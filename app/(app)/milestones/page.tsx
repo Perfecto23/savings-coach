@@ -6,6 +6,7 @@ import type { MonthlyMilestone, BonusEvent } from "@/lib/types/database";
 
 export default async function MilestonesPage() {
   const supabase = await createClient();
+  const now = Date.now();
 
   const [milestonesRes, bonusRes] = await Promise.all([
     supabase
@@ -35,7 +36,7 @@ export default async function MilestonesPage() {
 
       <MilestoneTable milestones={milestones} bonusEvents={bonusEvents} />
 
-      <IncomeTimeline bonusEvents={bonusEvents} now={Date.now()} />
+      <IncomeTimeline bonusEvents={bonusEvents} now={now} />
     </div>
   );
 }

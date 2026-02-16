@@ -74,7 +74,7 @@ export function BalanceHistoryChart({
   }
 
   const chartData = Array.from(dateMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
+    .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([date, balances]) => ({
       date,
       ...balances,

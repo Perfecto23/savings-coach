@@ -22,6 +22,7 @@ function getCurrentYearMonth() {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const now = Date.now();
   const yearMonth = getCurrentYearMonth();
 
   const [
@@ -156,7 +157,7 @@ export default async function DashboardPage() {
           sopRecords={sopRecords}
           milestone={currentMilestone}
         />
-        <UpcomingIncomeCard bonusEvents={bonusEvents} now={Date.now()} />
+        <UpcomingIncomeCard bonusEvents={bonusEvents} now={now} />
         <ImpulseSavingsCard logs={impulseLogs} totalSaved={impulseTotal} />
       </div>
 

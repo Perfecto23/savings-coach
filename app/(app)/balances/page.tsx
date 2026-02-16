@@ -1,8 +1,15 @@
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { AccountBalanceCard } from "@/components/balances/account-balance-card";
 import { BalanceForm } from "@/components/balances/balance-form";
-import { BalanceHistoryChart } from "@/components/balances/balance-history-chart";
 import type { Account, BalanceSnapshot } from "@/lib/types/database";
+
+const BalanceHistoryChart = dynamic(
+  () =>
+    import("@/components/balances/balance-history-chart").then(
+      (m) => m.BalanceHistoryChart
+    )
+);
 
 export default async function BalancesPage() {
   const supabase = await createClient();

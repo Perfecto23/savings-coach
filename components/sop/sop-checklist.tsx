@@ -110,7 +110,7 @@ export function SopChecklist({
 
   const sortedDays = Object.keys(groups)
     .map(Number)
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
 
   if (loading) {
     return (

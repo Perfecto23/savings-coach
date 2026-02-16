@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "储蓄教练 — 你的个人理财伙伴",
+  title: {
+    default: "储蓄教练 — 你的个人理财伙伴",
+    template: "%s | 储蓄教练",
+  },
   description:
     "帮助你执行月度储蓄 SOP、追踪多账户余额、通过 AI 财务教练进行复盘分析的个人理财应用",
   icons: {

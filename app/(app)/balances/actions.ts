@@ -70,6 +70,8 @@ export async function getBalanceHistory(
   months: number = 6
 ): Promise<ActionResult<BalanceSnapshot[]>> {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "未登录" };
 
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - months);

@@ -45,7 +45,7 @@ export function generateReportData(params: {
   const accountBalances = accounts.map((account) => {
     const acctSnaps = monthSnapshots
       .filter((s) => s.account_id === account.id)
-      .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+      .toSorted((a, b) => a.recorded_at.localeCompare(b.recorded_at));
 
     const startBalance = acctSnaps.length > 0 ? acctSnaps[0].balance : null;
     const endBalance =

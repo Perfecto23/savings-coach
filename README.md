@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 储蓄教练 (Savings Coach)
 
-## Getting Started
+个人储蓄管理应用，通过月度 SOP 流程、多账户余额追踪和 AI 教练帮你实现存钱目标。
 
-First, run the development server:
+## 技术栈
+
+- **Next.js 16** App Router + Server Actions
+- **Supabase** Auth + PostgreSQL + RLS
+- **Tailwind CSS 4**
+- **Vercel AI SDK** 多模型对话
+- **Recharts** 数据可视化
+
+## 本地开发
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.local.example .env.local  # 填入 Supabase 凭据
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 环境变量
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+在 `.env.local` 中配置：
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
 
-## Learn More
+### 数据库初始化
 
-To learn more about Next.js, take a look at the following resources:
+在 Supabase Dashboard → SQL Editor 中执行 `supabase/migrations/001_initial_schema.sql`，创建表结构、RLS 策略和索引。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 部署到 Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. 在 Vercel 导入 GitHub 仓库
+2. 在 Vercel 项目设置中添加环境变量（同上）
+3. 自动部署，无需额外配置
 
-## Deploy on Vercel
+## 项目结构
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+  (app)/              # 需要登录的页面
+    page.tsx          # 仪表盘
+    sop/              # 月度 SOP 清单
+    balances/         # 余额记录
+    income/           # 薪资配置 + 奖金事件
+    milestones/       # 储蓄里程碑
+    impulse/          # 冲动拦截
+    coach/            # AI 教练对话
+    settings/         # 账户/SOP模板/AI配置
+  login/              # 登录页
+  api/chat/           # AI 对话 API
+components/           # UI 组件
+lib/
+  supabase/           # Supabase 客户端封装
+  types/              # TypeScript 类型定义
+  tax-calculator.ts   # 累计预扣预缴个税计算
+  achievements.ts     # 成就系统
+supabase/
+  migrations/         # 数据库迁移文件
+  config.toml         # Supabase CLI 本地开发配置
+```

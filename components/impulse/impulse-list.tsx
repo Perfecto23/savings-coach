@@ -33,9 +33,9 @@ export function ImpulseList({ logs, onDeleted }: ImpulseListProps) {
       <div className="divide-y divide-gray-50">
         {logs.map((log) => (
           <div key={log.id} className="flex items-center justify-between px-6 py-3">
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3">
-                <span className="font-medium text-gray-900">{log.item_name}</span>
+                <span className="truncate font-medium text-gray-900">{log.item_name}</span>
                 <span className="font-mono text-sm text-green-600">
                   ¥{log.estimated_price.toLocaleString()}
                 </span>

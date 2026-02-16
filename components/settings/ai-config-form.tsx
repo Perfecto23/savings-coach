@@ -190,7 +190,7 @@ export function AiConfigManager({ initialConfigs }: AiConfigFormProps) {
                 name="api_key"
                 type="password"
                 required
-                placeholder="sk-..."
+                placeholder="sk-…"
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
@@ -208,7 +208,7 @@ export function AiConfigManager({ initialConfigs }: AiConfigFormProps) {
                 disabled={loading}
                 className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
               >
-                {loading ? "保存中..." : "添加"}
+                {loading ? "保存中…" : "添加"}
               </button>
             </div>
           </form>

@@ -51,7 +51,7 @@ export function AccountsOverviewCard({
     <div className="space-y-3">
       <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-linear-to-r from-amber-50 to-orange-50 px-5 py-3">
         <span className="text-sm font-medium text-amber-800">总资产</span>
-        <span className="text-xl font-bold text-amber-900">
+        <span className="text-xl font-bold tabular-nums text-amber-900">
           ¥{totalAssets.toLocaleString()}
         </span>
       </div>
@@ -68,13 +68,13 @@ export function AccountsOverviewCard({
             href="/balances"
             className={`cursor-pointer rounded-xl border bg-linear-to-br p-4 transition-shadow hover:shadow-md ${colors}`}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{account.icon}</span>
-              <span className="text-xs font-medium text-gray-600">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="shrink-0 text-lg">{account.icon}</span>
+              <span className="truncate text-xs font-medium text-gray-600">
                 {account.name}
               </span>
             </div>
-            <p className={`mt-2 text-lg font-bold ${textColor}`}>
+            <p className={`mt-2 text-lg font-bold tabular-nums ${textColor}`}>
               {snap ? `¥${snap.balance.toLocaleString()}` : "—"}
             </p>
           </Link>

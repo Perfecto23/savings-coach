@@ -81,6 +81,7 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
                     }))
                   }
                   placeholder="余额"
+                  aria-label={`${account.name}余额`}
                   className="w-full rounded-lg border border-gray-300 py-2 pl-7 pr-3 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
               </div>
@@ -105,7 +106,7 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
           disabled={loading}
           className="cursor-pointer rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
         >
-          {loading ? "保存中..." : "保存快照"}
+          {loading ? "保存中…" : "保存快照"}
         </button>
       </form>
     </div>

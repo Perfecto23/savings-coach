@@ -105,23 +105,23 @@ export function MilestoneTable({ milestones: initialMilestones, bonusEvents }: M
                       <span className="ml-1 text-xs text-orange-500">当前</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-700">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-700">
                     ¥{m.planned_savings.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-500">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-500">
                     ¥{m.planned_total_savings.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-700">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-700">
                     {m.actual_savings != null
                       ? `¥${m.actual_savings.toLocaleString()}`
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-500">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-500">
                     {m.actual_total_savings != null
                       ? `¥${m.actual_total_savings.toLocaleString()}`
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums">
                     {deviation != null ? (
                       <span
                         className={

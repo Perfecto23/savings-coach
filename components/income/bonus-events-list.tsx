@@ -195,6 +195,7 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                             value={receiveAmount}
                             onChange={(e) => setReceiveAmount(e.target.value)}
                             placeholder="实际金额"
+                            aria-label="实际到账金额"
                             className="w-24 rounded border border-gray-300 px-2 py-1 text-xs"
                           />
                           <button

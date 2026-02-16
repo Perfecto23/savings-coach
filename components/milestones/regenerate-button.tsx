@@ -34,7 +34,7 @@ export function RegenerateMilestonesButton() {
         disabled={loading}
         className="cursor-pointer rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700 transition-colors hover:bg-orange-100 disabled:opacity-50"
       >
-        {loading ? "生成中..." : "🔄 重新生成里程碑"}
+        {loading ? "生成中…" : "🔄 重新生成里程碑"}
       </button>
     </div>
   );

@@ -88,8 +88,8 @@ export function ConversationList({ conversations }: ConversationListProps) {
               href={`/coach/${conv.id}`}
               className="block cursor-pointer rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-orange-200 hover:shadow-sm"
             >
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900">{conv.title}</h4>
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="truncate font-medium text-gray-900">{conv.title}</h4>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     TYPE_COLORS[conv.conversation_type] || TYPE_COLORS.general

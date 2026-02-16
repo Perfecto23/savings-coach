@@ -172,6 +172,7 @@ export function SopStepItem({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="实际金额"
+                aria-label="实际金额"
                 className="w-28 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               <input
@@ -179,6 +180,7 @@ export function SopStepItem({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="备注"
+                aria-label="备注"
                 className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               <button

@@ -143,7 +143,7 @@ export function BonusEventForm({
           disabled={loading}
           className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
         >
-          {loading ? "保存中..." : event ? "更新" : "添加"}
+          {loading ? "保存中…" : event ? "更新" : "添加"}
         </button>
       </div>
     </form>

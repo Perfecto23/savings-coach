@@ -203,6 +203,7 @@ export function SopChecklist({
                 value={adHocLabel}
                 onChange={(e) => setAdHocLabel(e.target.value)}
                 placeholder="操作名称（如：储蓄→工资卡 匀钱）"
+                aria-label="临时操作名称"
                 className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               <div className="flex gap-2">
@@ -212,6 +213,7 @@ export function SopChecklist({
                   value={adHocDay}
                   onChange={(e) => setAdHocDay(e.target.value)}
                   placeholder="执行日"
+                  aria-label="执行日"
                   min={1}
                   max={31}
                   className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
@@ -222,6 +224,7 @@ export function SopChecklist({
                   value={adHocAmount}
                   onChange={(e) => setAdHocAmount(e.target.value)}
                   placeholder="金额（选填）"
+                  aria-label="金额"
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
               </div>
@@ -231,6 +234,7 @@ export function SopChecklist({
               value={adHocNote}
               onChange={(e) => setAdHocNote(e.target.value)}
               placeholder="备注（选填）"
+              aria-label="备注"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
             <div className="flex items-center justify-end gap-2">

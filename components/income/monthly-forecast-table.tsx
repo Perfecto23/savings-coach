@@ -66,22 +66,22 @@ export function MonthlyForecastTable({
                   <td className="px-3 py-2 font-medium text-gray-900">
                     {row.month}月
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-gray-700">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-700">
                     {row.gross.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-gray-500">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
                     -{row.socialInsurance.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-gray-500">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
                     -{row.housingFund.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-red-500">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-red-500">
                     -{row.monthlyTax.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono font-semibold text-green-700">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-green-700">
                     {row.netIncome.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-blue-600">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-blue-600">
                     {cumulativeFunds[index].toLocaleString()}
                   </td>
                   <td className="px-3 py-2">
@@ -106,22 +106,22 @@ export function MonthlyForecastTable({
           <tfoot>
             <tr className="border-t border-gray-200 bg-gray-50/50">
               <td className="px-3 py-2 font-semibold text-gray-900">合计</td>
-              <td className="px-3 py-2 text-right font-mono font-semibold">
+              <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                 {breakdown.reduce((s, r) => s + r.gross, 0).toLocaleString()}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-gray-500">
+              <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
                 -{breakdown.reduce((s, r) => s + r.socialInsurance, 0).toLocaleString()}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-gray-500">
+              <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
                 -{breakdown.reduce((s, r) => s + r.housingFund, 0).toLocaleString()}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-red-500">
+              <td className="px-3 py-2 text-right font-mono tabular-nums text-red-500">
                 -{breakdown.reduce((s, r) => s + r.monthlyTax, 0).toLocaleString()}
               </td>
-              <td className="px-3 py-2 text-right font-mono font-semibold text-green-700">
+              <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-green-700">
                 {breakdown.reduce((s, r) => s + r.netIncome, 0).toLocaleString()}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-blue-600">
+              <td className="px-3 py-2 text-right font-mono tabular-nums text-blue-600">
                 {totalCumulative.toLocaleString()}
               </td>
               <td className="px-3 py-2" />

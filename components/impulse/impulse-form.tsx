@@ -91,7 +91,7 @@ export function ImpulseForm({ onAdded }: ImpulseFormProps) {
           disabled={loading}
           className="cursor-pointer rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
         >
-          {loading ? "记录中..." : "我忍住了！💪"}
+          {loading ? "记录中…" : "我忍住了！💪"}
         </button>
       </form>
     </div>

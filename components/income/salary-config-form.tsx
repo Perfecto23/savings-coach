@@ -186,7 +186,7 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
             disabled={loading}
             className="cursor-pointer rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
           >
-            {loading ? "保存中..." : "保存配置"}
+            {loading ? "保存中…" : "保存配置"}
           </button>
         </div>
       </form>

@@ -163,7 +163,7 @@ export default async function DashboardPage() {
 
       {/* 成就徽章 */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-gray-900">成就</h3>
+        <h2 className="text-lg font-semibold text-gray-900">成就</h2>
         <p className="mt-1 text-sm text-gray-500">
           解锁成就，记录你的储蓄旅程
         </p>

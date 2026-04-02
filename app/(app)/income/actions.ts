@@ -7,7 +7,15 @@ import type {
   SalaryConfig,
   BonusEvent,
   MonthlyMilestone,
+  SopRecord,
 } from "@/lib/types/database";
+import {
+  getCurrentYearMonth,
+  getMilestoneStatus,
+  getMilestoneSnapshotForTemplate,
+  roundMoney,
+  sumMilestoneTarget,
+} from "@/lib/milestones";
 
 // ============================================
 // 薪资配置
@@ -213,7 +221,9 @@ export async function markBonusReceived(
 
 export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilestone[]>> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
 
   // 获取最新薪资配置（确定起始月份）
@@ -228,101 +238,124 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
     return { success: false, error: "请先配置薪资信息" };
   }
 
-  // 并行获取: SOP 模板、账户、奖金事件
-  const [templatesRes, accountsRes, bonusRes] = await Promise.all([
-    supabase.from("sop_templates").select("*").eq("is_active", true),
-    supabase.from("accounts").select("*"),
-    supabase.from("bonus_events").select("*").order("expected_date"),
-  ]);
+  const [templatesRes, accountsRes, bonusRes, snapshotsRes, existingMilestonesRes, sopRecordsRes] =
+    await Promise.all([
+      supabase.from("sop_templates").select("*").eq("is_active", true),
+      supabase.from("accounts").select("id, purpose"),
+      supabase.from("bonus_events").select("*").order("expected_date"),
+      supabase
+        .from("balance_snapshots")
+        .select("account_id, balance, recorded_at")
+        .order("recorded_at", { ascending: true }),
+      supabase.from("monthly_milestones").select("*"),
+      supabase
+        .from("sop_records")
+        .select(
+          "year_month, completed, counts_toward_milestone, milestone_amount"
+        )
+        .order("year_month", { ascending: true }),
+    ]);
+
+  if (templatesRes.error) return { success: false, error: templatesRes.error.message };
+  if (accountsRes.error) return { success: false, error: accountsRes.error.message };
+  if (bonusRes.error) return { success: false, error: bonusRes.error.message };
+  if (snapshotsRes.error) return { success: false, error: snapshotsRes.error.message };
+  if (existingMilestonesRes.error) return { success: false, error: existingMilestonesRes.error.message };
+  if (sopRecordsRes.error) return { success: false, error: sopRecordsRes.error.message };
 
   const templates = templatesRes.data || [];
-  const accounts = (accountsRes.data || []) as Array<{ id: string; purpose: string }>;
+  const accounts = accountsRes.data || [];
   const bonuses = (bonusRes.data || []) as BonusEvent[];
+  const allSnapshots = snapshotsRes.data || [];
+  const existingMilestones = (existingMilestonesRes.data || []) as MonthlyMilestone[];
+  const sopRecords = (sopRecordsRes.data || []) as Array<
+    Pick<SopRecord, "year_month" | "completed" | "counts_toward_milestone" | "milestone_amount">
+  >;
 
-  // 找出所有 purpose='savings' 的账户 ID
-  const savingsAccountIds = new Set(
-    accounts.filter((a) => a.purpose === "savings").map((a) => a.id)
+  const accountPurposeById = new Map(
+    accounts.map((account) => [account.id, account.purpose])
   );
 
-  // 从 SOP 模板计算每月固定储蓄目标：
-  // 只统计 to_account 为储蓄账户且有默认金额的模板
-  let monthlySopSavings = 0;
-  for (const tpl of templates) {
-    if (tpl.to_account_id && savingsAccountIds.has(tpl.to_account_id) && tpl.default_amount) {
-      monthlySopSavings += Number(tpl.default_amount);
-    }
-  }
+  const savingsAccountIds = new Set(
+    accounts
+      .filter((account) => account.purpose === "savings")
+      .map((account) => account.id)
+  );
 
-  // 确定起始年月
+  const templateMonthlySavings = roundMoney(
+    templates.reduce((sum, template) => {
+      const snapshot = getMilestoneSnapshotForTemplate({
+        toAccountId: template.to_account_id,
+        defaultAmount: template.default_amount,
+        accountPurposeById,
+      });
+      return sum + (snapshot.milestone_amount ?? 0);
+    }, 0)
+  );
+
   const config = salaryConfig as SalaryConfig;
   const effectiveDate = new Date(config.effective_from);
   const startYear = effectiveDate.getFullYear();
   const startMonth = effectiveDate.getMonth() + 1;
+  const currentYM = getCurrentYearMonth();
 
-  // 当前年月
-  const now = new Date();
-  const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
-  // 获取储蓄账户的所有余额快照（按月分组，取每月最新一条）
   const monthlyBalances = new Map<string, number>();
   if (savingsAccountIds.size > 0) {
-    const { data: allSnapshots } = await supabase
-      .from("balance_snapshots")
-      .select("account_id, balance, recorded_at")
-      .in("account_id", [...savingsAccountIds])
-      .order("recorded_at", { ascending: true });
-
-    // 按月分组每个账户的余额（同月取最新值），再汇总所有储蓄账户
     const perAccountMonthly = new Map<string, Map<string, number>>();
-    for (const snap of allSnapshots || []) {
-      const d = new Date(snap.recorded_at);
+    for (const snapshot of allSnapshots) {
+      if (!savingsAccountIds.has(snapshot.account_id)) continue;
+      const d = new Date(snapshot.recorded_at);
       const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (!perAccountMonthly.has(snap.account_id)) {
-        perAccountMonthly.set(snap.account_id, new Map());
+      if (!perAccountMonthly.has(snapshot.account_id)) {
+        perAccountMonthly.set(snapshot.account_id, new Map());
       }
-      perAccountMonthly.get(snap.account_id)!.set(ym, Number(snap.balance));
+      perAccountMonthly.get(snapshot.account_id)!.set(ym, Number(snapshot.balance));
     }
-    // 合并所有储蓄账户，按月汇总
+
     const allMonths = new Set<string>();
-    for (const acctMap of perAccountMonthly.values()) {
-      for (const ym of acctMap.keys()) allMonths.add(ym);
+    for (const accountMonths of perAccountMonthly.values()) {
+      for (const ym of accountMonths.keys()) allMonths.add(ym);
     }
+
     for (const ym of allMonths) {
       let total = 0;
-      for (const acctMap of perAccountMonthly.values()) {
-        const val = acctMap.get(ym);
-        if (val !== undefined) total += val;
+      for (const accountMonths of perAccountMonthly.values()) {
+        const value = accountMonths.get(ym);
+        if (value !== undefined) total += value;
       }
-      monthlyBalances.set(ym, total);
+      monthlyBalances.set(ym, roundMoney(total));
     }
   }
 
-  // 确定初始 baseline（最早的储蓄余额快照，作为第一个锚点）
-  // 按时间排序取最早的月份余额
   const sortedBalanceMonths = [...monthlyBalances.entries()].sort((a, b) =>
     a[0].localeCompare(b[0])
   );
   const initialBaseline = sortedBalanceMonths.length > 0 ? sortedBalanceMonths[0][1] : 0;
 
-  // 获取已有里程碑
-  const { data: existingMilestones } = await supabase
-    .from("monthly_milestones")
-    .select("*");
-
   const existingMap = new Map(
-    (existingMilestones || []).map((m) => [m.year_month, m])
+    existingMilestones.map((milestone) => [milestone.year_month, milestone])
   );
 
-  // 构建里程碑：滚动锚点模式
-  // - 锚点 = 最后一个有实际余额数据的月份的余额
-  // - 后续月份目标 = 锚点 + 累计计划存入
+  const sopRecordsByMonth = new Map<
+    string,
+    Array<
+      Pick<SopRecord, "year_month" | "completed" | "counts_toward_milestone" | "milestone_amount">
+    >
+  >();
+  for (const record of sopRecords) {
+    if (!sopRecordsByMonth.has(record.year_month)) {
+      sopRecordsByMonth.set(record.year_month, []);
+    }
+    sopRecordsByMonth.get(record.year_month)!.push(record);
+  }
+
   type MilestoneRow = {
     year_month: string;
     planned_savings: number;
     planned_total_savings: number;
     actual_savings: number | null;
     actual_total_savings: number | null;
-    status: string;
+    status: MonthlyMilestone["status"];
   };
 
   const milestones: MilestoneRow[] = [];
@@ -336,51 +369,52 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
     const month = (monthOffset % 12) + 1;
     const yearMonth = `${year}-${String(month).padStart(2, "0")}`;
 
-    // 跳过已开始且没有历史数据的月份
     if (yearMonth <= currentYM && !existingMap.has(yearMonth)) {
       continue;
     }
 
-    // 每月计划储蓄 = SOP 金额 + 奖金
-    let monthlySavings = monthlySopSavings;
+    const monthRecords = sopRecordsByMonth.get(yearMonth) || [];
+    const plannedSopSavings =
+      monthRecords.length > 0 ? sumMilestoneTarget(monthRecords) : templateMonthlySavings;
+
+    let monthlySavings = plannedSopSavings;
     for (const bonus of bonuses) {
       const bonusDate = new Date(bonus.expected_date);
       const bonusYM = `${bonusDate.getFullYear()}-${String(bonusDate.getMonth() + 1).padStart(2, "0")}`;
-      if (bonusYM === yearMonth && bonus.target_account_id && savingsAccountIds.has(bonus.target_account_id)) {
-        monthlySavings += bonus.actual_amount ?? bonus.amount;
+      if (
+        bonusYM === yearMonth &&
+        bonus.target_account_id &&
+        savingsAccountIds.has(bonus.target_account_id)
+      ) {
+        monthlySavings += Number(bonus.actual_amount ?? bonus.amount);
       }
     }
+    monthlySavings = roundMoney(monthlySavings);
 
-    cumulativeFromAnchor += monthlySavings;
+    cumulativeFromAnchor = roundMoney(cumulativeFromAnchor + monthlySavings);
 
-    // 检查该月是否有实际余额数据（来自 balance_snapshots）
     const actualBalance = monthlyBalances.get(yearMonth);
-    let actualSavings: number | null = null;
-    let actualTotal: number | null = null;
-    let status = "pending";
+    const actualSavings =
+      actualBalance !== undefined ? roundMoney(actualBalance - prevBalance) : null;
+    const actualTotal = actualBalance !== undefined ? roundMoney(actualBalance) : null;
+
+    const status = getMilestoneStatus({
+      yearMonth,
+      currentYearMonth: currentYM,
+      records: monthRecords,
+    });
 
     if (actualBalance !== undefined) {
-      actualTotal = actualBalance;
-      actualSavings = Math.round((actualBalance - prevBalance) * 100) / 100;
-
-      const deviation = actualSavings - monthlySavings;
-      if (deviation >= 0) {
-        status = deviation > 0 ? "exceeded" : "on_track";
-      } else {
-        status = "missed";
-      }
-
-      // 该月成为新锚点，后续月份从这里重新计算
       anchorBalance = actualBalance;
       prevBalance = actualBalance;
       cumulativeFromAnchor = 0;
     }
 
-    const targetBalance = Math.round((anchorBalance + cumulativeFromAnchor) * 100) / 100;
+    const targetBalance = roundMoney(anchorBalance + cumulativeFromAnchor);
 
     milestones.push({
       year_month: yearMonth,
-      planned_savings: Math.round(monthlySavings * 100) / 100,
+      planned_savings: monthlySavings,
       planned_total_savings: targetBalance,
       actual_savings: actualSavings,
       actual_total_savings: actualTotal,
@@ -388,29 +422,25 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
     });
   }
 
-  // Upsert 里程碑
-  for (const ms of milestones) {
-    const existing = existingMap.get(ms.year_month);
+  for (const milestone of milestones) {
+    const existing = existingMap.get(milestone.year_month);
 
     if (existing) {
       await supabase
         .from("monthly_milestones")
         .update({
-          planned_savings: ms.planned_savings,
-          planned_total_savings: ms.planned_total_savings,
-          actual_savings: ms.actual_savings,
-          actual_total_savings: ms.actual_total_savings,
-          status: ms.status,
+          planned_savings: milestone.planned_savings,
+          planned_total_savings: milestone.planned_total_savings,
+          actual_savings: milestone.actual_savings,
+          actual_total_savings: milestone.actual_total_savings,
+          status: milestone.status,
         })
         .eq("id", existing.id);
     } else {
-      await supabase
-        .from("monthly_milestones")
-        .insert(ms);
+      await supabase.from("monthly_milestones").insert(milestone);
     }
   }
 
-  // 返回最新里程碑
   const { data: result, error } = await supabase
     .from("monthly_milestones")
     .select("*")

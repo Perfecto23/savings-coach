@@ -7,16 +7,15 @@ interface CurrentMonthCardProps {
 }
 
 export function CurrentMonthCard({ sopRecords, milestone }: CurrentMonthCardProps) {
-  const completed = sopRecords.filter((r) => r.completed).length;
+  const completed = sopRecords.filter((record) => record.completed).length;
   const total = sopRecords.length;
-  const nextTodo = sopRecords.find((r) => !r.completed);
+  const nextTodo = sopRecords.find((record) => !record.completed);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
       <h3 className="text-sm font-semibold text-gray-500">本月状态</h3>
 
       <div className="mt-3 space-y-3">
-        {/* SOP 进度 */}
         <Link
           href="/sop"
           className="block cursor-pointer rounded-lg bg-gray-50 p-3 transition-colors hover:bg-orange-50"
@@ -34,7 +33,6 @@ export function CurrentMonthCard({ sopRecords, milestone }: CurrentMonthCardProp
           )}
         </Link>
 
-        {/* 里程碑 */}
         {milestone && (
           <Link
             href="/milestones"
@@ -50,7 +48,7 @@ export function CurrentMonthCard({ sopRecords, milestone }: CurrentMonthCardProp
             </div>
             {milestone.actual_savings != null && (
               <p className="mt-1 text-xs text-gray-500">
-                实际: ¥{milestone.actual_savings.toLocaleString()}
+                净值变化: ¥{milestone.actual_savings.toLocaleString()}
               </p>
             )}
           </Link>

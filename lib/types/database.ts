@@ -53,8 +53,8 @@ export interface MonthlyMilestone {
   year_month: string;
   planned_savings: number;
   planned_total_savings: number;
-  actual_savings: number | null;
-  actual_total_savings: number | null;
+  actual_savings: number | null; // 储蓄账户净值变化
+  actual_total_savings: number | null; // 储蓄账户月末总净值
   status: "pending" | "on_track" | "exceeded" | "missed";
   created_at: string;
   updated_at: string;
@@ -95,6 +95,8 @@ export interface SopRecord {
   amount: number | null;
   note: string | null;
   sort_order: number;
+  counts_toward_milestone: boolean;
+  milestone_amount: number | null;
   created_at: string;
 }
 

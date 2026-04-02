@@ -7,7 +7,6 @@ interface MonthlyReportProps {
 export function MonthlyReport({ data }: MonthlyReportProps) {
   return (
     <div className="space-y-6">
-      {/* 总览卡片 */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
           label="SOP 完成率"
@@ -15,7 +14,7 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
           color={data.sopCompletionRate === 100 ? "green" : "orange"}
         />
         <StatCard
-          label="计划存入"
+          label="计划转入"
           value={
             data.milestone
               ? `¥${data.milestone.planned_savings.toLocaleString()}`
@@ -24,7 +23,7 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
           color="blue"
         />
         <StatCard
-          label="实际存入"
+          label="净值变化"
           value={
             data.milestone?.actual_savings != null
               ? `¥${data.milestone.actual_savings.toLocaleString()}`
@@ -45,7 +44,10 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
         />
       </div>
 
-      {/* SOP 执行详情 */}
+      <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-blue-700">
+        本月 badge 只由储蓄类 SOP 是否执行完成决定；“净值变化”会把投资浮盈浮亏一起算进去，所以可能低于计划转入。
+      </div>
+
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <h3 className="font-semibold text-gray-900">SOP 执行详情</h3>
         <div className="mt-3 space-y-2">
@@ -84,7 +86,6 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
         </div>
       </div>
 
-      {/* 账户余额变化 */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <h3 className="font-semibold text-gray-900">账户余额变化</h3>
         <div className="mt-3 overflow-x-auto">

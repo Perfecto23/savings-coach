@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
     currentMilestone: milestone
       ? {
           planned: milestone.planned_savings,
-          actual: milestone.actual_savings,
+          netChange: milestone.actual_savings,
+          status: milestone.status,
         }
       : null,
     sopStatus: sopRecords.map((s) => ({

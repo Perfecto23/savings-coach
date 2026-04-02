@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { regenerateMilestones } from "@/app/(app)/income/actions";
+import {
+  getMilestoneSnapshotForTemplate,
+  roundMoney,
+} from "@/lib/milestones";
 import type { ActionResult, SopRecord } from "@/lib/types/database";
 
 const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
@@ -10,7 +15,9 @@ export async function initMonthSop(
   yearMonth: string
 ): Promise<ActionResult<SopRecord[]>> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (!YEAR_MONTH_REGEX.test(yearMonth)) return { success: false, error: "年月格式无效" };
 
@@ -33,27 +40,43 @@ export async function initMonthSop(
     return { success: true, data: data as SopRecord[] };
   }
 
-  // 从 sop_templates 实例化
-  const { data: templates, error: tplError } = await supabase
-    .from("sop_templates")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort_order");
+  const [templatesRes, accountsRes] = await Promise.all([
+    supabase.from("sop_templates").select("*").eq("is_active", true).order("sort_order"),
+    supabase.from("accounts").select("id, purpose"),
+  ]);
 
-  if (tplError) return { success: false, error: tplError.message };
-  if (!templates || templates.length === 0) {
+  if (templatesRes.error) return { success: false, error: templatesRes.error.message };
+  if (accountsRes.error) return { success: false, error: accountsRes.error.message };
+
+  const templates = templatesRes.data || [];
+  const accounts = accountsRes.data || [];
+
+  if (templates.length === 0) {
     return { success: true, data: [] };
   }
 
-  const records = templates.map((tpl) => ({
-    year_month: yearMonth,
-    template_id: tpl.id,
-    step_key: tpl.step_key,
-    step_label: tpl.step_label,
-    due_day: tpl.due_day,
-    amount: tpl.default_amount,
-    sort_order: tpl.sort_order,
-  }));
+  const accountPurposeById = new Map(
+    accounts.map((account) => [account.id, account.purpose])
+  );
+
+  const records = templates.map((tpl) => {
+    const milestoneSnapshot = getMilestoneSnapshotForTemplate({
+      toAccountId: tpl.to_account_id,
+      defaultAmount: tpl.default_amount,
+      accountPurposeById,
+    });
+
+    return {
+      year_month: yearMonth,
+      template_id: tpl.id,
+      step_key: tpl.step_key,
+      step_label: tpl.step_label,
+      due_day: tpl.due_day,
+      amount: tpl.default_amount,
+      sort_order: tpl.sort_order,
+      ...milestoneSnapshot,
+    };
+  });
 
   const { data: inserted, error: insertError } = await supabase
     .from("sop_records")
@@ -61,6 +84,8 @@ export async function initMonthSop(
     .select();
 
   if (insertError) return { success: false, error: insertError.message };
+
+  await regenerateMilestones();
   revalidatePath("/sop");
   return { success: true, data: inserted as SopRecord[] };
 }
@@ -70,7 +95,9 @@ export async function toggleSopStep(
   completed: boolean
 ): Promise<ActionResult> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (!id || typeof id !== "string" || id.trim() === "") return { success: false, error: "ID无效" };
 
@@ -83,6 +110,8 @@ export async function toggleSopStep(
     .eq("id", id);
 
   if (error) return { success: false, error: error.message };
+
+  await regenerateMilestones();
   revalidatePath("/sop");
   return { success: true, data: undefined };
 }
@@ -92,7 +121,9 @@ export async function addAdHocSopStep(
   data: { step_label: string; due_day: number; amount?: number; note?: string }
 ): Promise<ActionResult<SopRecord>> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (!YEAR_MONTH_REGEX.test(yearMonth)) return { success: false, error: "年月格式无效" };
   if (!data.step_label || data.step_label.trim() === "") return { success: false, error: "步骤名称不能为空" };
@@ -124,6 +155,8 @@ export async function addAdHocSopStep(
       amount: data.amount ?? null,
       note: data.note ?? null,
       sort_order: sortOrder,
+      counts_toward_milestone: false,
+      milestone_amount: null,
     })
     .select()
     .single();
@@ -135,7 +168,9 @@ export async function addAdHocSopStep(
 
 export async function deleteAdHocSopStep(id: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (!id || id.trim() === "") return { success: false, error: "ID无效" };
 
@@ -160,16 +195,43 @@ export async function updateSopStep(
   data: { note?: string; amount?: number }
 ): Promise<ActionResult> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount < 0)) return { success: false, error: "金额无效" };
 
-  const { error } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("sop_records")
-    .update(data)
-    .eq("id", id);
+    .select("counts_toward_milestone")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (existingError) return { success: false, error: existingError.message };
+  if (!existing) return { success: false, error: "记录不存在" };
+
+  const updates: { note?: string; amount?: number; counts_toward_milestone?: boolean; milestone_amount?: number | null } = {
+    ...data,
+  };
+
+  if (data.amount !== undefined && existing.counts_toward_milestone) {
+    const nextAmount = roundMoney(data.amount);
+    if (nextAmount > 0) {
+      updates.milestone_amount = nextAmount;
+    } else {
+      updates.counts_toward_milestone = false;
+      updates.milestone_amount = null;
+    }
+  }
+
+  const { error } = await supabase.from("sop_records").update(updates).eq("id", id);
 
   if (error) return { success: false, error: error.message };
+
+  if (data.amount !== undefined) {
+    await regenerateMilestones();
+  }
+
   revalidatePath("/sop");
   return { success: true, data: undefined };
 }

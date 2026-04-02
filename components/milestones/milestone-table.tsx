@@ -17,7 +17,7 @@ function getCurrentYearMonth() {
 }
 
 const STATUS_BADGES: Record<string, { label: string; class: string }> = {
-  pending: { label: "待定", class: "bg-gray-100 text-gray-500" },
+  pending: { label: "待进行", class: "bg-gray-100 text-gray-500" },
   on_track: { label: "达标", class: "bg-green-50 text-green-700" },
   exceeded: { label: "超额", class: "bg-orange-50 text-orange-700" },
   missed: { label: "未达", class: "bg-red-50 text-red-600" },
@@ -38,8 +38,8 @@ export function MilestoneTable({ milestones: initialMilestones, bonusEvents }: M
   }
 
   function getBonusForMonth(yearMonth: string) {
-    return bonusEvents.filter((e) => {
-      const ym = e.expected_date.slice(0, 7);
+    return bonusEvents.filter((event) => {
+      const ym = event.expected_date.slice(0, 7);
       return ym === yearMonth;
     });
   }
@@ -59,126 +59,132 @@ export function MilestoneTable({ milestones: initialMilestones, bonusEvents }: M
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-200 text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="px-4 py-3 text-left font-medium text-gray-500">月份</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">计划存入</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">目标余额</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">实际存入</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">实际余额</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">偏差</th>
-              <th className="px-4 py-3 text-center font-medium text-gray-500">状态</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">特殊收入</th>
-              <th className="px-4 py-3 text-center font-medium text-gray-500">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {milestones.map((m) => {
-              const isCurrent = m.year_month === currentYM;
-              const isFuture = m.year_month > currentYM;
-              const bonuses = getBonusForMonth(m.year_month);
-              const deviation =
-                m.actual_savings != null
-                  ? m.actual_savings - m.planned_savings
-                  : null;
-              const badge = STATUS_BADGES[m.status] || STATUS_BADGES.pending;
+    <div className="space-y-3">
+      <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-xs leading-5 text-blue-700">
+        状态 badge 只看当月储蓄类 SOP 是否执行到位；“净值变化”会继续反映投资涨跌，所以两者不一定同步。
+      </div>
 
-              return (
-                <tr
-                  key={m.id}
-                  className={`border-b border-gray-50 last:border-0 ${
-                    isCurrent
-                      ? "bg-orange-50/50"
-                      : isFuture
-                        ? "opacity-50"
-                        : ""
-                  } ${bonuses.length > 0 ? "bg-amber-50/30" : ""}`}
-                >
-                  <td className="px-4 py-3">
-                    <span className={`font-medium ${isCurrent ? "text-orange-700" : "text-gray-900"}`}>
-                      {m.year_month}
-                    </span>
-                    {isCurrent && (
-                      <span className="ml-1 text-xs text-orange-500">当前</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-700">
-                    ¥{m.planned_savings.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-500">
-                    ¥{m.planned_total_savings.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-700">
-                    {m.actual_savings != null
-                      ? `¥${m.actual_savings.toLocaleString()}`
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-500">
-                    {m.actual_total_savings != null
-                      ? `¥${m.actual_total_savings.toLocaleString()}`
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums">
-                    {deviation != null ? (
-                      <span
-                        className={
-                          deviation >= 0 ? "text-green-600" : "text-red-500"
-                        }
-                      >
-                        {deviation >= 0 ? "+" : ""}¥{deviation.toLocaleString()}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-200 text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="px-4 py-3 text-left font-medium text-gray-500">月份</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">计划转入</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">目标余额</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">净值变化</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">月末余额</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">净值偏差</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">状态</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">特殊收入</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {milestones.map((milestone) => {
+                const isCurrent = milestone.year_month === currentYM;
+                const isFuture = milestone.year_month > currentYM;
+                const bonuses = getBonusForMonth(milestone.year_month);
+                const deviation =
+                  milestone.actual_savings != null
+                    ? milestone.actual_savings - milestone.planned_savings
+                    : null;
+                const badge = STATUS_BADGES[milestone.status] || STATUS_BADGES.pending;
+
+                return (
+                  <tr
+                    key={milestone.id}
+                    className={`border-b border-gray-50 last:border-0 ${
+                      isCurrent
+                        ? "bg-orange-50/50"
+                        : isFuture
+                          ? "opacity-50"
+                          : ""
+                    } ${bonuses.length > 0 ? "bg-amber-50/30" : ""}`}
+                  >
+                    <td className="px-4 py-3">
+                      <span className={`font-medium ${isCurrent ? "text-orange-700" : "text-gray-900"}`}>
+                        {milestone.year_month}
                       </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.class}`}
-                    >
-                      {badge.label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {bonuses.map((b) => (
-                      <span
-                        key={b.id}
-                        className={`mr-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                          b.is_received
-                            ? "bg-green-50 text-green-700"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {b.label}
-                      </span>
-                    ))}
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Link
-                        href={`/milestones/${m.year_month}/report`}
-                        className="text-xs text-orange-500 hover:text-orange-600 hover:underline"
-                      >
-                        报告
-                      </Link>
-                      {m.year_month <= currentYM && m.actual_savings == null && (
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(m.year_month)}
-                          className="cursor-pointer text-xs text-gray-400 transition-colors hover:text-red-500"
-                        >
-                          删除
-                        </button>
+                      {isCurrent && (
+                        <span className="ml-1 text-xs text-orange-500">当前</span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-700">
+                      ¥{milestone.planned_savings.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-500">
+                      ¥{milestone.planned_total_savings.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-700">
+                      {milestone.actual_savings != null
+                        ? `¥${milestone.actual_savings.toLocaleString()}`
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-gray-500">
+                      {milestone.actual_total_savings != null
+                        ? `¥${milestone.actual_total_savings.toLocaleString()}`
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums">
+                      {deviation != null ? (
+                        <span
+                          className={
+                            deviation >= 0 ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          {deviation >= 0 ? "+" : ""}¥{deviation.toLocaleString()}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.class}`}
+                      >
+                        {badge.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {bonuses.map((bonus) => (
+                        <span
+                          key={bonus.id}
+                          className={`mr-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                            bonus.is_received
+                              ? "bg-green-50 text-green-700"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {bonus.label}
+                        </span>
+                      ))}
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          href={`/milestones/${milestone.year_month}/report`}
+                          className="text-xs text-orange-500 hover:text-orange-600 hover:underline"
+                        >
+                          报告
+                        </Link>
+                        {milestone.year_month <= currentYM && milestone.actual_savings == null && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(milestone.year_month)}
+                            className="cursor-pointer text-xs text-gray-400 transition-colors hover:text-red-500"
+                          >
+                            删除
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

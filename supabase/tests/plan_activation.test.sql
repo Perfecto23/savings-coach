@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(73);
+select plan(74);
 
 select has_column('public', 'sop_templates', 'is_plan_rule', 'Plan Rules are marked SOP Templates');
 select has_column('public', 'sop_records', 'is_monthly_action', 'Monthly Actions are marked SOP Records');
@@ -241,6 +241,31 @@ select is(
   ),
   0::bigint,
   'a rejected non-finite amount creates no Plan Rule row'
+);
+
+select throws_ok(
+  $$
+    insert into public.sop_records (
+      owner_id, year_month, template_id, step_key, step_label, due_day,
+      amount, counts_toward_milestone, milestone_amount,
+      is_monthly_action, rule_amount, scheduled_for
+    ) values (
+      '00000000-0000-4000-8000-00000000005a',
+      '2099-01',
+      '20000000-0000-4000-8000-000000000051',
+      'nan_monthly_action',
+      'NaN Monthly Action',
+      10,
+      100,
+      true,
+      100,
+      true,
+      'NaN'::numeric,
+      '2099-01-10'
+    )
+  $$,
+  '23514', null,
+  'direct writes cannot store a non-finite Monthly Action amount'
 );
 
 select throws_ok(

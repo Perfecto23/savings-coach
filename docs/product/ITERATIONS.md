@@ -190,7 +190,7 @@
 
 ### Verified
 
-- Full pgTAP：214/214；Plan suite：73/73。
+- Full pgTAP：215/215；Plan suite：74/74。
 - Concurrency：相同 activation、activation + edit、跨 owner 相同 UUID 均通过。
 - Migration preflight：5 个 owner mapping 场景通过。
 - Setup concurrency：4 个并发场景和最终不变量通过。

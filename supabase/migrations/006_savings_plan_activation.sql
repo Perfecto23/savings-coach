@@ -70,7 +70,12 @@ left join public.accounts as target_account
 where action.owner_id = template.owner_id
   and action.template_id = template.id
   and action.counts_toward_milestone
-  and coalesce(action.milestone_amount, action.amount) > 0;
+  and coalesce(action.milestone_amount, action.amount)::text not in (
+    'NaN', 'Infinity', '-Infinity'
+  )
+  and coalesce(action.milestone_amount, action.amount) > 0
+  and coalesce(action.milestone_amount, action.amount) <= 9999999999.99
+  and scale(coalesce(action.milestone_amount, action.amount)) <= 2;
 
 -- A template may have been deleted after migration 003. Preserve a positive
 -- milestone record as a Monthly Action even when live account links are gone.
@@ -84,7 +89,12 @@ set
   )
 where not action.is_monthly_action
   and action.counts_toward_milestone
-  and coalesce(action.milestone_amount, action.amount) > 0;
+  and coalesce(action.milestone_amount, action.amount)::text not in (
+    'NaN', 'Infinity', '-Infinity'
+  )
+  and coalesce(action.milestone_amount, action.amount) > 0
+  and coalesce(action.milestone_amount, action.amount) <= 9999999999.99
+  and scale(coalesce(action.milestone_amount, action.amount)) <= 2;
 
 do $monthly_action_duplicate_preflight$
 begin
@@ -111,7 +121,15 @@ alter table public.sop_templates
 
 alter table public.sop_records
   add constraint sop_records_monthly_action_amount_check
-    check (not is_monthly_action or rule_amount > 0),
+    check (
+      not is_monthly_action or (
+        rule_amount is not null
+        and rule_amount::text not in ('NaN', 'Infinity', '-Infinity')
+        and rule_amount > 0
+        and rule_amount <= 9999999999.99
+        and scale(rule_amount) <= 2
+      )
+    ),
   add constraint sop_records_source_account_fkey
     foreign key (owner_id, source_account_id)
     references public.accounts(owner_id, id)

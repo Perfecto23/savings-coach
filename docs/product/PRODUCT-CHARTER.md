@@ -179,7 +179,7 @@ Critical path：`1 → 2 → 3 → 4 → 5 → 6 → 8 → 10`。
 |---|---|---:|---|---|---|
 | Cross-owner access | Confirmed blocker | Critical | 任意 owner 能读写另一 owner 的数据 | Codex | Iteration 3 隔离测试前不开放 beta |
 | Client secret exposure | Confirmed blocker | Critical | `api_key` 进入 Client props 或 bundle | Codex | 关闭 Consumer AI；只传安全 DTO |
-| EdgeOne incompatibility | Uncertainty | High | POC fail | Codex | Iteration 2 内 Kill，并用 fallback host |
+| EdgeOne incompatibility | Uncertainty | High | POC fail | Codex | 局部失败或证据不足使用 fallback；只有命中明确 Kill criteria 才 Kill |
 | Customer need weak | Uncertainty | High | 可用 onboarding 的激活率仍低 | Codex / Perfecto | 暂停扩功能，访谈并调整定位 |
 | Monthly learning delay | Uncertainty | Medium | 没有第二周期数据 | Codex | 使用 behavior activation 作早期代理 |
 | Timezone boundary error | Risk | High | 跨时区测试不一致 | Codex | 单 timezone；月界测试 |

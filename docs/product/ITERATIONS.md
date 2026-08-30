@@ -16,8 +16,8 @@
 
 | Iteration | Outcome | Status | Release evidence |
 |---:|---|---|---|
-| 1 | Quality foundation | `verified_preview` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel Preview readback |
-| 2 | EdgeOne hosting decision | `planned` | — |
+| 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
+| 2 | EdgeOne hosting decision | `ready_for_release` | [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe English beta access | `planned` | — |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
@@ -31,12 +31,14 @@
 
 - Date: 2026-08-30
 - Outcome: 建立可重复的产品治理和公开登录页自动化回归。
-- Status: `verified_preview`
+- Status: `verified_live`
 - Local branch: `codex/iteration-1-quality-foundation`
-- Implementation commit: `70ced96`
+- Commits: `70ced96`、`8d41afc`、`089a9f1`
+- Merge commit: `eeab88c`
 - Remote branch: `origin/codex/iteration-1-quality-foundation`
 - Pull request: [#1](https://github.com/Perfecto23/savings-coach/pull/1)
 - Preview: `https://savings-coach-git-codex-iteration-1-39733f-perfecto23-projects.vercel.app`
+- Production: `https://savings-coach.vercel.app`
 
 ### Delivered
 
@@ -57,11 +59,11 @@
 - GitGuardian Security Checks：pass。
 - Vercel Preview：pass。
 - Codex 侧边栏浏览器：`/` 跳转 `/login`，标题、表单和 DOM 正常；无 browser error/warning log。
+- PR #1 已合并到 `main`；Vercel production build 和独立浏览器 readback 通过。
 
 ### Not Claimed
 
-- 尚未 merge 到 `main` 或部署 production。
-- 尚未验证 EdgeOne、真实 Supabase 登录成功或 session refresh。
+- 尚未验证真实 Supabase 登录成功或 session refresh。
 - 尚未运行 Firefox、WebKit 或真实移动设备。
 - 尚未修改 production schema 或 production data。
 
@@ -75,9 +77,28 @@
 4. Push 或部署前获得 Perfecto 的单次明确确认。
 5. 发布后独立 readback，并按目标环境更新为 `verified_preview` 或 `verified_live`。
 
-## Iteration 2 Entry Conditions
+## Iteration 2 Safety Boundary
 
-- 获得当前 EdgeOne 项目和 preview 入口。
-- 准备隔离的 staging Supabase 数据。
-- 明确 preview deployment 的单次授权。
+- EdgeOne 使用独立 POC 项目，不连接 production Supabase。
+- Build 与公开入口使用无效的 fake public Supabase 配置。
+- Auth 和 Server Action gate 必须等待隔离 staging Supabase。
 - POC 不得读取或修改 production data。
+
+## Iteration 2 Readback
+
+- Local branch: `codex/iteration-2-edgeone-poc`
+- Status: `ready_for_release`
+- Pull request: [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)
+- GitGuardian and Vercel checks: pass。
+- EdgeOne project: `makers-5llzko3fa3m5`，仅用于 POC。
+- Deployment A: `dpfr2ly4pgcc`；clean Preview。
+- Deployment B: `dpx9iypqi6g4`；临时 marker 与 server canary。
+- Deployment A′: `dpx4kn6wo1b4`；从 clean commit 重新构建恢复。
+- Result: `FAIL_FOR_CURRENT_SEQUENCE`；当前 10 次迭代选择 Vercel。
+- Completed: 官方支持矩阵、Pass / Fail / Kill、原样 webpack build、Proxy 307、公开登录页和 Preview A/B/A′。
+- Recovery evidence: known-source public redeploy verified；authenticated session/write recovery `NOT TESTED`。
+- Environment evidence: canary 未进入测试过的 HTML 或 Client JS，但进入 `edge-functions/index.js`。冻结的 artifact isolation 条件未通过。
+- Not tested: staging Auth、Server Action probe、Console log correlation 和 runtime secret isolation。
+- Tenant isolation: `NOT TESTED`。
+- External state changed: 创建隔离 EdgeOne POC 项目及四个 deployment；未连接生产数据或 secret。
+- Revisit only with new evidence defined in `EDGEONE-POC.md`。

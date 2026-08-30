@@ -471,7 +471,7 @@
 - Public、Setup、Plan、Monthly Review 和 Reminder Playwright：12/12。
 - `lint`、`tsc --noEmit`、production build 和 `git diff --check` 通过。
 - Next.js 16.3.3、Supabase JS 2.112.4 和 eslint-config-next 16.3.3 完成安全升级。Production dependency audit 为 0 个已知漏洞。
-- Codex 侧边栏浏览器：Supabase production 当前 0 自定义 Edge Function、0 自定义 Function Secret。
+- Codex 侧边栏浏览器 preflight：Supabase production 初始为 0 自定义 Edge Function、0 自定义 Function Secret。
 - Product review：`ship`。邮件只包含 Review month、固定 CTA、同意来源和 unsubscribe。
 - Final code review：`ship`。Final security review：`ship`。Production activation 仍需 live gates。
 
@@ -484,7 +484,7 @@
 ### Not Claimed
 
 - 没有 Provider Acceptance、signed delivery receipt 或 unsubscribe production evidence。
-- 没有创建 Sender Cron、retention Cron、Vault secret 或自定义 Function Secret。Sending、Vercel 和数据库 availability gate 均保持关闭。
+- 没有创建 Sender Cron、retention Cron、Vault 或 Provider credential Secret。仅 `APP_BASE_URL` 和 `REVIEW_EMAIL_SENDING_ENABLED=false` 已配置。Vercel 和数据库 availability gate 均保持关闭。
 - 没有实现 push、SMS、WhatsApp 或 browser notification。
 - Production state changed: Yes。只发布 dark schema、Functions 和隐藏 UI code。
 
@@ -498,6 +498,8 @@
 - Hosted ACL：authenticated availability gate grants 0；service internal grants 7；direct delivery table grants 0。
 - Hosted state：0 Setup、0 Reminder Consent、0 Reminder Delivery。
 - Supabase Edge Functions：3/3。三个 legacy JWT gate 均为关闭。
+- Supabase custom Secret key names：`APP_BASE_URL`、`REVIEW_EMAIL_SENDING_ENABLED`。Provider credential Secret 为 0。
+- Scheduler extensions：0。Sender Cron 和 retention Cron 均不存在。
 - Dark smoke：Sender GET 405；Sender POST 无 named secret 401；Webhook 无 signing secret 503；Unsubscribe GET 200；Unsubscribe POST 200 空响应。
 - Vercel production：`/` → `/login`；标题和登录表单正常；browser error / warning 为 0。
 - Status boundary：dark code、schema 和 Functions 已发布。Outbound Email 未 activation，因此状态为 `released`，不是 `verified_live`。

@@ -98,6 +98,11 @@ export function MilestoneTable({
                       {isCurrent ? (
                         <span className="ml-1.5 text-xs text-orange-700">Current</span>
                       ) : null}
+                      {milestone.review_completed_at ? (
+                        <span className="ml-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                          Reviewed
+                        </span>
+                      ) : null}
                     </td>
                     <MoneyCell value={milestone.planned_savings} locale={locale} currency={baseCurrency} />
                     <MoneyCell value={milestone.planned_total_savings} locale={locale} currency={baseCurrency} muted />

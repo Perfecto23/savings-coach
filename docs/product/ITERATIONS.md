@@ -23,7 +23,7 @@
 | 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006、Vercel production and live activation readback |
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
-| 8 | Monthly close and rollover | `planned` | — |
+| 8 | Monthly close and rollover | `ready_for_release` | DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
 | 9 | One-channel reminder experiment | `planned` | — |
 | 10 | Paid-intent beta and release candidate | `planned` | — |
 
@@ -352,3 +352,56 @@
 - disposable owner 和关联数据随后在单事务内精确清理。清理后恢复 1 Auth user、81 行业务数据、5 Accounts、30 Balance Snapshots、0 Setup、0 Plan Activation 和 0 Behavior Activation。
 - Vercel production：merge commit `029288f` 部署完成；公开 `/` → `/login`；authenticated journey 通过。
 - Production state changed: Yes；008 applied、PR #12 merged and Vercel production verified。
+
+## Iteration 8 Current State
+
+- Local branch: `codex/iteration-8-monthly-close`
+- Status: `ready_for_release`
+- Outcome: 用户在新自然月查看上一月报告，显式完成月度复盘，并获得当前月的月度行动和计划路径。
+- In scope: 上一 owner-local 自然月、月度报告入口、复盘完成、已关闭月份执行冻结、当前月月度行动实例化、计划路径重建、Home 引导和 desktop/mobile 验收。
+- Out of scope: 财务结账、强制余额快照、银行确认、历史月份补造、reopen、Reminder、AI、Billing、Plan Rule version 和新事件实体。
+
+### Frozen Seam
+
+- 月度复盘是执行复盘，不是财务结账。复盘完成只证明用户查看并关闭了上一月执行记录。
+- 只有 owner timezone 的上一自然月可以复盘完成。当前月、未来月和更早月份均不可通过本 seam 关闭。
+- 上一月必须存在至少一条月度行动，且所有月度行动已经完成。Balance Snapshot 不是复盘完成前提。
+- 复盘完成写入月度里程碑的单个 `review_completed_at` 字段。`monthly_review_completed` 由该字段查询，不新增 event 或 review 表。
+- 已关闭月份的月度 SOP 执行记录、计划转入、目标余额、执行状态、计划路径标记和复盘时间保持不变。
+- 已关闭月份仍允许后补或纠正 Balance Snapshot。净值变化和 Balance Snapshot total 可以更新，但不改变执行状态或复盘时间。
+- 月度结转使用当前 active Plan Rules 生成当前月月度行动，并重建 current + 11 个月计划路径。操作必须 owner-scoped、幂等和并发安全。
+- 缺失多月时不使用当前 Plan Rule 伪造历史月度行动或复盘完成。用户可以重新 Plan Activation，从当前月继续。
+- 本迭代不新增持久化实体。
+
+### Delivered
+
+- 月度里程碑新增 `review_completed_at`。`monthly_review_completed` 可以直接查询，不新增 event 或 review 表。
+- 新增 authenticated-only `close_monthly_review` RPC。RPC 校验 owner timezone、上一自然月、月度行动完成状态和当前月 Plan readiness。
+- Close、Review Completion、当前月行动实例化和 Plan Path 重建在同一 owner-locked 事务完成。
+- Home 在新月份先显示 Monthly Review gate。用户从现有月度报告完成复盘。
+- 已关闭月份的月度 SOP 执行写入和 Plan Path 字段受数据库保护；Balance Snapshot 后补仍可更新 `actual_*`。
+- 已关闭月份 UI 隐藏 toggle、edit、delete 和新增临时步骤控件。Progress 显示 `Reviewed`。
+- Account 和 legacy template 删除仍可把历史记录的内部 FK 置空，同时保留金额、名称和完成快照。
+- 无 active Plan Rule 且当前月无行动时，Close 原子回滚，并引导用户打开 Savings Plan。
+- 不新增持久化实体。
+
+### Verified
+
+- Focused Monthly Close pgTAP：42/42；Full pgTAP：355/355。
+- Monthly Close concurrency：Close / Close、Close / legacy SOP insert/update/delete 和 owner isolation 通过。
+- Monthly Execution concurrency 与 Trustworthy Progress concurrency 回归通过。
+- Public Playwright：4/4；Setup Playwright：2/2；Plan + Home + Progress Playwright：2/2；Monthly Review Playwright：2/2。
+- Monthly Review Playwright 覆盖 Desktop Chrome 与 Pixel 5、Home gate、报告、Close、当前月行动、reload、closed SOP、Progress 和 RSC canary。
+- `lint`：0 error，保留 1 条迭代前 warning。
+- `tsc --noEmit`、production build、shell syntax 和 `git diff --check` 通过。
+- Product review：`ship`；bounded code review：`ship`；security review：`ship`，无 confirmed finding。
+- Codex 侧边栏浏览器：Home、Monthly report、Close success、当前月行动和 closed SOP 通过。
+- 浏览器验收发现并修复 `ProgressRing` hydration error。修复后 Next.js issue overlay 为 0，local server log 无 error / warning。
+
+### Not Claimed
+
+- 尚未创建 commit、PR、Preview 或 production 发布。
+- Hosted migration 009 尚未应用。
+- external analytics exactly-once 未实现。留存 baseline 只使用数据库 `review_completed_at`。
+- 缺失多月不做历史 catch-up。Iteration 8 不提供 reopen。
+- Production state changed: No。

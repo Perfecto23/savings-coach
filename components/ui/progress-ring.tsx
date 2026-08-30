@@ -23,7 +23,6 @@ export function ProgressRing({
   return (
     <div className="relative inline-flex items-center justify-center">
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
-        <title>进度 {clamped}%</title>
         <circle
           cx={size / 2}
           cy={size / 2}

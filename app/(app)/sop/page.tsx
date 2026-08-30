@@ -35,11 +35,20 @@ export default async function SopPage({ searchParams }: SopPageProps) {
   }
   const yearMonth =
     params.month || getCurrentYearMonth(setupRes.data.time_zone);
-  const recordsRes = await supabase.rpc("get_sop_display_records", {
-    p_year_month: yearMonth,
-  });
+  const [recordsRes, reviewRes] = await Promise.all([
+    supabase.rpc("get_sop_display_records", {
+      p_year_month: yearMonth,
+    }),
+    supabase
+      .from("monthly_milestones")
+      .select("review_completed_at")
+      .eq("owner_id", user.id)
+      .eq("year_month", yearMonth)
+      .eq("is_plan_path", true)
+      .maybeSingle(),
+  ]);
 
-  if (recordsRes.error) {
+  if (recordsRes.error || reviewRes.error) {
     throw new Error("Unable to load monthly execution steps");
   }
   const displayRecords = (recordsRes.data || []) as SopDisplayRecord[];
@@ -59,6 +68,7 @@ export default async function SopPage({ searchParams }: SopPageProps) {
         yearMonth={yearMonth}
         locale={setupRes.data?.locale ?? "en-US"}
         baseCurrency={setupRes.data?.base_currency ?? "USD"}
+        isClosed={reviewRes.data?.review_completed_at != null}
       />
     </div>
   );

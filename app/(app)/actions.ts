@@ -11,7 +11,12 @@ interface MonthlyActionRpcResult {
 }
 
 function errorState(
-  code: "UNAUTHENTICATED" | "ACTION_NOT_FOUND" | "INVALID_ACTION" | "ACTION_UPDATE_FAILED",
+  code:
+    | "UNAUTHENTICATED"
+    | "ACTION_NOT_FOUND"
+    | "INVALID_ACTION"
+    | "MONTH_CLOSED"
+    | "ACTION_UPDATE_FAILED",
   message: string
 ): HomeActionState {
   return { status: "error", error: { code, message } };
@@ -60,6 +65,12 @@ export async function updateHomeAction(
     return errorState(
       "ACTION_NOT_FOUND",
       "This Monthly Action is no longer available. Reload Home."
+    );
+  }
+  if (error?.code === "P0001" && error.message === "month_review_closed") {
+    return errorState(
+      "MONTH_CLOSED",
+      "This month is closed. Its Monthly Actions cannot be changed."
     );
   }
   if (error) {

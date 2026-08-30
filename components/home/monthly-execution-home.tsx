@@ -109,6 +109,43 @@ export function MonthlyExecutionHome({
         </section>
       ) : null}
 
+      {home.status === "needs_review" ? (
+        <section className="mt-8 overflow-hidden rounded-xl bg-stone-950 text-white">
+          <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-orange-300">
+                Monthly Review
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em]">
+                Review {formatMonth(home.review.yearMonth, home.locale)} before
+                starting {formatMonth(home.currentYearMonth, home.locale)}.
+              </h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-stone-300">
+                Closing preserves the month&apos;s execution record. Balance
+                Snapshots remain observations and can be added or corrected
+                later.
+              </p>
+              <p className="mt-5 text-sm text-stone-400">
+                {home.review.completedCount} of {home.review.totalCount} Monthly
+                Actions confirmed
+              </p>
+            </div>
+            <Link
+              href={
+                home.review.readyToReview
+                  ? `/milestones/${home.review.yearMonth}/report`
+                  : `/sop?month=${home.review.yearMonth}`
+              }
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-orange-600 px-5 text-base font-semibold text-white transition-colors hover:bg-orange-700"
+            >
+              {home.review.readyToReview
+                ? `Review ${formatMonth(home.review.yearMonth, home.locale)}`
+                : `Finish ${formatMonth(home.review.yearMonth, home.locale)}`}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {home.status === "needs_repair" ? (
         <section className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-0.035em] text-amber-950">
@@ -210,7 +247,7 @@ export function MonthlyExecutionHome({
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-stone-300">
               You confirmed {home.completedCount} of {home.totalCount} actions.
-              Your next monthly review will be available in a later release.
+              Your Monthly Review will open after this natural month ends.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link

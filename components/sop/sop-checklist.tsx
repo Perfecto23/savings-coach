@@ -12,6 +12,7 @@ interface SopChecklistProps {
   yearMonth: string;
   locale: string;
   baseCurrency: string;
+  isClosed: boolean;
 }
 
 export function SopChecklist({
@@ -19,11 +20,12 @@ export function SopChecklist({
   yearMonth,
   locale,
   baseCurrency,
+  isClosed,
 }: SopChecklistProps) {
   const [records, setRecords] = useState(initialRecords);
   const [loading, setLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [initDone, setInitDone] = useState(initialRecords.length > 0);
+  const [initDone, setInitDone] = useState(initialRecords.length > 0 || isClosed);
   const [showAdHocForm, setShowAdHocForm] = useState(false);
   const [adHocLabel, setAdHocLabel] = useState("");
   const [adHocDay, setAdHocDay] = useState("10");
@@ -129,6 +131,13 @@ export function SopChecklist({
     <div className="space-y-6">
       <Confetti active={showCelebration} duration={3000} />
 
+      {isClosed ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
+          This month is closed. Its execution record cannot be changed. Balance
+          Snapshots remain observations and can still be corrected.
+        </div>
+      ) : null}
+
       {/* 进度 */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex items-center gap-4">
@@ -174,6 +183,7 @@ export function SopChecklist({
                 record={record}
                 locale={locale}
                 baseCurrency={baseCurrency}
+                readOnly={isClosed}
                 onUpdated={handleRecordUpdated}
                 onDeleted={handleRecordDeleted}
               />
@@ -183,9 +193,10 @@ export function SopChecklist({
       ))}
 
       {/* 添加临时步骤 */}
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-4">
-        {showAdHocForm ? (
-          <div className="space-y-3">
+      {!isClosed ? (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-4">
+          {showAdHocForm ? (
+            <div className="space-y-3">
             <p className="text-sm font-medium text-gray-700">添加临时操作</p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
@@ -244,18 +255,19 @@ export function SopChecklist({
                 添加
               </button>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowAdHocForm(true)}
-            className="flex w-full cursor-pointer items-center justify-center gap-1 py-1 text-sm text-gray-500 transition-colors hover:text-orange-600"
-          >
-            <span className="text-lg leading-none">+</span>
-            添加临时操作（账户间匀钱等）
-          </button>
-        )}
-      </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAdHocForm(true)}
+              className="flex w-full cursor-pointer items-center justify-center gap-1 py-1 text-sm text-gray-500 transition-colors hover:text-orange-600"
+            >
+              <span className="text-lg leading-none">+</span>
+              添加临时操作（账户间匀钱等）
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

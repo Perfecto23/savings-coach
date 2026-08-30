@@ -31,6 +31,10 @@ interface HomePathProjection {
   planned_total_savings: number | string;
 }
 
+interface HomeReviewProjection {
+  review_completed_at: string | null;
+}
+
 function datePartsInTimeZone(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -44,6 +48,12 @@ function datePartsInTimeZone(timeZone: string) {
 function getLocalDate(timeZone: string) {
   const parts = datePartsInTimeZone(timeZone);
   return `${parts.get("year")}-${parts.get("month")}-${parts.get("day")}`;
+}
+
+function previousYearMonth(yearMonth: string) {
+  const month = new Date(`${yearMonth}-01T00:00:00.000Z`);
+  month.setUTCMonth(month.getUTCMonth() - 1);
+  return month.toISOString().slice(0, 7);
 }
 
 function toActionDto(
@@ -96,8 +106,9 @@ export async function getMonthlyExecutionHome(): Promise<MonthlyExecutionHomeDto
   const setup = setupData as HomeSetupProjection;
   const localToday = getLocalDate(setup.time_zone);
   const currentYearMonth = localToday.slice(0, 7);
+  const reviewYearMonth = previousYearMonth(currentYearMonth);
 
-  const [actionsResult, pathResult] = await Promise.all([
+  const [actionsResult, pathResult, reviewPathResult, reviewActionsResult] = await Promise.all([
     supabase
       .from("sop_records")
       .select("id, step_label, amount, scheduled_for, source_account_name, target_account_name, completed, completed_at, sort_order")
@@ -115,8 +126,27 @@ export async function getMonthlyExecutionHome(): Promise<MonthlyExecutionHomeDto
       .eq("year_month", currentYearMonth)
       .eq("is_plan_path", true)
       .maybeSingle(),
+    supabase
+      .from("monthly_milestones")
+      .select("review_completed_at")
+      .eq("owner_id", user.id)
+      .eq("year_month", reviewYearMonth)
+      .eq("is_plan_path", true)
+      .maybeSingle(),
+    supabase
+      .from("sop_records")
+      .select("completed")
+      .eq("owner_id", user.id)
+      .eq("year_month", reviewYearMonth)
+      .eq("is_monthly_action", true)
+      .eq("counts_toward_milestone", true),
   ]);
-  if (actionsResult.error || pathResult.error) {
+  if (
+    actionsResult.error ||
+    pathResult.error ||
+    reviewPathResult.error ||
+    reviewActionsResult.error
+  ) {
     throw new Error("Unable to load Home");
   }
 
@@ -127,6 +157,30 @@ export async function getMonthlyExecutionHome(): Promise<MonthlyExecutionHomeDto
       status: "needs_plan",
       nextAction: null,
       lastCompletedAction: null,
+    };
+  }
+
+  const reviewPath = reviewPathResult.data as HomeReviewProjection | null;
+  const reviewActions = reviewActionsResult.data || [];
+  if (
+    reviewPath &&
+    reviewPath.review_completed_at == null &&
+    reviewActions.length > 0
+  ) {
+    const reviewCompletedCount = reviewActions.filter(
+      (action) => action.completed
+    ).length;
+    return {
+      ...base,
+      status: "needs_review",
+      nextAction: null,
+      lastCompletedAction: null,
+      review: {
+        yearMonth: reviewYearMonth,
+        completedCount: reviewCompletedCount,
+        totalCount: reviewActions.length,
+        readyToReview: reviewCompletedCount === reviewActions.length,
+      },
     };
   }
 

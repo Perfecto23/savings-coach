@@ -9,6 +9,7 @@ interface SopStepItemProps {
   record: SopDisplayRecord;
   locale: string;
   baseCurrency: string;
+  readOnly?: boolean;
   onUpdated: (updated: SopDisplayRecord) => void;
   onDeleted?: (id: string) => void;
 }
@@ -17,6 +18,7 @@ export function SopStepItem({
   record,
   locale,
   baseCurrency,
+  readOnly = false,
   onUpdated,
   onDeleted,
 }: SopStepItemProps) {
@@ -82,24 +84,36 @@ export function SopStepItem({
       }`}
     >
       <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={handleToggle}
-          disabled={loading}
-          className={`mt-0.5 flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors ${
-            record.completed
-              ? "border-green-500 bg-green-500 text-white"
-              : "border-gray-300 hover:border-orange-400"
-          }`}
-          aria-label={record.completed ? "标记为未完成" : "标记为完成"}
-        >
-          {record.completed && (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
-              <title>已完成</title>
-              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-            </svg>
-          )}
-        </button>
+        {readOnly ? (
+          <span
+            aria-label={
+              record.completed
+                ? "Completed in closed month"
+                : "Incomplete in closed month"
+            }
+            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+              record.completed
+                ? "border-green-500 bg-green-500 text-white"
+                : "border-gray-300 bg-gray-100"
+            }`}
+          >
+            {record.completed ? <Checkmark /> : null}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={handleToggle}
+            disabled={loading}
+            className={`mt-0.5 flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors ${
+              record.completed
+                ? "border-green-500 bg-green-500 text-white"
+                : "border-gray-300 hover:border-orange-400"
+            }`}
+            aria-label={record.completed ? "标记为未完成" : "标记为完成"}
+          >
+            {record.completed ? <Checkmark /> : null}
+          </button>
+        )}
 
         <div className="flex-1">
           <div className="flex items-center justify-between">
@@ -124,7 +138,7 @@ export function SopStepItem({
               )}
             </div>
 
-            {!record.completed && (
+            {!readOnly && !record.completed && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -162,7 +176,7 @@ export function SopStepItem({
             </p>
           )}
 
-          {editing && !record.completed && (
+          {editing && !readOnly && !record.completed && (
             <div className="mt-3">
               <div className="flex items-center gap-2">
                 <input
@@ -201,5 +215,13 @@ export function SopStepItem({
         </div>
       </div>
     </div>
+  );
+}
+
+function Checkmark() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+    </svg>
   );
 }

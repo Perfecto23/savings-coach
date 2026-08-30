@@ -1,18 +1,33 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { generateReportData } from "@/lib/report-generator";
+import {
+  generateReportData,
+  type MonthlyReportAccount,
+  type MonthlyReportImpulse,
+  type MonthlyReportMilestone,
+  type MonthlyReportSnapshot,
+  type MonthlyReportSopRecord,
+} from "@/lib/report-generator";
 import { MonthlyReport } from "@/components/report/monthly-report";
-import type {
-  Account,
-  BalanceSnapshot,
-  MonthlyMilestone,
-  SopRecord,
-  ImpulseLog,
-} from "@/lib/types/database";
+import { MonthlyReviewPanel } from "@/components/report/monthly-review-panel";
 
 interface ReportPageProps {
   params: Promise<{ yearMonth: string }>;
+}
+
+function previousYearMonthInTimeZone(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const byType = new Map(parts.map((part) => [part.type, part.value]));
+  const currentMonth = new Date(
+    `${byType.get("year")}-${byType.get("month")}-01T00:00:00.000Z`
+  );
+  currentMonth.setUTCMonth(currentMonth.getUTCMonth() - 1);
+  return currentMonth.toISOString().slice(0, 7);
 }
 
 export default async function ReportPage({ params }: ReportPageProps) {
@@ -28,46 +43,57 @@ export default async function ReportPage({ params }: ReportPageProps) {
     await Promise.all([
       supabase
         .from("accounts")
-        .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
+        .select("id, name, icon")
         .eq("owner_id", user.id)
         .order("sort_order"),
       supabase
         .from("balance_snapshots")
-        .select("*")
+        .select("account_id, recorded_at, balance")
         .order("recorded_at"),
       supabase
         .from("monthly_milestones")
-        .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+        .select("year_month, planned_savings, actual_savings, is_plan_path, review_completed_at")
         .eq("owner_id", user.id)
         .eq("year_month", yearMonth)
         .maybeSingle(),
       supabase
         .from("sop_records")
-        .select("id, year_month, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
+        .select("id, step_label, completed, amount, scheduled_for")
         .eq("owner_id", user.id)
         .eq("year_month", yearMonth)
         .order("sort_order"),
       supabase
         .from("impulse_logs")
-        .select("id, item_name, estimated_price, reason, resisted, logged_at, created_at")
+        .select("estimated_price, resisted, logged_at")
         .eq("owner_id", user.id)
         .eq("resisted", true)
         .order("created_at"),
       supabase
         .from("owner_setup")
-        .select("locale, base_currency")
+        .select("locale, time_zone, base_currency")
         .eq("owner_id", user.id)
         .maybeSingle(),
     ]);
 
+  const sopRecords = (sopRes.data || []) as MonthlyReportSopRecord[];
   const reportData = generateReportData({
     yearMonth,
-    accounts: (accountsRes.data || []) as Account[],
-    snapshots: (snapshotsRes.data || []) as BalanceSnapshot[],
-    milestone: milestoneRes.data as MonthlyMilestone | null,
-    sopRecords: (sopRes.data || []) as SopRecord[],
-    impulseLogs: (impulseRes.data || []) as ImpulseLog[],
+    accounts: (accountsRes.data || []) as MonthlyReportAccount[],
+    snapshots: (snapshotsRes.data || []) as MonthlyReportSnapshot[],
+    milestone: milestoneRes.data as MonthlyReportMilestone | null,
+    sopRecords,
+    impulseLogs: (impulseRes.data || []) as MonthlyReportImpulse[],
   });
+  const monthlyActions = sopRecords.filter(
+    (record) => record.scheduled_for != null
+  );
+  const completedMonthlyActions = monthlyActions.filter(
+    (record) => record.completed
+  ).length;
+  const locale = setupRes.data?.locale || "en-US";
+  const previousYearMonth = previousYearMonthInTimeZone(
+    setupRes.data?.time_zone || "UTC"
+  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -90,9 +116,21 @@ export default async function ReportPage({ params }: ReportPageProps) {
         </div>
       </div>
 
+      <MonthlyReviewPanel
+        yearMonth={yearMonth}
+        locale={locale}
+        reviewCompletedAt={reportData.milestone?.review_completed_at ?? null}
+        isReviewWindow={
+          yearMonth === previousYearMonth &&
+          reportData.milestone?.is_plan_path === true
+        }
+        completedCount={completedMonthlyActions}
+        totalCount={monthlyActions.length}
+      />
+
       <MonthlyReport
         data={reportData}
-        locale={setupRes.data?.locale || "en-US"}
+        locale={locale}
         baseCurrency={setupRes.data?.base_currency || "USD"}
       />
     </div>

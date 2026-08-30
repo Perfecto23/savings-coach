@@ -2,6 +2,7 @@ export type HomeActionErrorCode =
   | "UNAUTHENTICATED"
   | "ACTION_NOT_FOUND"
   | "INVALID_ACTION"
+  | "MONTH_CLOSED"
   | "ACTION_UPDATE_FAILED";
 
 export interface HomeActionError {
@@ -39,6 +40,13 @@ export interface HomePlanSummaryDto {
   targetBalance: string;
 }
 
+export interface HomeMonthlyReviewDto {
+  yearMonth: string;
+  completedCount: number;
+  totalCount: number;
+  readyToReview: boolean;
+}
+
 interface MonthlyExecutionHomeBase {
   locale: string;
   baseCurrency: string;
@@ -53,6 +61,12 @@ export type MonthlyExecutionHomeDto =
       status: "needs_plan";
       nextAction: null;
       lastCompletedAction: null;
+    })
+  | (MonthlyExecutionHomeBase & {
+      status: "needs_review";
+      nextAction: null;
+      lastCompletedAction: null;
+      review: HomeMonthlyReviewDto;
     })
   | (MonthlyExecutionHomeBase & {
       status: "ready";

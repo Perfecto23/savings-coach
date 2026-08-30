@@ -160,17 +160,6 @@ HOME_ACTION_TWO="$(run_sql "
     and is_monthly_action;
 ")"
 
-run_sql "
-  update public.monthly_milestones
-  set actual_savings = 45, actual_total_savings = 1045
-  where owner_id = '$HOME_OWNER'
-    and is_plan_path
-    and year_month = to_char(
-      date_trunc('month', current_timestamp at time zone 'Asia/Singapore'),
-      'YYYY-MM'
-    );
-"
-
 run_pair \
   "two Monthly Actions complete concurrently" \
   "select public.update_monthly_action('$HOME_ACTION_ONE', '{\"completed\":true}'::jsonb);" \
@@ -192,8 +181,8 @@ assert_value "both Monthly Actions are complete" "2" \
   "select count(*) from public.sop_records where owner_id = '$HOME_OWNER' and is_monthly_action and completed;"
 assert_value "concurrent completion makes the current Plan Path on track" "on_track" \
   "select status from public.monthly_milestones where owner_id = '$HOME_OWNER' and is_plan_path and year_month = to_char(date_trunc('month', current_timestamp at time zone 'Asia/Singapore'), 'YYYY-MM');"
-assert_value "concurrent completion preserves Net Worth fields" "45.00|1045.00" \
-  "select actual_savings || '|' || actual_total_savings from public.monthly_milestones where owner_id = '$HOME_OWNER' and is_plan_path and year_month = to_char(date_trunc('month', current_timestamp at time zone 'Asia/Singapore'), 'YYYY-MM');"
+assert_value "concurrent completion preserves observation-authoritative Net Worth fields" "1" \
+  "select case when actual_savings is null and actual_total_savings = 1000 then 1 else 0 end from public.monthly_milestones where owner_id = '$HOME_OWNER' and is_plan_path and year_month = to_char(date_trunc('month', current_timestamp at time zone 'Asia/Singapore'), 'YYYY-MM');"
 
 HOME_FIRST_BEHAVIOR_AT="$(run_sql "
   select behavior_activated_at

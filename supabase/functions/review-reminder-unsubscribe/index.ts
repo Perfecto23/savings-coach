@@ -11,4 +11,6 @@ const handler = withSupabase(
     ),
 );
 
-Deno.serve(handler);
+const app = { fetch: handler };
+
+export default app;

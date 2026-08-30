@@ -24,7 +24,7 @@
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
-| 9 | One-channel reminder experiment | `ready_for_release` | Local delivery pipeline verified；production activation inputs pending |
+| 9 | One-channel reminder experiment | `released` | [PR #18](https://github.com/Perfecto23/savings-coach/pull/18)、[PR #19](https://github.com/Perfecto23/savings-coach/pull/19)；hosted 011、Vercel production and dark Edge Function readback |
 | 10 | Paid-intent beta and release candidate | `released` | [PR #16](https://github.com/Perfecto23/savings-coach/pull/16)；hosted 010 and Vercel production |
 
 ## Iteration 1 Readback
@@ -423,7 +423,7 @@
 ## Iteration 9 Decision
 
 - Local branch: `codex/iteration-9-email-reminder`
-- Status: `ready_for_release`
+- Status: `released`
 - Intended outcome: opt-in owner 在新月份收到一次 Monthly Review reminder，并可随时 unsubscribe。
 - Required contract: one outbound channel、owner timezone、explicit consent、background scheduler、idempotent delivery 和 unsubscribe。
 
@@ -467,7 +467,7 @@
 
 - Database：454/454。测试在完整 E2E fixture 存在时仍通过。
 - Reminder concurrency：duplicate claim、authorize vs unsubscribe、claim vs Review Completion 全部通过。
-- Edge Function：29/29。三个 Function entrypoint 使用 frozen `deno.lock` 并通过 `deno check`。
+- Edge Function：30/30。三个 Function entrypoint 使用 frozen `deno.lock` 并通过 `deno check`。
 - Public、Setup、Plan、Monthly Review 和 Reminder Playwright：12/12。
 - `lint`、`tsc --noEmit`、production build 和 `git diff --check` 通过。
 - Next.js 16.3.3、Supabase JS 2.112.4 和 eslint-config-next 16.3.3 完成安全升级。Production dependency audit 为 0 个已知漏洞。
@@ -483,11 +483,24 @@
 
 ### Not Claimed
 
-- Schema、Edge Function 和 App UI 尚未发布到 production。
 - 没有 Provider Acceptance、signed delivery receipt 或 unsubscribe production evidence。
-- 没有创建 Sender Cron、retention Cron、Vault secret 或自定义 Function Secret。
+- 没有创建 Sender Cron、retention Cron、Vault secret 或自定义 Function Secret。Sending、Vercel 和数据库 availability gate 均保持关闭。
 - 没有实现 push、SMS、WhatsApp 或 browser notification。
-- Production state changed: No。
+- Production state changed: Yes。只发布 dark schema、Functions 和隐藏 UI code。
+
+### Release Readback
+
+- PR #18 merge commit：`cd3b702`。Vercel production deployment：pass。
+- PR #19 修复 Supabase Runtime entrypoint。TDD contract、code review 和 security review：`ship`。
+- Hosted preflight：1 Auth user、81 行业务数据、0 Setup、0 Reminder table、0 Reminder column、0 Reminder function。
+- Hosted migration：011 在单事务内成功。81 行业务数据保持不变；无 Reminder Consent backfill。
+- Hosted catalog：1 Reminder Delivery table、3 Reminder Consent columns、9 Reminder functions。
+- Hosted ACL：authenticated availability gate grants 0；service internal grants 7；direct delivery table grants 0。
+- Hosted state：0 Setup、0 Reminder Consent、0 Reminder Delivery。
+- Supabase Edge Functions：3/3。三个 legacy JWT gate 均为关闭。
+- Dark smoke：Sender GET 405；Sender POST 无 named secret 401；Webhook 无 signing secret 503；Unsubscribe GET 200；Unsubscribe POST 200 空响应。
+- Vercel production：`/` → `/login`；标题和登录表单正常；browser error / warning 为 0。
+- Status boundary：dark code、schema 和 Functions 已发布。Outbound Email 未 activation，因此状态为 `released`，不是 `verified_live`。
 
 ## Iteration 10 Current State
 
@@ -552,5 +565,5 @@
 - Hosted state：0 Review Completion、0 Paid Intent、0 billing/payment/subscription/entitlement tables。
 - Vercel production：merge commit `8d1214e` 部署完成；公开 `/` → `/login`；标题与登录表单正常。
 - Status boundary：代码和 schema 已发布。authenticated production Paid Intent journey 尚未执行，因此状态为 `released`，不是 `verified_live`。
-- Program boundary：Iteration 10 已发布。Iteration 9 本地状态为 `ready_for_release`。Production activation 仍需要 outbound provider credential、verified sender 和费用授权。
+- Program boundary：Iteration 9 和 Iteration 10 均已发布。Iteration 9 Production activation 仍需要 outbound provider credential、verified sender 和费用授权。
 - Production state changed: Yes；010 applied、PR #16 merged and Vercel production deployed。

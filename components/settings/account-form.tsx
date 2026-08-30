@@ -47,14 +47,13 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
 
         <div>
           <label htmlFor="bank" className="block text-sm font-medium text-gray-700">
-            银行/机构
+            银行/机构（选填）
           </label>
           <input
             id="bank"
             name="bank"
             type="text"
-            required
-            defaultValue={account?.bank}
+            defaultValue={account?.bank ?? ""}
             placeholder="如：招商银行"
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           />

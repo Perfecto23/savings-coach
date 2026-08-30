@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-30T15:30:43Z",
+  "title": "Design System: Savings Coach",
+  "extensions": {
+    "colorMeta": {
+      "canvas": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#fffbf5", "tonalRamp": ["#1c1917", "#3d3732", "#625a52", "#8d8378", "#b9aea1", "#ded5ca", "#f2ebe2", "#fffbf5"] },
+      "setup-canvas": { "role": "neutral", "displayName": "Ledger Paper", "canonical": "#f6f1e8", "tonalRamp": ["#1c1917", "#403a33", "#655e54", "#8e8679", "#b9b0a1", "#ddd6c8", "#eee9df", "#f6f1e8"] },
+      "surface": { "role": "neutral", "displayName": "Clear Surface", "canonical": "#ffffff", "tonalRamp": ["#171717", "#383838", "#5c5c5c", "#858585", "#ababab", "#d1d1d1", "#ededed", "#ffffff"] },
+      "ink": { "role": "neutral", "displayName": "Stone Ink", "canonical": "#1c1917", "tonalRamp": ["#0c0a09", "#1c1917", "#292524", "#44403c", "#78716c", "#a8a29e", "#d6d3d1", "#f5f5f4"] },
+      "ink-inverse": { "role": "neutral", "displayName": "Night Stone", "canonical": "#0c0a09", "tonalRamp": ["#0c0a09", "#181512", "#292524", "#44403c", "#78716c", "#a8a29e", "#d6d3d1", "#fafaf9"] },
+      "copy-muted": { "role": "neutral", "displayName": "Muted Stone", "canonical": "#57534e", "tonalRamp": ["#171513", "#302c28", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#e7e5e4", "#fafaf9"] },
+      "border": { "role": "neutral", "displayName": "Stone Border", "canonical": "#d6d3d1", "tonalRamp": ["#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#e7e5e4", "#fafaf9"] },
+      "action": { "role": "primary", "displayName": "Ledger Orange", "canonical": "#c2410c", "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", "#ffedd5"] },
+      "action-hover": { "role": "primary", "displayName": "Ledger Orange Deep", "canonical": "#9a3412", "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", "#ffedd5"] },
+      "action-bright": { "role": "primary", "displayName": "Signal Orange", "canonical": "#f97316", "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", "#ffedd5"] },
+      "action-soft": { "role": "primary", "displayName": "Soft Orange", "canonical": "#ffedd5", "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", "#ffedd5"] },
+      "focus": { "role": "primary", "displayName": "Focus Orange", "canonical": "#fed7aa", "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", "#ffedd5"] },
+      "success": { "role": "secondary", "displayName": "Confirmed Emerald", "canonical": "#34d399", "tonalRamp": ["#022c22", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#d1fae5"] },
+      "error": { "role": "tertiary", "displayName": "Recovery Red", "canonical": "#b91c1c", "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#fca5a5", "#fee2e2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Completion Display", "purpose": "Use only for the saved starting-point statement." },
+      "headline": { "displayName": "Task Headline", "purpose": "Use for the current form task or route-level heading." },
+      "body": { "displayName": "Readable Body", "purpose": "Use for explanatory copy and form values." },
+      "label": { "displayName": "Operational Label", "purpose": "Use for field labels, checkpoints, and navigation." }
+    },
+    "shadows": [
+      { "name": "control-low", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "Low separation for Setup fields." },
+      { "name": "action-setup", "value": "0 10px 24px rgba(194,65,12,0.24)", "purpose": "Affordance for the primary Setup action." },
+      { "name": "action-complete", "value": "0 12px 32px rgba(249,115,22,0.22)", "purpose": "Affordance for the completion action." },
+      { "name": "card-hover", "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", "purpose": "Hover lift for pointer-linked dashboard cards." }
+    ],
+    "motion": [
+      { "name": "color-state", "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Color changes for controls, routes, and choice cards." },
+      { "name": "progress", "value": "700ms cubic-bezier(0, 0, 0.2, 1)", "purpose": "Progress-ring value arc." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Respect the global reduced-motion override." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Setup Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single advancing action in each Setup checkpoint.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Save and continue</button>",
+      "css": ".ds-btn-primary { min-height: 48px; width: 100%; cursor: pointer; border: 0; border-radius: 12px; background: #c2410c; color: #ffffff; padding: 0 20px; font: 600 16px/24px system-ui, -apple-system, sans-serif; box-shadow: 0 10px 24px rgba(194,65,12,0.24); transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: #9a3412; } .ds-btn-primary:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; } .ds-btn-primary:active { background: #9a3412; } .ds-btn-primary:disabled { cursor: not-allowed; opacity: 0.6; }"
+    },
+    {
+      "name": "Setup Field",
+      "kind": "input",
+      "refersTo": "field-default",
+      "description": "The labeled input or select for a deliberate user-entered value.",
+      "html": "<label class=\"ds-field-label\" for=\"ds-balance\">Current balance</label><input class=\"ds-field\" id=\"ds-balance\" placeholder=\"0.00\" inputmode=\"decimal\">",
+      "css": ".ds-field-label { display: block; color: #292524; font: 500 14px/20px system-ui, -apple-system, sans-serif; } .ds-field { box-sizing: border-box; display: block; min-height: 48px; width: 100%; margin-top: 8px; border: 1px solid #d6d3d1; border-radius: 12px; background: #ffffff; color: #1c1917; padding: 0 12px; font: 400 16px/24px system-ui, -apple-system, sans-serif; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); } .ds-field::placeholder { color: #a8a29e; } .ds-field:focus { border-color: #f97316; outline: 2px solid #fed7aa; outline-offset: 0; } .ds-field:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; } .ds-field:disabled { cursor: not-allowed; background: #f5f5f4; color: #78716c; }"
+    },
+    {
+      "name": "Account Choice Card",
+      "kind": "card",
+      "refersTo": "choice-card-selected",
+      "description": "A visible-radio choice between attaching an existing account and creating one.",
+      "html": "<label class=\"ds-choice-card\"><input class=\"ds-choice-radio\" type=\"radio\" name=\"account-mode\" checked><span>Use an existing account</span></label>",
+      "css": ".ds-choice-card { display: flex; min-height: 56px; cursor: pointer; align-items: center; gap: 12px; border: 1px solid #d6d3d1; border-radius: 12px; background: #ffffff; color: #292524; padding: 0 16px; font: 500 14px/20px system-ui, -apple-system, sans-serif; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-choice-card:has(.ds-choice-radio:checked) { border-color: #f97316; background: #ffedd5; } .ds-choice-radio { width: 16px; height: 16px; accent-color: #ea580c; } .ds-choice-radio:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }"
+    },
+    {
+      "name": "Navigation Rail Item",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "A compact route item for the desktop rail and mobile more-menu.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#dashboard\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 12 9-8 9 8v8a1 1 0 0 1-1 1h-4v-6H8v6H4a1 1 0 0 1-1-1z\"/></svg><span>Dashboard</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 12px; border-radius: 8px; color: #4b5563; padding: 8px 12px; font: 500 14px/20px system-ui, -apple-system, sans-serif; text-decoration: none; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; } .ds-nav-item:hover { background: #fff7ed; color: #1c1917; } .ds-nav-item-active { background: #ffedd5; color: #c2410c; } .ds-nav-item:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }"
+    },
+    {
+      "name": "Progress Ring",
+      "kind": "custom",
+      "refersTo": "progress-ring",
+      "description": "A compact milestone indicator that pairs percentage with completion count.",
+      "html": "<div class=\"ds-progress\"><svg viewBox=\"0 0 100 100\" aria-hidden=\"true\"><defs><linearGradient id=\"ds-progress-gradient\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"0%\"><stop offset=\"0%\" stop-color=\"#fb923c\"/><stop offset=\"100%\" stop-color=\"#f97316\"/></linearGradient></defs><circle class=\"ds-progress-track\" cx=\"50\" cy=\"50\" r=\"42\"/><circle class=\"ds-progress-value\" cx=\"50\" cy=\"50\" r=\"42\"/></svg><span><strong>64%</strong><small>7/11</small></span></div>",
+      "css": ".ds-progress { position: relative; display: inline-flex; width: 100px; height: 100px; align-items: center; justify-content: center; } .ds-progress svg { width: 100px; height: 100px; transform: rotate(-90deg); } .ds-progress circle { fill: none; stroke-width: 8; } .ds-progress-track { stroke: #f3f4f6; } .ds-progress-value { stroke: url(#ds-progress-gradient); stroke-linecap: round; stroke-dasharray: 263.9; stroke-dashoffset: 95; transition: stroke-dashoffset 700ms cubic-bezier(0, 0, 0.2, 1); } .ds-progress span { position: absolute; display: flex; flex-direction: column; align-items: center; } .ds-progress strong { color: #111827; font: 700 20px/28px system-ui, -apple-system, sans-serif; } .ds-progress small { color: #6b7280; font: 400 12px/16px system-ui, -apple-system, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Ledger.",
+    "overview": "Savings Coach treats financial input as a deliberate record, not a performance dashboard. Warm paper surfaces make manual entry approachable. Dark anchoring areas mark orientation and completion. Orange identifies the next action, not generic decoration.",
+    "keyCharacteristics": [
+      "Quiet warm neutrals keep planning and balance entry readable for extended use.",
+      "Orange has a single job: mark an action, current route, current checkpoint, or measured progress.",
+      "Rounded controls soften data entry, while dark panels create a stable visual anchor.",
+      "Numbers use tabular figures when the value needs comparison or confirmation."
+    ],
+    "rules": [
+      { "name": "The Manual-First Rule", "body": "The interface must make a user-entered amount feel explicit and recoverable. It must not imply a bank connection, transaction confirmation, or automatic money movement.", "section": "overview" },
+      { "name": "The Orange Is Evidence Rule", "body": "Orange must communicate the current or next meaningful state. Do not use it as a second neutral, a decorative page wash, or a substitute for hierarchy.", "section": "colors" },
+      { "name": "The Dark Anchor Rule", "body": "The dark panel is reserved for navigation, orientation, and success confirmation. Keep its supporting copy subdued so the current checkpoint or confirmed value remains dominant.", "section": "colors" },
+      { "name": "The Value First Rule", "body": "When an amount is the action's subject, give the amount a larger numeric treatment than its supporting label.", "section": "typography" },
+      { "name": "The One Task Rule", "body": "A form surface presents one current user decision. Keep secondary detail in helper copy, the progress rail, or a following step.", "section": "layout" },
+      { "name": "The Resting Surface Rule", "body": "Do not add a shadow to every card. Elevation must indicate an interactive response or the next action.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use a warm canvas, white fields, and dark text for routine data entry.",
+      "Do reserve orange for the current step, the primary action, selected navigation, and progress.",
+      "Do use tabular numerals for financial values and comparison counts.",
+      "Do maintain 48px minimum targets and visible keyboard focus.",
+      "Do state manual-entry limits plainly when a balance or completion could be mistaken for a bank-confirmed event."
+    ],
+    "donts": [
+      "Don't imply that Savings Coach connects to a bank, transfers money, or confirms a bank transaction.",
+      "Don't turn every card into a raised container or add shadows without a state purpose.",
+      "Don't use orange as ordinary body text or a general background color.",
+      "Don't hide validation in placeholders or color alone; keep labels, error text, and focus visible.",
+      "Don't introduce a display font, uppercase dashboard labels, or non-tabular financial figures."
+    ]
+  }
+}

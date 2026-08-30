@@ -18,8 +18,8 @@
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
-| 3 | Safe invited-user access | `ready_for_release` | [Draft PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；local gates passed |
-| 4 | Setup checkpoint | `planned` | — |
+| 3 | Safe invited-user access | `released` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted 004 readback；Vercel production |
+| 4 | Setup checkpoint | `ready_for_release` | [Draft PR #5](https://github.com/Perfecto23/savings-coach/pull/5)；local gates passed |
 | 5 | Income-independent Plan activation | `planned` | — |
 | 6 | Monthly execution Home | `planned` | — |
 | 7 | Trustworthy Progress | `planned` | — |
@@ -110,10 +110,11 @@
 
 - Local branch: `codex/iteration-3-owner-isolation`
 - Commit: `64f2f73`
-- Pull request: [Draft PR #4](https://github.com/Perfecto23/savings-coach/pull/4)
+- Pull request: [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)
+- Merge commit: `bc72e81`
 - GitGuardian and Vercel Preview checks: pass。
 - Vercel Preview browser readback: `NOT TESTED`；Preview 需要 Vercel 登录。
-- Status: `ready_for_release`
+- Status: `released`
 - Outcome: 两名受邀用户可以使用同一 deployment，且不能读取或修改对方的财务数据。
 - Access model: `one auth user = one owner`；不新增 Tenant、Organization、Profile、Membership 或 RBAC。
 - In scope: owner migration、RLS、owner-scoped unique、cross-owner FK、两用户负向测试、Consumer AI 关闭。
@@ -123,5 +124,30 @@
 - Local application suite: lint 0 error、typecheck pass、build pass、Playwright 4/4。
 - Codex 侧边栏浏览器：desktop/mobile 登录页正常；无 signup；无水平溢出；`/api/chat` 返回 `404 feature_disabled`。
 - Browser data boundary: RSC DTO 不包含 `owner_id`；Consumer BYOK 没有 Data API grant。
-- Release boundary: production migration 必须先于应用部署；当前缺少 hosted Supabase 控制面访问。
+- Hosted Supabase preflight: 1 Auth user、81 business rows、0 owner columns、11 broad policies。
+- Hosted migration: 004 applied；81 business rows preserved；0 null owner；44 owner policies；0 broad policies。
+- Hosted grants and FKs: business anon CRUD 0；BYOK CRUD 0；released authenticated CRUD 40；owner RESTRICT FKs 9。
+- Hosted Auth: Email provider enabled；public signup disabled；anonymous sign-in disabled；reload readback passed。
+- Vercel production: merge deployment passed；`/` → `/login`；`/api/chat` returns `404 feature_disabled`。
+- Remaining live gate: second invited user creation and A/B browser isolation readback。
+- Production state changed: Yes；Supabase project resumed、004 applied、public signup disabled、PR #4 merged and deployed。
+
+## Iteration 4 Readback
+
+- Local branch: `codex/iteration-4-setup-checkpoint`
+- Commit: `47ff7b7`
+- Pull request: [Draft PR #5](https://github.com/Perfecto23/savings-coach/pull/5)
+- Base branch: `main` after PR #4
+- Status: `ready_for_release`
+- Outcome: 受邀用户保存地区设置、一个储蓄账户和当前余额；返回后恢复同一个储蓄起点。
+- In scope: locale、timezone、基础货币、储蓄账户、首个余额快照、Setup completion 和 redirect。
+- Out of scope: public signup、Plan、月度里程碑、Income、AI、Reminder、Billing、Household、FX 和完整 i18n。
+- Release boundary: Iteration 3 已完成 hosted migration；第二名受邀用户的 A/B live readback 必须先通过。
+- Database: migration 005；owner-scoped `owner_setup`；58 Setup assertions；existing isolation suite 82 assertions。
+- Concurrency: preferences、Account create、same-balance retry 和 conflicting-balance race passed。
+- Authenticated Playwright: desktop and Pixel 5 passed；真实 local Auth、three-checkpoint recovery、logout/login、RSC canary and currency readback。
+- Public Playwright: 4/4 passed；login 和 disabled AI boundary unchanged。
+- Application validation: lint 0 error、typecheck pass、build pass。
+- Design review: Impeccable verdict `ship` after CTA contrast、mobile hierarchy、field errors、loading、rail summary and copy fixes。
+- Manual browser: desktop/mobile Setup、completion、dashboard currency and complete redirect passed；no browser error or warning。
 - Production state changed: No。

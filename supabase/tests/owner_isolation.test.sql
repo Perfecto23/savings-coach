@@ -454,7 +454,7 @@ select is(
       and attribute.attname = 'owner_id'
       and constraint_row.confdeltype = 'r'
   ),
-  9::bigint,
+  10::bigint,
   'all direct-owner tables restrict deletion of an Auth user with financial data'
 );
 

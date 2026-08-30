@@ -7,6 +7,11 @@ import { regenerateMilestones } from "@/app/(app)/income/actions";
 
 const ACCOUNT_PURPOSES = ["salary", "fixed_expense", "dating_fund", "savings", "flexible", "housing_fund"] as const;
 
+function getInstitution(formData: FormData) {
+  const institution = String(formData.get("bank") || "").trim();
+  return institution || null;
+}
+
 // ============================================
 // 账户 CRUD
 // ============================================
@@ -42,7 +47,7 @@ export async function createAccount(
     .insert({
       owner_id: user.id,
       name: name.trim(),
-      bank: formData.get("bank") as string,
+      bank: getInstitution(formData),
       purpose: formData.get("purpose") as string,
       icon: (formData.get("icon") as string) || "🏦",
       sort_order: Number(formData.get("sort_order") || 0),
@@ -72,7 +77,7 @@ export async function updateAccount(
     .from("accounts")
     .update({
       name: name.trim(),
-      bank: formData.get("bank") as string,
+      bank: getInstitution(formData),
       purpose: formData.get("purpose") as string,
       icon: (formData.get("icon") as string) || "🏦",
     })

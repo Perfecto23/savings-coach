@@ -6,7 +6,7 @@
 
 - `planned`：尚未开始。
 - `in_progress`：正在实现或验证。
-- `ready_for_release`：本地验收完成，尚未 push 或部署。
+- `ready_for_release`：本地验收完成，尚未完成目标环境发布。
 - `released`：代码已经发布，但不自动代表 live 行为正确。
 - `verified_preview`：Preview 已完成独立 readback，但 production 尚未生效。
 - `verified_live`：目标环境已经完成独立 readback。
@@ -18,7 +18,7 @@
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
-| 3 | Safe invited-user access | `ready_for_release` | Local migration rehearsal 5/5；pgTAP 82/82；E2E 4/4 |
+| 3 | Safe invited-user access | `ready_for_release` | [Draft PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；local gates passed |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
 | 6 | Monthly execution Home | `planned` | — |
@@ -109,6 +109,8 @@
 ## Iteration 3 Readback
 
 - Local branch: `codex/iteration-3-owner-isolation`
+- Commit: `64f2f73`
+- Pull request: [Draft PR #4](https://github.com/Perfecto23/savings-coach/pull/4)
 - Status: `ready_for_release`
 - Outcome: 两名受邀用户可以使用同一 deployment，且不能读取或修改对方的财务数据。
 - Access model: `one auth user = one owner`；不新增 Tenant、Organization、Profile、Membership 或 RBAC。

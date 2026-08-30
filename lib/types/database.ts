@@ -57,6 +57,7 @@ export interface MonthlyMilestone {
   actual_total_savings: number | null; // 储蓄账户月末总净值
   status: "pending" | "on_track" | "exceeded" | "missed";
   is_plan_path: boolean;
+  review_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }

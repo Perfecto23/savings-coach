@@ -20,7 +20,7 @@ export default async function MilestonesPage() {
   const [milestonesRes, bonusRes, setupRes] = await Promise.all([
     supabase
       .from("monthly_milestones")
-      .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, is_plan_path, created_at, updated_at")
+      .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, is_plan_path, review_completed_at, created_at, updated_at")
       .eq("owner_id", user.id)
       .order("year_month"),
     supabase

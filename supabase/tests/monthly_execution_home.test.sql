@@ -447,6 +447,9 @@ where owner_id = '00000000-0000-4000-8000-00000000006a'
   and is_monthly_action;
 
 reset role;
+reset "request.jwt.claim.sub";
+reset "request.jwt.claim.role";
+set local "request.jwt.claims" = '{}';
 
 update public.owner_setup
 set plan_activated_at = current_timestamp

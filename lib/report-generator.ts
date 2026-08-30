@@ -6,13 +6,35 @@ import type {
   ImpulseLog,
 } from "@/lib/types/database";
 
+export type MonthlyReportAccount = Pick<Account, "id" | "name" | "icon">;
+export type MonthlyReportSnapshot = Pick<
+  BalanceSnapshot,
+  "account_id" | "recorded_at" | "balance"
+>;
+export type MonthlyReportMilestone = Pick<
+  MonthlyMilestone,
+  | "year_month"
+  | "planned_savings"
+  | "actual_savings"
+  | "is_plan_path"
+  | "review_completed_at"
+>;
+export type MonthlyReportSopRecord = Pick<
+  SopRecord,
+  "id" | "step_label" | "completed" | "amount" | "scheduled_for"
+>;
+export type MonthlyReportImpulse = Pick<
+  ImpulseLog,
+  "estimated_price" | "resisted" | "logged_at"
+>;
+
 export interface MonthlyReportData {
   yearMonth: string;
-  milestone: MonthlyMilestone | null;
-  sopRecords: SopRecord[];
+  milestone: MonthlyReportMilestone | null;
+  sopRecords: MonthlyReportSopRecord[];
   sopCompletionRate: number;
   accountBalances: Array<{
-    account: Account;
+    account: MonthlyReportAccount;
     startBalance: number | null;
     endBalance: number | null;
     change: number | null;
@@ -23,11 +45,11 @@ export interface MonthlyReportData {
 
 export function generateReportData(params: {
   yearMonth: string;
-  accounts: Account[];
-  snapshots: BalanceSnapshot[];
-  milestone: MonthlyMilestone | null;
-  sopRecords: SopRecord[];
-  impulseLogs: ImpulseLog[];
+  accounts: MonthlyReportAccount[];
+  snapshots: MonthlyReportSnapshot[];
+  milestone: MonthlyReportMilestone | null;
+  sopRecords: MonthlyReportSopRecord[];
+  impulseLogs: MonthlyReportImpulse[];
 }): MonthlyReportData {
   const { yearMonth, accounts, snapshots, milestone, sopRecords, impulseLogs } =
     params;

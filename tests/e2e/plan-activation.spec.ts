@@ -195,6 +195,44 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(page.getByRole("region", { name: "Next Monthly Action" })).toContainText(fixture.ruleName);
   await expectNoHorizontalOverflow(page);
 
+  await page.goto("/balances");
+  await expect(page.getByRole("heading", { level: 1, name: "Balance Snapshots" })).toBeVisible();
+  await expect(page.getByText("S$1,000.00", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Savings Coach does not verify a bank balance/)).toBeVisible();
+  await expect(page.getByText(/¥/)).toHaveCount(0);
+  await page.getByLabel(/Starting Point Balance Snapshot/).fill("1100");
+  await page.getByRole("button", { name: "Save Balance Snapshots" }).click();
+  await expect(page.getByText(/Balance Snapshot saved/)).toBeVisible();
+
+  await page.goto("/milestones");
+  await expect(page.getByRole("heading", { level: 1, name: "Progress" })).toBeVisible();
+  await expect(page.getByText("S$500.00", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("S$1,500.00", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("S$1,100.00", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Net value deviation", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/¥/)).toHaveCount(0);
+  await page.getByRole("link", { name: "Open monthly report" }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: /Monthly report/ })).toBeVisible();
+  await expect(page.getByText("Earliest Balance Snapshot", { exact: true })).toBeVisible();
+  await expect(page.getByText("Latest Balance Snapshot", { exact: true })).toBeVisible();
+  await expect(page.getByText("S$1,100.00", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/¥/)).toHaveCount(0);
+
+  await page.goto("/sop");
+  await expect(
+    page.getByText("Monthly Action amount: S$500.00", { exact: true })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "编辑" }).first().click();
+  await expect(page.getByLabel("Monthly Action amount")).toBeVisible();
+  await expect(page.getByText(/does not record an actual bank transfer/)).toBeVisible();
+
+  await page.goto("/impulse");
+  await expect(page.getByRole("heading", { level: 1, name: "Impulse Check" })).toBeVisible();
+  await expect(page.getByLabel("Impulse amount (SGD)")).toBeVisible();
+  await expect(page.getByText(/It is not confirmed savings/)).toBeVisible();
+  await expect(page.getByText(/¥/)).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+
   const responsePayload = await captured.read();
   for (const forbiddenValue of [
     "owner_id",

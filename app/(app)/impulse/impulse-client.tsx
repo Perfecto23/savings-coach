@@ -9,11 +9,15 @@ import { ImpulseList } from "@/components/impulse/impulse-list";
 interface ImpulsePageClientProps {
   initialLogs: ImpulseLog[];
   initialTotal: number;
+  locale: string;
+  baseCurrency: string;
 }
 
 export function ImpulsePageClient({
   initialLogs,
   initialTotal,
+  locale,
+  baseCurrency,
 }: ImpulsePageClientProps) {
   const [logs, setLogs] = useState(initialLogs);
   const [total, setTotal] = useState(initialTotal);
@@ -32,17 +36,26 @@ export function ImpulsePageClient({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div lang="en" className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">冲动拦截</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Impulse Check</h1>
         <p className="mt-1 text-sm text-gray-500">
-          每一次忍住，都是对未来的投资
+          Record a purchase you decided not to make without treating it as savings.
         </p>
       </div>
 
-      <SavingsCounter total={total} />
-      <ImpulseForm onAdded={handleAdded} />
-      <ImpulseList logs={logs} onDeleted={handleDeleted} />
+      <SavingsCounter
+        total={total}
+        locale={locale}
+        baseCurrency={baseCurrency}
+      />
+      <ImpulseForm baseCurrency={baseCurrency} onAdded={handleAdded} />
+      <ImpulseList
+        logs={logs}
+        locale={locale}
+        baseCurrency={baseCurrency}
+        onDeleted={handleDeleted}
+      />
     </div>
   );
 }

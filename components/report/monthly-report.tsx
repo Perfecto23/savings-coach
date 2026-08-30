@@ -1,58 +1,56 @@
 import type { MonthlyReportData } from "@/lib/report-generator";
+import { formatMoney } from "@/lib/format-money";
 
 interface MonthlyReportProps {
   data: MonthlyReportData;
+  locale: string;
+  baseCurrency: string;
 }
 
-export function MonthlyReport({ data }: MonthlyReportProps) {
+export function MonthlyReport({ data, locale, baseCurrency }: MonthlyReportProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
-          label="SOP 完成率"
+          label="Execution completion"
           value={`${data.sopCompletionRate}%`}
           color={data.sopCompletionRate === 100 ? "green" : "orange"}
         />
         <StatCard
-          label="计划转入"
+          label="Planned transfer"
           value={
             data.milestone
-              ? `¥${data.milestone.planned_savings.toLocaleString()}`
+              ? formatMoney(data.milestone.planned_savings, locale, baseCurrency)
               : "—"
           }
           color="blue"
         />
         <StatCard
-          label="净值变化"
+          label="Net value change"
           value={
             data.milestone?.actual_savings != null
-              ? `¥${data.milestone.actual_savings.toLocaleString()}`
+              ? formatMoney(data.milestone.actual_savings, locale, baseCurrency)
               : "—"
           }
-          color={
-            data.milestone?.actual_savings != null &&
-            data.milestone.actual_savings >= data.milestone.planned_savings
-              ? "green"
-              : "red"
-          }
+          color="blue"
         />
         <StatCard
-          label="冲动拦截"
-          value={`¥${data.impulseTotal.toLocaleString()}`}
-          subtitle={`${data.impulseCount} 次`}
+          label="Impulse amount"
+          value={formatMoney(data.impulseTotal, locale, baseCurrency)}
+          subtitle={`${data.impulseCount} decisions`}
           color="purple"
         />
       </div>
 
       <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-blue-700">
-        本月 badge 只由储蓄类 SOP 是否执行完成决定；“净值变化”会把投资浮盈浮亏一起算进去，所以可能低于计划转入。
+        Execution status only reflects confirmations. Net value change comes from Balance Snapshots and stays independent from planned transfer.
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="font-semibold text-gray-900">SOP 执行详情</h3>
+        <h3 className="font-semibold text-gray-900">Monthly Action confirmations</h3>
         <div className="mt-3 space-y-2">
           {data.sopRecords.length === 0 ? (
-            <p className="text-sm text-gray-400">本月无 SOP 记录</p>
+            <p className="text-sm text-gray-400">No monthly actions for this month.</p>
           ) : (
             data.sopRecords.map((record) => (
               <div
@@ -68,8 +66,8 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
                   <span
                     className={`text-sm ${
                       record.completed
-                        ? "text-gray-900"
-                        : "text-gray-400 line-through"
+                        ? "text-gray-500 line-through"
+                        : "text-gray-900"
                     }`}
                   >
                     {record.step_label}
@@ -77,7 +75,7 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
                 </div>
                 <span className="font-mono text-sm text-gray-500">
                   {record.amount != null
-                    ? `¥${record.amount.toLocaleString()}`
+                    ? formatMoney(record.amount, locale, baseCurrency)
                     : ""}
                 </span>
               </div>
@@ -87,22 +85,22 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="font-semibold text-gray-900">账户余额变化</h3>
+        <h3 className="font-semibold text-gray-900">Balance Snapshot observations</h3>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="px-3 py-2 text-left font-medium text-gray-500">
-                  账户
+                  Account
                 </th>
                 <th className="px-3 py-2 text-right font-medium text-gray-500">
-                  月初
+                  Earliest Balance Snapshot
                 </th>
                 <th className="px-3 py-2 text-right font-medium text-gray-500">
-                  月末
+                  Latest Balance Snapshot
                 </th>
                 <th className="px-3 py-2 text-right font-medium text-gray-500">
-                  变化
+                  Observed change
                 </th>
               </tr>
             </thead>
@@ -115,20 +113,19 @@ export function MonthlyReport({ data }: MonthlyReportProps) {
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-gray-600">
                     {startBalance != null
-                      ? `¥${startBalance.toLocaleString()}`
+                      ? formatMoney(startBalance, locale, baseCurrency)
                       : "—"}
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-gray-600">
                     {endBalance != null
-                      ? `¥${endBalance.toLocaleString()}`
+                      ? formatMoney(endBalance, locale, baseCurrency)
                       : "—"}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
                     {change != null ? (
-                      <span
-                        className={change >= 0 ? "text-green-600" : "text-red-500"}
-                      >
-                        {change >= 0 ? "+" : ""}¥{change.toLocaleString()}
+                      <span className="text-stone-700">
+                        {change >= 0 ? "+" : ""}
+                        {formatMoney(change, locale, baseCurrency)}
                       </span>
                     ) : (
                       "—"

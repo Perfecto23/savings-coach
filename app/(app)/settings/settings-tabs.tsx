@@ -15,9 +15,11 @@ type TabId = (typeof TABS)[number]["id"];
 interface SettingsTabsProps {
   accounts: Account[];
   templates: SopTemplate[];
+  locale: string;
+  baseCurrency: string;
 }
 
-export function SettingsTabs({ accounts, templates }: SettingsTabsProps) {
+export function SettingsTabs({ accounts, templates, locale, baseCurrency }: SettingsTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("accounts");
 
   return (
@@ -49,6 +51,8 @@ export function SettingsTabs({ accounts, templates }: SettingsTabsProps) {
           <SopTemplateEditor
             initialTemplates={templates}
             accounts={accounts}
+            locale={locale}
+            baseCurrency={baseCurrency}
           />
         )}
       </div>

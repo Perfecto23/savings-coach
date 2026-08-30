@@ -6,6 +6,7 @@ import type { Account, SopTemplate } from "@/lib/types/database";
 interface SopTemplateFormProps {
   template?: SopTemplate;
   accounts: Account[];
+  baseCurrency: string;
   onSubmit: (formData: FormData) => Promise<void>;
   onCancel: () => void;
 }
@@ -13,6 +14,7 @@ interface SopTemplateFormProps {
 export function SopTemplateForm({
   template,
   accounts,
+  baseCurrency,
   onSubmit,
   onCancel,
 }: SopTemplateFormProps) {
@@ -120,7 +122,7 @@ export function SopTemplateForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="default_amount" className="block text-sm font-medium text-gray-700">
-            默认金额（¥）
+            Default amount ({baseCurrency})
           </label>
           <input
             id="default_amount"

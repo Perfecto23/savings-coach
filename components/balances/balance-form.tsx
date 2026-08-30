@@ -6,10 +6,12 @@ import { saveBalanceSnapshot } from "@/app/(app)/balances/actions";
 
 interface BalanceFormProps {
   accounts: Account[];
+  baseCurrency: string;
+  defaultDate: string;
 }
 
-export function BalanceForm({ accounts }: BalanceFormProps) {
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+export function BalanceForm({ accounts, baseCurrency, defaultDate }: BalanceFormProps) {
+  const [date, setDate] = useState(defaultDate);
   const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -40,12 +42,15 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">录入余额</h3>
+      <h3 className="text-lg font-semibold text-gray-900">Record Balance Snapshots</h3>
+      <p className="mt-1 text-sm leading-6 text-gray-500">
+        This saves your observation. It does not confirm a bank balance.
+      </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
           <label htmlFor="balance-date" className="block text-sm font-medium text-gray-700">
-            记录日期
+            Observation date
           </label>
           <input
             id="balance-date"
@@ -66,8 +71,8 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
                 </span>
               </div>
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                  ¥
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-400">
+                  {baseCurrency}
                 </span>
                 <input
                   type="number"
@@ -80,9 +85,9 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
                       [account.id]: e.target.value,
                     }))
                   }
-                  placeholder="余额"
-                  aria-label={`${account.name}余额`}
-                  className="w-full rounded-lg border border-gray-300 py-2 pl-7 pr-3 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  placeholder="Observed balance"
+                  aria-label={`${account.name} Balance Snapshot`}
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-3 pr-16 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
               </div>
             </div>
@@ -97,7 +102,7 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
 
         {success && (
           <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
-            余额保存成功！
+            Balance Snapshot saved. Savings Coach does not verify a bank balance.
           </div>
         )}
 
@@ -106,7 +111,7 @@ export function BalanceForm({ accounts }: BalanceFormProps) {
           disabled={loading}
           className="cursor-pointer rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
         >
-          {loading ? "保存中…" : "保存快照"}
+          {loading ? "Saving…" : "Save Balance Snapshots"}
         </button>
       </form>
     </div>

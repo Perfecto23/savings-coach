@@ -60,7 +60,11 @@ export function AccountManager({ initialAccounts }: AccountManagerProps) {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("确定要删除此账户吗？关联的余额快照和 SOP 模板也会被删除。")) return;
+    if (
+      !window.confirm(
+        "Delete this account? Setup Savings Accounts and accounts with Balance Snapshots are protected. If deletion is allowed, legacy SOP Template links are disconnected and historical Monthly Actions remain."
+      )
+    ) return;
     const result = await deleteAccount(id);
     if (result.success) {
       setAccounts((prev) => prev.filter((a) => a.id !== id));

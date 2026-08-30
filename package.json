@@ -13,7 +13,8 @@
     "test:db": "supabase test db",
     "test:migration-preflight": "bash scripts/test-owner-migration-preflight.sh",
     "test:setup-concurrency": "bash scripts/test-setup-concurrency.sh",
-    "test:monthly-execution-concurrency": "bash scripts/test-monthly-execution-concurrency.sh"
+    "test:monthly-execution-concurrency": "bash scripts/test-monthly-execution-concurrency.sh",
+    "test:trustworthy-progress-concurrency": "bash scripts/test-trustworthy-progress-concurrency.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

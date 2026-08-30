@@ -564,11 +564,12 @@ export async function deleteMilestone(yearMonth: string): Promise<ActionResult> 
     .delete()
     .eq("year_month", yearMonth)
     .eq("owner_id", user.id)
+    .eq("is_plan_path", false)
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "里程碑不存在" };
+  if (error) return { success: false, error: "The legacy Monthly Milestone could not be deleted." };
+  if (!data) return { success: false, error: "Plan Path nodes cannot be deleted." };
   revalidatePath("/milestones");
   revalidatePath("/");
   return { success: true, data: undefined };

@@ -12,8 +12,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import type { Account, BalanceSnapshot } from "@/lib/types/database";
+import type { Account } from "@/lib/types/database";
+import type { BalanceDisplaySnapshot } from "@/lib/balances/contracts";
 import { deleteBalanceSnapshotsByDate } from "@/app/(app)/balances/actions";
+import { formatMoney } from "@/lib/format-money";
 
 const ACCOUNT_COLORS: Record<string, string> = {
   salary: "#3b82f6",
@@ -26,18 +28,22 @@ const ACCOUNT_COLORS: Record<string, string> = {
 
 interface BalanceHistoryChartProps {
   accounts: Account[];
-  snapshots: BalanceSnapshot[];
+  snapshots: BalanceDisplaySnapshot[];
+  locale: string;
+  baseCurrency: string;
 }
 
 export function BalanceHistoryChart({
   accounts,
   snapshots,
+  locale,
+  baseCurrency,
 }: BalanceHistoryChartProps) {
   const [range, setRange] = useState<"3" | "6" | "all">("all");
   const router = useRouter();
 
   async function handleDeleteDate(date: string) {
-    if (!window.confirm(`确定删除 ${date} 的所有余额记录？`)) return;
+    if (!window.confirm(`Delete all Balance Snapshots observed on ${date}?`)) return;
     const result = await deleteBalanceSnapshotsByDate(date);
     if (result.success) {
       router.refresh();
@@ -56,7 +62,7 @@ export function BalanceHistoryChart({
   if (snapshots.length === 0) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-400">
-        暂无余额历史数据，请先录入余额。
+        No Balance Snapshots yet.
       </div>
     );
   }
@@ -82,7 +88,7 @@ export function BalanceHistoryChart({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">余额趋势</h3>
+      <h3 className="text-lg font-semibold text-gray-900">Balance Snapshot history</h3>
 
       <div className="mt-3 flex gap-2">
         {(["3", "6", "all"] as const).map((r) => (
@@ -96,7 +102,7 @@ export function BalanceHistoryChart({
                 : "text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {r === "3" ? "近3月" : r === "6" ? "近6月" : "全部"}
+            {r === "3" ? "3 months" : r === "6" ? "6 months" : "All"}
           </button>
         ))}
       </div>
@@ -113,7 +119,7 @@ export function BalanceHistoryChart({
               type="button"
               onClick={() => handleDeleteDate(d.date)}
               className="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
-              aria-label={`删除 ${d.date} 的记录`}
+              aria-label={`Delete Balance Snapshots for ${d.date}`}
             >
               ×
             </button>
@@ -122,7 +128,12 @@ export function BalanceHistoryChart({
       </div>
 
       <div className="mt-4 h-64 sm:h-80">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          initialDimension={{ width: 800, height: 320 }}
+        >
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
@@ -133,16 +144,21 @@ export function BalanceHistoryChart({
             <YAxis
               tick={{ fontSize: 12 }}
               stroke="#9ca3af"
-              tickFormatter={(v: number) =>
-                v >= 10000 ? `${(v / 10000).toFixed(1)}万` : String(v)
+              tickFormatter={(value: number) =>
+                new Intl.NumberFormat(locale, {
+                  notation: "compact",
+                  maximumFractionDigits: 1,
+                }).format(value)
               }
             />
             <Tooltip
-              formatter={(value: number | undefined) => value != null ? `¥${value.toLocaleString()}` : ""}
+              formatter={(value: number | undefined) =>
+                value != null ? formatMoney(value, locale, baseCurrency) : ""
+              }
               contentStyle={{
                 borderRadius: "8px",
-                border: "1px solid #e5e7eb",
-                fontSize: "13px",
+                border: "1px solid #d6d3d1",
+                fontSize: "14px",
               }}
             />
             <Legend />

@@ -8,15 +8,20 @@ import {
   updateSopTemplate,
   deleteSopTemplate,
 } from "@/app/(app)/settings/actions";
+import { formatMoney } from "@/lib/format-money";
 
 interface SopTemplateEditorProps {
   initialTemplates: SopTemplate[];
   accounts: Account[];
+  locale: string;
+  baseCurrency: string;
 }
 
 export function SopTemplateEditor({
   initialTemplates,
   accounts,
+  locale,
+  baseCurrency,
 }: SopTemplateEditorProps) {
   const [templates, setTemplates] = useState(initialTemplates);
   const [showForm, setShowForm] = useState(false);
@@ -115,7 +120,9 @@ export function SopTemplateEditor({
                     {getAccountName(tpl.from_account_id)} → {getAccountName(tpl.to_account_id)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-gray-700">
-                    {tpl.default_amount != null ? `¥${tpl.default_amount.toLocaleString()}` : "—"}
+                    {tpl.default_amount != null
+                      ? formatMoney(tpl.default_amount, locale, baseCurrency)
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span
@@ -158,6 +165,7 @@ export function SopTemplateEditor({
           <SopTemplateForm
             template={editingTemplate}
             accounts={accounts}
+            baseCurrency={baseCurrency}
             onSubmit={handleUpdate}
             onCancel={() => setEditingTemplate(null)}
           />
@@ -169,6 +177,7 @@ export function SopTemplateEditor({
           <h4 className="mb-3 text-sm font-medium text-gray-700">添加 SOP 步骤</h4>
           <SopTemplateForm
             accounts={accounts}
+            baseCurrency={baseCurrency}
             onSubmit={handleCreate}
             onCancel={() => setShowForm(false)}
           />

@@ -1,24 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Account, SopRecord, SopTemplate } from "@/lib/types/database";
+import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { SopStepItem } from "./sop-step-item";
 import { initMonthSop, addAdHocSopStep } from "@/app/(app)/sop/actions";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Confetti } from "@/components/ui/confetti";
 
 interface SopChecklistProps {
-  initialRecords: SopRecord[];
-  templates: SopTemplate[];
-  accounts: Account[];
+  initialRecords: SopDisplayRecord[];
   yearMonth: string;
+  locale: string;
+  baseCurrency: string;
 }
 
 export function SopChecklist({
   initialRecords,
-  templates,
-  accounts,
   yearMonth,
+  locale,
+  baseCurrency,
 }: SopChecklistProps) {
   const [records, setRecords] = useState(initialRecords);
   const [loading, setLoading] = useState(false);
@@ -49,16 +49,7 @@ export function SopChecklist({
     return () => { cancelled = true; };
   }, [initDone, yearMonth]);
 
-  function getTemplateAccount(templateId: string | null, field: "from" | "to") {
-    if (!templateId) return null;
-    const tpl = templates.find((t) => t.id === templateId);
-    if (!tpl) return null;
-    const accountId = field === "from" ? tpl.from_account_id : tpl.to_account_id;
-    if (!accountId) return null;
-    return accounts.find((a) => a.id === accountId) ?? null;
-  }
-
-  function handleRecordUpdated(updated: SopRecord) {
+  function handleRecordUpdated(updated: SopDisplayRecord) {
     setRecords((prev) => {
       const next = prev.map((r) => (r.id === updated.id ? updated : r));
       if (next.length > 0 && next.every((r) => r.completed)) {
@@ -105,7 +96,7 @@ export function SopChecklist({
       acc[key].push(record);
       return acc;
     },
-    {} as Record<number, SopRecord[]>
+    {} as Record<number, SopDisplayRecord[]>
   );
 
   const sortedDays = Object.keys(groups)
@@ -181,9 +172,8 @@ export function SopChecklist({
               <SopStepItem
                 key={record.id}
                 record={record}
-                accounts={accounts}
-                templateFromAccount={getTemplateAccount(record.template_id, "from")}
-                templateToAccount={getTemplateAccount(record.template_id, "to")}
+                locale={locale}
+                baseCurrency={baseCurrency}
                 onUpdated={handleRecordUpdated}
                 onDeleted={handleRecordDeleted}
               />

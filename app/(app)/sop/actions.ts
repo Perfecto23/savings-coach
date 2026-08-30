@@ -7,13 +7,27 @@ import {
   getMilestoneSnapshotForTemplate,
   roundMoney,
 } from "@/lib/milestones";
-import type { ActionResult, SopRecord } from "@/lib/types/database";
+import type { ActionResult } from "@/lib/types/database";
+import type { SopDisplayRecord } from "@/lib/sop/contracts";
 
 const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
 
+async function readDisplayRecords(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  yearMonth: string
+): Promise<ActionResult<SopDisplayRecord[]>> {
+  const { data, error } = await supabase.rpc("get_sop_display_records", {
+    p_year_month: yearMonth,
+  });
+  if (error) {
+    return { success: false, error: "Monthly execution steps could not be loaded." };
+  }
+  return { success: true, data: (data || []) as SopDisplayRecord[] };
+}
+
 export async function initMonthSop(
   yearMonth: string
-): Promise<ActionResult<SopRecord[]>> {
+): Promise<ActionResult<SopDisplayRecord[]>> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,16 +44,7 @@ export async function initMonthSop(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    // 已存在，直接返回
-    const { data, error } = await supabase
-      .from("sop_records")
-      .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
-      .eq("year_month", yearMonth)
-      .eq("owner_id", user.id)
-      .order("sort_order");
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, data: data as SopRecord[] };
+    return readDisplayRecords(supabase, yearMonth);
   }
 
   const [templatesRes, accountsRes] = await Promise.all([
@@ -96,7 +101,8 @@ export async function initMonthSop(
 
   await regenerateMilestones();
   revalidatePath("/sop");
-  return { success: true, data: inserted as SopRecord[] };
+  void inserted;
+  return readDisplayRecords(supabase, yearMonth);
 }
 
 export async function toggleSopStep(
@@ -155,7 +161,7 @@ export async function toggleSopStep(
 export async function addAdHocSopStep(
   yearMonth: string,
   data: { step_label: string; due_day: number; amount?: number; note?: string }
-): Promise<ActionResult<SopRecord>> {
+): Promise<ActionResult<SopDisplayRecord>> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -196,12 +202,20 @@ export async function addAdHocSopStep(
       counts_toward_milestone: false,
       milestone_amount: null,
     })
-    .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
+    .select("id")
     .single();
 
   if (error) return { success: false, error: error.message };
   revalidatePath("/sop");
-  return { success: true, data: inserted as SopRecord };
+  const displayResult = await readDisplayRecords(supabase, yearMonth);
+  if (!displayResult.success) return displayResult;
+  const displayRecord = displayResult.data.find(
+    (record) => record.id === inserted.id
+  );
+  if (!displayRecord) {
+    return { success: false, error: "The monthly execution step could not be loaded." };
+  }
+  return { success: true, data: displayRecord };
 }
 
 export async function deleteAdHocSopStep(id: string): Promise<ActionResult> {

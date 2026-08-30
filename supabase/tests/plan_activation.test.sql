@@ -790,22 +790,24 @@ select lives_ok(
   'owner B can create a Rule before deleting the Setup target account'
 );
 
-select lives_ok(
+select throws_ok(
   $$ delete from public.accounts where id = '10000000-0000-4000-8000-00000000005b' $$,
-  'deleting a Setup target account safely applies Plan Rule fallout'
+  'P0001', null,
+  'a Setup-linked Target Account cannot be deleted'
 );
 
 select ok(
   (
-    select not is_active and to_account_id is null
+    select is_active
+      and to_account_id = '10000000-0000-4000-8000-00000000005b'
     from public.sop_templates
     where id = '20000000-0000-4000-8000-00000000005b'
   ) and (
-    select savings_account_id is null
+    select savings_account_id = '10000000-0000-4000-8000-00000000005b'
     from public.owner_setup
     where owner_id = '00000000-0000-4000-8000-00000000005b'
   ),
-  'target deletion deactivates the Rule and clears only live account links'
+  'a rejected Target Account deletion preserves the Rule and Setup link'
 );
 
 reset role;
@@ -814,9 +816,10 @@ set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000005a';
 set local "request.jwt.claim.role" = 'authenticated';
 set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000005a","role":"authenticated"}';
 
-select lives_ok(
+select throws_ok(
   $$ delete from public.accounts where id = '10000000-0000-4000-8000-00000000005a' $$,
-  'deleting an activated target applies the frozen lifecycle contract'
+  'P0001', null,
+  'an activated Setup-linked Target Account cannot be deleted'
 );
 
 select results_eq(
@@ -827,7 +830,7 @@ select results_eq(
     where setup.owner_id = '00000000-0000-4000-8000-00000000005a'
   $$,
   $$ values (true) $$,
-  'target deletion preserves the one-time activation timestamp'
+  'a rejected Target Account deletion preserves the one-time activation timestamp'
 );
 
 select is(
@@ -838,84 +841,56 @@ select is(
       and is_plan_path
       and year_month >= to_char(date_trunc('month', current_timestamp at time zone 'Asia/Singapore'), 'YYYY-MM')
   ),
-  0::bigint,
-  'target deletion invalidates current and future active Plan Path markers'
+  12::bigint,
+  'a rejected Target Account deletion preserves the active Plan Path'
 );
 
 select ok(
   (
-    select target_account_id is null and target_account_name = 'A Savings'
+    select target_account_id = '10000000-0000-4000-8000-00000000005a'
+      and target_account_name = 'A Savings'
     from public.sop_records
     where owner_id = '00000000-0000-4000-8000-00000000005a'
       and template_id = '20000000-0000-4000-8000-000000000051'
       and is_monthly_action
   ),
-  'target deletion preserves historical Monthly Action target snapshot name'
-);
-
-insert into public.accounts (id, owner_id, name, bank, purpose)
-values (
-  '12000000-0000-4000-8000-00000000005a',
-  '00000000-0000-4000-8000-00000000005a',
-  'A Replacement Savings', null, 'savings'
-);
-update public.owner_setup
-set savings_account_id = '12000000-0000-4000-8000-00000000005a'
-where owner_id = '00000000-0000-4000-8000-00000000005a';
-insert into public.balance_snapshots (account_id, recorded_at, balance)
-values (
-  '12000000-0000-4000-8000-00000000005a',
-  (current_timestamp at time zone 'Asia/Singapore')::date,
-  1500
-);
-
-select lives_ok(
-  $$
-    select public.save_plan_rule(
-      '{
-        "rule_id":"22000000-0000-4000-8000-00000000005a",
-        "name":"Replacement target rule",
-        "amount":"80.00",
-        "due_day":12,
-        "source_account_id":null,
-        "target_account_id":"12000000-0000-4000-8000-00000000005a"
-      }'::jsonb
-    )
-  $$,
-  'saving a Rule for the replacement target succeeds'
+  'a rejected Target Account deletion preserves Monthly Action target snapshots'
 );
 
 select is(
   (
     select count(*)
-    from public.monthly_milestones
+    from public.accounts
     where owner_id = '00000000-0000-4000-8000-00000000005a'
-      and is_plan_path
-      and year_month >= to_char(date_trunc('month', current_timestamp at time zone 'Asia/Singapore'), 'YYYY-MM')
+      and id = '10000000-0000-4000-8000-00000000005a'
   ),
-  0::bigint,
-  'saving a replacement Rule does not silently reactivate the Plan'
+  1::bigint,
+  'a rejected Target Account deletion preserves the Account row'
 );
 
-select lives_ok(
-  $$ select public.activate_savings_plan() $$,
-  'replacement target requires and accepts explicit reactivation'
+select is(
+  (
+    select count(*)
+    from public.balance_snapshots
+    where account_id = '10000000-0000-4000-8000-00000000005a'
+  ),
+  1::bigint,
+  'a rejected Target Account deletion preserves Balance Snapshot history'
 );
 
 select ok(
   (
-    select setup.plan_activated_at = first_activation.plan_activated_at
-    from public.owner_setup as setup
-    cross join first_activation
-    where setup.owner_id = '00000000-0000-4000-8000-00000000005a'
-  ) and (
-    select count(*) = 12
-    from public.monthly_milestones
-    where owner_id = '00000000-0000-4000-8000-00000000005a'
-      and is_plan_path
-      and year_month >= to_char(date_trunc('month', current_timestamp at time zone 'Asia/Singapore'), 'YYYY-MM')
+    select not is_active
+      and to_account_id = '10000000-0000-4000-8000-00000000005a'
+    from public.sop_templates
+    where id = '20000000-0000-4000-8000-000000000051'
   ),
-  'explicit reactivation restores 12 active nodes without rewriting activation history'
+  'a rejected Target Account deletion preserves the existing Plan Rule state and linkage'
+);
+
+select lives_ok(
+  $$ select public.activate_savings_plan() $$,
+  'Plan Activation remains idempotent after rejected Target Account deletion'
 );
 
 select * from finish();

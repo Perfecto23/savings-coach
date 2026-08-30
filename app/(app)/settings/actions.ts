@@ -104,7 +104,22 @@ export async function deleteAccount(id: string): Promise<ActionResult> {
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
+  if (
+    error?.code === "P0001" &&
+    error.message === "setup_linked_account_delete_forbidden"
+  ) {
+    return {
+      success: false,
+      error: "Choose a different Setup Savings Account before deleting this account.",
+    };
+  }
+  if (error?.code === "23503") {
+    return {
+      success: false,
+      error: "Delete this account’s Balance Snapshots before deleting the account.",
+    };
+  }
+  if (error) return { success: false, error: "The account could not be deleted. Try again." };
   if (!data) return { success: false, error: "账户不存在" };
   revalidatePath("/settings");
   return { success: true, data: undefined };

@@ -1,22 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { Account, SopRecord } from "@/lib/types/database";
+import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { toggleSopStep, updateSopStep, deleteAdHocSopStep } from "@/app/(app)/sop/actions";
+import { formatMoney } from "@/lib/format-money";
 
 interface SopStepItemProps {
-  record: SopRecord;
-  accounts: Account[];
-  templateFromAccount: Account | null;
-  templateToAccount: Account | null;
-  onUpdated: (updated: SopRecord) => void;
+  record: SopDisplayRecord;
+  locale: string;
+  baseCurrency: string;
+  onUpdated: (updated: SopDisplayRecord) => void;
   onDeleted?: (id: string) => void;
 }
 
 export function SopStepItem({
   record,
-  templateFromAccount,
-  templateToAccount,
+  locale,
+  baseCurrency,
   onUpdated,
   onDeleted,
 }: SopStepItemProps) {
@@ -24,6 +24,7 @@ export function SopStepItem({
   const [editing, setEditing] = useState(false);
   const [amount, setAmount] = useState(String(record.amount ?? ""));
   const [note, setNote] = useState(record.note ?? "");
+  const isMonthlyAction = record.scheduled_for != null;
 
   async function handleToggle() {
     setLoading(true);
@@ -38,7 +39,7 @@ export function SopStepItem({
     setLoading(false);
   }
 
-  const isAdHoc = record.template_id === null;
+  const isAdHoc = record.is_ad_hoc;
 
   async function handleDelete() {
     if (!window.confirm("确定删除此临时步骤？")) return;
@@ -66,16 +67,8 @@ export function SopStepItem({
     setLoading(false);
   }
 
-  const fromLabel = record.scheduled_for
-    ? record.source_account_name
-    : templateFromAccount
-      ? `${templateFromAccount.icon} ${templateFromAccount.name}`
-      : null;
-  const toLabel = record.scheduled_for
-    ? record.target_account_name
-    : templateToAccount
-      ? `${templateToAccount.icon} ${templateToAccount.name}`
-      : null;
+  const fromLabel = record.source_account_name;
+  const toLabel = record.target_account_name;
 
   const transferLabel =
     fromLabel && toLabel ? `${fromLabel} → ${toLabel}` : record.step_label;
@@ -124,9 +117,10 @@ export function SopStepItem({
                 {transferLabel}
               </span>
               {record.amount != null && (
-                <span className="ml-2 font-mono text-sm text-gray-500">
-                  ¥{record.amount.toLocaleString()}
-                </span>
+                <p className="mt-1 font-mono text-sm text-gray-500">
+                  {isMonthlyAction ? "Monthly Action amount: " : ""}
+                  {formatMoney(record.amount, locale, baseCurrency)}
+                </p>
               )}
             </div>
 
@@ -169,32 +163,39 @@ export function SopStepItem({
           )}
 
           {editing && !record.completed && (
-            <div className="mt-3 flex items-center gap-2">
-              <input
-                type="number"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="实际金额"
-                aria-label="实际金额"
-                className="w-28 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="备注"
-                aria-label="备注"
-                className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={loading}
-                className="cursor-pointer rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
-              >
-                保存
-              </button>
+            <div className="mt-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder={isMonthlyAction ? "Monthly Action amount" : "金额"}
+                  aria-label={isMonthlyAction ? "Monthly Action amount" : "金额"}
+                  className="w-28 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="备注"
+                  aria-label="备注"
+                  className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="cursor-pointer rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
+                >
+                  保存
+                </button>
+              </div>
+              {isMonthlyAction ? (
+                <p className="mt-2 text-xs leading-5 text-gray-500">
+                  This adjusts this month&apos;s plan. It does not record an actual bank transfer.
+                </p>
+              ) : null}
             </div>
           )}
         </div>

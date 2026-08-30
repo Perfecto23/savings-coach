@@ -1,49 +1,48 @@
 import { SopChecklist } from "@/components/sop/sop-checklist";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Account, SopRecord, SopTemplate } from "@/lib/types/database";
+import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { MonthSelector } from "./month-selector";
 
 interface SopPageProps {
   searchParams: Promise<{ month?: string }>;
 }
 
-function getCurrentYearMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+function getCurrentYearMonth(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const byType = new Map(parts.map((part) => [part.type, part.value]));
+  return `${byType.get("year")}-${byType.get("month")}`;
 }
 
 export default async function SopPage({ searchParams }: SopPageProps) {
   const params = await searchParams;
-  const yearMonth = params.month || getCurrentYearMonth();
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [recordsRes, templatesRes, accountsRes] = await Promise.all([
-    supabase
-      .from("sop_records")
-      .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, rule_amount, scheduled_for, source_account_id, source_account_name, target_account_id, target_account_name, created_at")
-      .eq("owner_id", user.id)
-      .eq("year_month", yearMonth)
-      .order("sort_order"),
-    supabase
-      .from("sop_templates")
-      .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
-      .eq("owner_id", user.id)
-      .eq("is_plan_rule", false)
-      .order("sort_order"),
-    supabase
-      .from("accounts")
-      .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
-      .eq("owner_id", user.id)
-      .order("sort_order"),
-  ]);
+  const setupRes = await supabase
+    .from("owner_setup")
+    .select("locale, time_zone, base_currency")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (setupRes.error || !setupRes.data) {
+    throw new Error("Unable to load monthly execution settings");
+  }
+  const yearMonth =
+    params.month || getCurrentYearMonth(setupRes.data.time_zone);
+  const recordsRes = await supabase.rpc("get_sop_display_records", {
+    p_year_month: yearMonth,
+  });
 
-  const records = (recordsRes.data || []) as SopRecord[];
-  const templates = (templatesRes.data || []) as SopTemplate[];
-  const accounts = (accountsRes.data || []) as Account[];
+  if (recordsRes.error) {
+    throw new Error("Unable to load monthly execution steps");
+  }
+  const displayRecords = (recordsRes.data || []) as SopDisplayRecord[];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -56,10 +55,10 @@ export default async function SopPage({ searchParams }: SopPageProps) {
       </div>
 
       <SopChecklist
-        initialRecords={records}
-        templates={templates}
-        accounts={accounts}
+        initialRecords={displayRecords}
         yearMonth={yearMonth}
+        locale={setupRes.data?.locale ?? "en-US"}
+        baseCurrency={setupRes.data?.base_currency ?? "USD"}
       />
     </div>
   );

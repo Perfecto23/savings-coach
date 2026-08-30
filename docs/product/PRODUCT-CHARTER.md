@@ -227,3 +227,5 @@ Critical path：`1 → 2 → 3 → 4 → 5 → 6 → 8 → 10`。
 - 2026-08-30 — Perfecto 授权 Codex 作为 CEO，管理至少 10 次敏捷迭代。
 - 2026-08-30 — 决定保留 Next.js + Supabase，首发采用 English-first、manual-first、single-owner、single-base-currency。
 - 2026-08-30 — 决定自动化回归使用项目 Playwright，人工产品验收使用 Codex 侧边栏浏览器。
+- 2026-08-31 — Iteration 9 拒绝将 Home prompt 表示为 scheduler-backed reminder。Outbound reminder 等待 provider credential、verified sender 和费用授权。
+- 2026-08-31 — Iteration 10 冻结 `pro_beta_usd_499_monthly_v1` 价格假设。Paid Intent 不创建付款、订阅、trial 或 entitlement。

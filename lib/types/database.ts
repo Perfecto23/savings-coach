@@ -155,6 +155,8 @@ export interface OwnerSetup {
   savings_account_id: string | null;
   plan_activated_at: string | null;
   behavior_activated_at: string | null;
+  paid_intent_offer_code: string | null;
+  paid_intent_recorded_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -11,21 +11,32 @@ import {
 } from "@/lib/report-generator";
 import { MonthlyReport } from "@/components/report/monthly-report";
 import { MonthlyReviewPanel } from "@/components/report/monthly-review-panel";
+import { ProBetaOffer } from "@/components/report/pro-beta-offer";
 
 interface ReportPageProps {
   params: Promise<{ yearMonth: string }>;
 }
 
-function previousYearMonthInTimeZone(timeZone: string) {
+interface PaidIntentOfferState {
+  offer_code: string;
+  eligible: boolean;
+  recorded_at: string | null;
+}
+
+const PAID_INTENT_OFFER_CODE = "pro_beta_usd_499_monthly_v1";
+
+function currentYearMonthInTimeZone(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
     month: "2-digit",
   }).formatToParts(new Date());
   const byType = new Map(parts.map((part) => [part.type, part.value]));
-  const currentMonth = new Date(
-    `${byType.get("year")}-${byType.get("month")}-01T00:00:00.000Z`
-  );
+  return `${byType.get("year")}-${byType.get("month")}`;
+}
+
+function previousYearMonth(currentYearMonth: string) {
+  const currentMonth = new Date(`${currentYearMonth}-01T00:00:00.000Z`);
   currentMonth.setUTCMonth(currentMonth.getUTCMonth() - 1);
   return currentMonth.toISOString().slice(0, 7);
 }
@@ -39,7 +50,15 @@ export default async function ReportPage({ params }: ReportPageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [accountsRes, snapshotsRes, milestoneRes, sopRes, impulseRes, setupRes] =
+  const [
+    accountsRes,
+    snapshotsRes,
+    milestoneRes,
+    sopRes,
+    impulseRes,
+    setupRes,
+    paidIntentRes,
+  ] =
     await Promise.all([
       supabase
         .from("accounts")
@@ -73,7 +92,12 @@ export default async function ReportPage({ params }: ReportPageProps) {
         .select("locale, time_zone, base_currency")
         .eq("owner_id", user.id)
         .maybeSingle(),
+      supabase.rpc("get_paid_intent_offer_state"),
     ]);
+
+  if (paidIntentRes.error) {
+    throw new Error("Unable to load Pro beta offer state");
+  }
 
   const sopRecords = (sopRes.data || []) as MonthlyReportSopRecord[];
   const reportData = generateReportData({
@@ -91,9 +115,18 @@ export default async function ReportPage({ params }: ReportPageProps) {
     (record) => record.completed
   ).length;
   const locale = setupRes.data?.locale || "en-US";
-  const previousYearMonth = previousYearMonthInTimeZone(
+  const currentYearMonth = currentYearMonthInTimeZone(
     setupRes.data?.time_zone || "UTC"
   );
+  const previousReviewYearMonth = previousYearMonth(currentYearMonth);
+  const paidIntentState = paidIntentRes.data as PaidIntentOfferState | null;
+  if (
+    !paidIntentState ||
+    paidIntentState.offer_code !== PAID_INTENT_OFFER_CODE ||
+    typeof paidIntentState.eligible !== "boolean"
+  ) {
+    throw new Error("Invalid Pro beta offer state");
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -118,14 +151,23 @@ export default async function ReportPage({ params }: ReportPageProps) {
 
       <MonthlyReviewPanel
         yearMonth={yearMonth}
+        currentYearMonth={currentYearMonth}
         locale={locale}
         reviewCompletedAt={reportData.milestone?.review_completed_at ?? null}
         isReviewWindow={
-          yearMonth === previousYearMonth &&
+          yearMonth === previousReviewYearMonth &&
           reportData.milestone?.is_plan_path === true
         }
         completedCount={completedMonthlyActions}
         totalCount={monthlyActions.length}
+      />
+
+      <ProBetaOffer
+        eligible={
+          paidIntentState.eligible &&
+          reportData.milestone?.review_completed_at != null
+        }
+        recorded={paidIntentState.recorded_at != null}
       />
 
       <MonthlyReport

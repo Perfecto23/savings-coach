@@ -148,6 +148,10 @@ test("an invited owner can save and recover the three Setup checkpoints", async 
   await page.getByLabel("密码").fill(fixture.password);
   await page.getByRole("button", { name: "登录" }).click();
   await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1, name: "This month" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Build your Savings Plan" })).toBeVisible();
+
+  await page.goto("/setup/complete");
   await expect(page.getByText("S$1,234.56", { exact: true }).first()).toBeVisible();
 
   await page.goto("/setup");

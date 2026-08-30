@@ -243,6 +243,8 @@ select is(
   'a rejected non-finite amount creates no Plan Rule row'
 );
 
+reset role;
+
 select throws_ok(
   $$
     insert into public.sop_records (
@@ -267,6 +269,11 @@ select throws_ok(
   '23514', null,
   'direct writes cannot store a non-finite Monthly Action amount'
 );
+
+set local role authenticated;
+set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000005a';
+set local "request.jwt.claim.role" = 'authenticated';
+set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000005a","role":"authenticated"}';
 
 select throws_ok(
   $$
@@ -662,6 +669,8 @@ select results_eq(
   'a rejected Monthly Action patch rolls back without changing path inputs'
 );
 
+reset role;
+
 select throws_ok(
   $$
     update public.sop_records
@@ -672,6 +681,11 @@ select throws_ok(
   'P0001', null,
   'Monthly Action Rule Amount snapshot is immutable'
 );
+
+set local role authenticated;
+set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000005a';
+set local "request.jwt.claim.role" = 'authenticated';
+set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000005a","role":"authenticated"}';
 
 select throws_ok(
   $$ delete from public.sop_templates where id = '20000000-0000-4000-8000-000000000051' $$,

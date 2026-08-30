@@ -37,6 +37,7 @@ export default async function DashboardPage() {
     bonusRes,
     impulseRes,
     impulseTotalRes,
+    setupRes,
   ] = await Promise.all([
     supabase
       .from("accounts")
@@ -80,6 +81,11 @@ export default async function DashboardPage() {
       .select("estimated_price")
       .eq("owner_id", user.id)
       .eq("resisted", true),
+    supabase
+      .from("owner_setup")
+      .select("locale, base_currency")
+      .eq("owner_id", user.id)
+      .maybeSingle(),
   ]);
 
   const accounts = (accountsRes.data || []) as Account[];
@@ -89,6 +95,8 @@ export default async function DashboardPage() {
   const sopAllRecords = (sopAllRes.data || []) as { year_month: string; completed: boolean }[];
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
   const impulseLogs = (impulseRes.data || []) as ImpulseLog[];
+  const locale = setupRes.data?.locale || "en-US";
+  const baseCurrency = setupRes.data?.base_currency || "USD";
 
   // 每个账户最新余额
   const latestSnapshots = new Map<string, BalanceSnapshot>();
@@ -162,12 +170,16 @@ export default async function DashboardPage() {
       <SavingsProgressCard
         milestones={milestones}
         totalSavings={totalSavings}
+        locale={locale}
+        baseCurrency={baseCurrency}
       />
 
       {/* 第二行：账户概览 */}
       <AccountsOverviewCard
         accounts={accounts}
         latestSnapshots={latestSnapshots}
+        locale={locale}
+        baseCurrency={baseCurrency}
       />
 
       {/* 第三行：本月状态 + 即将到账 + 冲动拦截 */}

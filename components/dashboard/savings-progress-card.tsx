@@ -3,15 +3,20 @@
 import type { MonthlyMilestone } from "@/lib/types/database";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { StreakCounter } from "@/components/ui/streak-counter";
+import { formatMoney } from "@/lib/format-money";
 
 interface SavingsProgressCardProps {
   milestones: MonthlyMilestone[];
   totalSavings: number;
+  locale: string;
+  baseCurrency: string;
 }
 
 export function SavingsProgressCard({
   milestones,
   totalSavings,
+  locale,
+  baseCurrency,
 }: SavingsProgressCardProps) {
   const completed = milestones.filter(
     (m) => m.status === "on_track" || m.status === "exceeded"
@@ -46,7 +51,7 @@ export function SavingsProgressCard({
           <div>
             <p className="text-sm font-medium text-gray-500">累计存款总额</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">
-              ¥{totalSavings.toLocaleString()}
+              {formatMoney(totalSavings, locale, baseCurrency)}
             </p>
             <div className="mt-2">
               <StreakCounter count={streak} />

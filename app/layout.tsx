@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s | 储蓄教练",
   },
   description:
-    "帮助你执行月度储蓄 SOP、追踪多账户余额、通过 AI 财务教练进行复盘分析的个人理财应用",
+    "帮助你执行月度储蓄流程、记录账户余额并复盘进展的个人储蓄工具",
   icons: {
     icon: [
       {
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "储蓄教练 — 你的个人理财伙伴",
-    description: "月度储蓄 SOP + 多账户追踪 + AI 财务教练",
+    description: "月度储蓄流程、账户余额观察与进展复盘",
     type: "website",
     locale: "zh_CN",
   },

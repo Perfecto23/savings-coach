@@ -20,9 +20,9 @@
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe invited-user access | `verified_live` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted A/B RLS and browser readback |
 | 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
-| 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006 and Vercel production |
-| 6 | Monthly execution Home | `released` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and Vercel production |
-| 7 | Trustworthy Progress | `ready_for_release` | Local DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
+| 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006、Vercel production and live activation readback |
+| 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
+| 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `planned` | — |
 | 9 | One-channel reminder experiment | `planned` | — |
 | 10 | Paid-intent beta and release candidate | `planned` | — |
@@ -206,8 +206,8 @@
 
 ### Not Claimed
 
-- 尚未完成 authenticated production Plan activation journey。
-- 尚未在 production 创建计划规则、计划路径或 activation timestamp。
+- authenticated production Plan activation 已完成。
+- production 的 Plan Rule edit、deactivate 和 reactivate 尚未执行。
 
 ### Release Readback
 
@@ -219,7 +219,8 @@
 - Hosted activation evidence：direct INSERT / UPDATE 均关闭；Setup column INSERT allowlist 保持有效。
 - Hosted state：0 计划规则、4 月度行动、0 计划路径、0 activation timestamp、0 duplicate group。
 - Vercel production：merge commit `3d1eb1e` 部署完成；`/plan` → `/login`；新日志 0 error / 0 warning。
-- Remaining live gate：创建一个 disposable invited user，完成 Setup、Plan activation、reload、edit 和 deactivate 后精确清理。该账号创建需要单次明确确认。
+- Authenticated production：disposable owner 完成 Setup、S$500 Plan Rule、Plan Activation、1 条 Monthly Action 和 12 个 Plan Path 节点；reload 后状态保持。
+- Remaining live gate：production Plan Rule edit、deactivate 和 reactivate。不得使用现有用户数据执行该 gate。
 - Production state changed: Yes；006 applied、PR #8 merged and Vercel production deployed。
 
 ## Iteration 6 Current State
@@ -228,7 +229,7 @@
 - Commit: `839a2d1`
 - Pull request: [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)
 - Merge commit: `1bb2ef6`
-- Status: `released`
+- Status: `verified_live`
 - Outcome: 已激活储蓄计划的用户在 Home 看到下一行动，手工完成后确认步骤完成，并形成行为激活。
 - In scope: Home 的下一行动、月度行动完成确认、当前月度行动进度、逾期显示、行为激活、Plan Path 摘要和 desktop/mobile 验收。
 - Out of scope: 银行同步、真实资金转移、余额快照录入、净值变化、计划规则编辑、月度复盘、Reminder、AI、Billing、Household 和多币种资产组合。
@@ -266,8 +267,8 @@
 
 ### Not Claimed
 
-- 尚未完成 authenticated production Home completion journey。
-- Production 尚未创建行为激活。
+- 不表示银行已经执行或确认转账。
+- production 验收数据未保留为长期样本。
 
 ### Release Readback
 
@@ -278,13 +279,18 @@
 - Hosted RPC：`update_monthly_action` 为 authenticated-only definer；PUBLIC / anon 无执行权限。
 - Hosted evidence：Behavior Activation direct INSERT / UPDATE 均关闭；Plan-before-Behavior CHECK 生效；无 event / home 表。
 - Vercel production：merge commit `1bb2ef6` 部署完成；`/` → `/login`；新日志 0 error / 0 warning。
-- Remaining live gate：创建一个 disposable invited user，完成 Setup、Plan Activation、Home completion、reload、undo 和精确清理。该单次账号创建确认可同时关闭 Iteration 5 与 6 的 authenticated production gate。
+- Authenticated production：Plan Activation 后，Home 显示下一 Monthly Action；首次完成写入 Behavior Activation；reload 保持完成状态；undo 恢复下一行动且不撤销 Behavior Activation。
+- 验收时独立回读为 1 Setup、1 Plan Activation、1 Behavior Activation、1 Account、1 Snapshot、1 Plan Rule、1 Monthly Action 和 12 个 Plan Path 节点。
+- disposable owner 和关联数据已在单事务内精确清理。清理后恢复 1 Auth user、81 行业务数据、5 Accounts、30 Balance Snapshots、0 Setup、0 Plan Activation 和 0 Behavior Activation。
 - Production state changed: Yes；007 applied、PR #10 merged and Vercel production deployed。
 
 ## Iteration 7 Current State
 
 - Local branch: `codex/iteration-7-trustworthy-progress`
-- Status: `ready_for_release`
+- Commit: `7f76aa5`
+- Pull request: [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)
+- Merge commit: `029288f`
+- Status: `verified_live`
 - Outcome: 用户在手工储蓄执行路径中区分计划转入、余额快照、净值变化和拦截金额，并以基础货币查看金额。
 - In scope: 余额观察、月度里程碑、月度报告、月度行动、冲动拦截和关联删除确认的金额口径、术语、基础货币格式化和历史保留规则。
 - Out of scope: 银行同步、真实资金转移、交易导入、全球税务计算、Income 模型重写、AI、月度复盘、Reminder、Billing、Household、FX 和多币种账户实体。
@@ -328,7 +334,21 @@
 
 ### Not Claimed
 
-- 尚未创建 commit、PR、Preview 或 production 发布。
-- Hosted migration 008 尚未应用。
-- 尚未完成 authenticated production Balance Snapshot 与 Progress journey。
-- Production state changed: No。
+- 不验证银行余额、银行交易或真实资金转移。
+- 不提供 public signup 或用户自助删除账号。
+- production 验收数据未保留为长期样本。
+
+### Release Readback
+
+- GitGuardian：pass；Vercel Preview：pass；Vercel production：pass。
+- Hosted preflight：1 Auth user、81 行业务数据、5 Accounts、30 Balance Snapshots、0 非法余额、0 Setup、0 Plan Activation 和 0 Behavior Activation。
+- Hosted migration：008 在单事务内成功；81 行业务数据和 30 Balance Snapshots 保持不变。
+- Hosted integrity：Balance Snapshot→Account 为 `RESTRICT`；金额 CHECK、Setup-linked Account、最后 Setup Snapshot 和 Plan Path 删除保护均生效。
+- Hosted ACL：3 个 Balance Snapshot 直写策略关闭；4 个新函数存在；6 个 definer 函数固定空 `search_path`；private Setup helper 对 PUBLIC、anon 和 authenticated 的授权为 0。
+- Hosted RPC：authenticated 获得 3 个安全 RPC；anon 获得 0。
+- Authenticated production：Balance Snapshot 从 S$1,000 更新为 S$1,100；Progress 分列显示 S$500 planned transfer、S$1,500 target balance、空 net value change 和 S$1,100 Snapshot total。
+- Monthly report 使用 Earliest / Latest Balance Snapshot；SOP 显示 Monthly Action amount；Impulse amount 明确不是 confirmed savings。
+- Supabase Dashboard 直接删除 owner 因 Iteration 3 的 owner 外键 `RESTRICT` 失败，且未产生部分删除。产品当前没有用户自助删除账号功能。
+- disposable owner 和关联数据随后在单事务内精确清理。清理后恢复 1 Auth user、81 行业务数据、5 Accounts、30 Balance Snapshots、0 Setup、0 Plan Activation 和 0 Behavior Activation。
+- Vercel production：merge commit `029288f` 部署完成；公开 `/` → `/login`；authenticated journey 通过。
+- Production state changed: Yes；008 applied、PR #12 merged and Vercel production verified。

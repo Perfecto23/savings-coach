@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
 
 # next.js
 /.next/
@@ -28,7 +30,9 @@
 .idea/
 
 # personal planning docs
-docs/
+docs/*
+!docs/product/
+!docs/product/**
 
 # debug
 npm-debug.log*

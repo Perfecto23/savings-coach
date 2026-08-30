@@ -17,7 +17,7 @@
 | Iteration | Outcome | Status | Release evidence |
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
-| 2 | EdgeOne hosting decision | `in_progress` | EdgeOne build、Preview 与 recovery 已验证；Auth 等待 staging |
+| 2 | EdgeOne hosting decision | `in_progress` | [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；EdgeOne build/recovery 已验证 |
 | 3 | Safe English beta access | `planned` | — |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
@@ -88,6 +88,8 @@
 
 - Local branch: `codex/iteration-2-edgeone-poc`
 - Status: `in_progress`
+- Pull request: [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)
+- GitGuardian and Vercel checks: pass。
 - EdgeOne project: `makers-5llzko3fa3m5`，仅用于 POC。
 - Deployment A: `dpfr2ly4pgcc`；clean Preview。
 - Deployment B: `dpx9iypqi6g4`；临时 marker 与 server canary。
@@ -97,3 +99,4 @@
 - Not completed: staging Auth、Server Action probe、Console log correlation 和 runtime secret isolation。
 - Tenant isolation: `NOT TESTED`。
 - External state changed: 创建隔离 EdgeOne POC 项目及四个 deployment；未连接生产数据或 secret。
+- Required user input: 在 Codex 侧边栏浏览器登录腾讯云和 Supabase；不提供密码或 token。

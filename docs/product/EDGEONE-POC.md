@@ -150,3 +150,5 @@ Hosted AI 重新进入 Scope 时，这些 probe 才升级为 release gate。
 - Codex 侧边栏浏览器没有 EdgeOne Console 登录态，无法关联 runtime logs。
 - EdgeOne build-time `.env` 会进入 Edge Function artifact。尚未证明存在不入 artifact 的 runtime secret 路径。
 - 本机全局 CLI 是 `1.6.17`。`1.6.28` 已通过 `npx` 验证，但 `env set` 仍只写本地 `.env`，没有远端 readback。
+
+解除 blocker 只需要 Perfecto 在 Codex 侧边栏浏览器完成腾讯云与 Supabase 登录。禁止在聊天中发送密码或 token。

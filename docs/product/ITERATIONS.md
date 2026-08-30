@@ -17,7 +17,7 @@
 | Iteration | Outcome | Status | Release evidence |
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
-| 2 | EdgeOne hosting decision | `in_progress` | [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；EdgeOne build/recovery 已验证 |
+| 2 | EdgeOne hosting decision | `ready_for_release` | [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe English beta access | `planned` | — |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
@@ -87,16 +87,18 @@
 ## Iteration 2 Readback
 
 - Local branch: `codex/iteration-2-edgeone-poc`
-- Status: `in_progress`
+- Status: `ready_for_release`
 - Pull request: [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)
 - GitGuardian and Vercel checks: pass。
 - EdgeOne project: `makers-5llzko3fa3m5`，仅用于 POC。
 - Deployment A: `dpfr2ly4pgcc`；clean Preview。
 - Deployment B: `dpx9iypqi6g4`；临时 marker 与 server canary。
 - Deployment A′: `dpx4kn6wo1b4`；从 clean commit 重新构建恢复。
-- Completed: 官方支持矩阵、Pass / Fail / Kill、原样 webpack build、Proxy 307、公开登录页、Preview A/B/A′ 和 deterministic recovery。
-- Environment evidence: server canary 未进入 HTML 或 Client JS，但进入 `edge-functions/index.js`。Runtime secret path 尚未验证。
-- Not completed: staging Auth、Server Action probe、Console log correlation 和 runtime secret isolation。
+- Result: `FAIL_FOR_CURRENT_SEQUENCE`；当前 10 次迭代选择 Vercel。
+- Completed: 官方支持矩阵、Pass / Fail / Kill、原样 webpack build、Proxy 307、公开登录页和 Preview A/B/A′。
+- Recovery evidence: known-source public redeploy verified；authenticated session/write recovery `NOT TESTED`。
+- Environment evidence: canary 未进入测试过的 HTML 或 Client JS，但进入 `edge-functions/index.js`。冻结的 artifact isolation 条件未通过。
+- Not tested: staging Auth、Server Action probe、Console log correlation 和 runtime secret isolation。
 - Tenant isolation: `NOT TESTED`。
 - External state changed: 创建隔离 EdgeOne POC 项目及四个 deployment；未连接生产数据或 secret。
-- Required user input: 在 Codex 侧边栏浏览器登录腾讯云和 Supabase；不提供密码或 token。
+- Revisit only with new evidence defined in `EDGEONE-POC.md`。

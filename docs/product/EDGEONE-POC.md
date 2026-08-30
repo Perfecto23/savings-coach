@@ -1,6 +1,6 @@
 # EdgeOne Preview POC
 
-> Status: 执行中 | Owner: Codex | Verified on: 2026-08-30
+> Status: 已关闭 — FAIL_FOR_CURRENT_SEQUENCE | Owner: Codex | Verified on: 2026-08-30
 
 ## Decision Question
 
@@ -133,22 +133,28 @@ Hosted AI 重新进入 Scope 时，这些 probe 才升级为 release gate。
 | Deployment A / B / A′ | `dpfr2ly4pgcc` / `dpx9iypqi6g4` / `dpx4kn6wo1b4` |
 | Staging Supabase alias | NOT PROVIDED |
 | Build gate | PASS |
-| Auth gate | PARTIAL — public redirect only |
+| Auth gate | PARTIAL — public redirect only；staging login/refresh/logout NOT TESTED |
 | Server Action gate | NOT RUN |
 | Diagnostics gate | PARTIAL — response request ID only；Console correlation 未验证 |
-| Environment isolation gate | FAIL — canary 未进入 Client，但进入 `edge-functions/index.js` |
-| Recovery gate | PARTIAL — clean rebuild、marker removal 和 public journey 通过；Auth/write 未运行 |
+| Environment isolation gate | FAIL against frozen artifact criterion — canary 未进入测试过的 HTML/Client JS，但进入 `edge-functions/index.js` |
+| Recovery gate | PARTIAL — known-source public redeploy verified；authenticated session/write recovery NOT TESTED |
 | Tenant isolation | NOT TESTED |
-| Result | IN PROGRESS |
-| Selected host | UNDECIDED |
+| Result | FAIL_FOR_CURRENT_SEQUENCE |
+| Selected host | Vercel for the current 10-iteration sequence |
 | Fallback | Standard Next.js host |
 | Business production state changed | Vercel main 已发布；EdgeOne 只创建隔离 POC 项目 |
 
-## Current Blockers
+最终判断：Build gate 通过，public redirect 和 known-source public redeploy 已验证。六个 must-gate 没有在 bounded Iteration 2 内全部通过。Artifact isolation 条件明确失败，staging Auth、Server Action 和 runtime-log correlation 仍为 `NOT TESTED`。当前序列使用 Vercel。
 
-- 没有隔离 staging Supabase。
-- Codex 侧边栏浏览器没有 EdgeOne Console 登录态，无法关联 runtime logs。
-- EdgeOne build-time `.env` 会进入 Edge Function artifact。尚未证明存在不入 artifact 的 runtime secret 路径。
-- 本机全局 CLI 是 `1.6.17`。`1.6.28` 已通过 `npx` 验证，但 `env set` 仍只写本地 `.env`，没有远端 readback。
+该结果不证明 EdgeOne Auth、Server Actions、Cookie refresh 或 runtime logs 不兼容。没有命中 Kill criteria。
 
-解除 blocker 只需要 Perfecto 在 Codex 侧边栏浏览器完成腾讯云与 Supabase 登录。禁止在聊天中发送密码或 token。
+## Revisit Criteria
+
+只有同时获得以下新证据，才重新评估 EdgeOne：
+
+1. Runtime-only secret 不进入 artifact、Client 或 logs。
+2. Console log 能按 request ID 关联 deployment 和 request。
+3. 独立 staging Supabase 完成 login、Cookie refresh、dashboard 和 logout。
+4. Server Action 完成唯一 probe 的写入、fresh readback、精确删除和 0 行回读。
+5. A → B → A′ 后重新通过 Auth 和 Server Action journey。
+6. 六个 must-gate 全部 Pass，且 `tenant isolation` 继续标记为 `NOT TESTED`。

@@ -158,7 +158,7 @@ Chat 首 token、超过 30 秒、断连和最终持久化属于 Deferred capabil
 |---:|---|---|
 | 1 | **Quality foundation.** 建立产品章程、Playwright 公开登录 smoke 和项目验证基线。 | `lint`、`typecheck`、`build`、desktop/mobile E2E 通过 |
 | 2 | **EdgeOne hosting decision.** 完成六门槛 Preview POC：build、auth Cookie、Server Action、diagnostics、deterministic recovery 和 staging isolation。 | POC matrix 得到 Pass、Fail 或 Kill 结论 |
-| 3 | **Safe English beta access.** 按 `nullable owner_id → backfill → readback → owner RLS/unique → NOT NULL` 迁移。关闭 Consumer Coach/BYOK。 | 两 owner 隔离测试通过；没有 secret 跨 RSC–Client boundary |
+| 3 | **Safe invited-user access.** 按 `nullable owner_id → backfill → readback → owner RLS/unique → NOT NULL` 迁移。关闭 Consumer Coach/BYOK。 | 两 owner 隔离测试通过；没有 secret 跨 RSC–Client boundary |
 | 4 | **Setup checkpoint.** 用户保存 locale、timezone、base currency、储蓄账户和初始余额。 | Setup 可保存和恢复，不需要重复录入 |
 | 5 | **Income-independent Plan activation.** 定义 Savings Plan、Plan Rule、Monthly Action。创建正金额规则，实例化月份，生成计划路径并发出幂等 `plan_activated`。 | 不依赖中国 SalaryConfig 即可激活计划 |
 | 6 | **Monthly execution Home.** 首页优先展示下一步。用户完成计入里程碑的 Monthly Action，并发出 `behavior_activated`。 | 执行状态改变；净值变化保持独立 |

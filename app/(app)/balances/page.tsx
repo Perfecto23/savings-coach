@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AccountBalanceCard } from "@/components/balances/account-balance-card";
 import { BalanceForm } from "@/components/balances/balance-form";
@@ -13,9 +14,15 @@ const BalanceHistoryChart = dynamic(
 
 export default async function BalancesPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const [accountsRes, snapshotsRes] = await Promise.all([
-    supabase.from("accounts").select("*").order("sort_order"),
+    supabase
+      .from("accounts")
+      .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
+      .eq("owner_id", user.id)
+      .order("sort_order"),
     supabase
       .from("balance_snapshots")
       .select("*")

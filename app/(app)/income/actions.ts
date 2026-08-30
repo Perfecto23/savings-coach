@@ -27,7 +27,8 @@ export async function getSalaryConfig(): Promise<ActionResult<SalaryConfig | nul
   if (!user) return { success: false, error: "未登录" };
   const { data, error } = await supabase
     .from("salary_configs")
-    .select("*")
+    .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
+    .eq("owner_id", user.id)
     .order("effective_from", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -57,6 +58,7 @@ export async function saveSalaryConfig(
   if (!Number.isFinite(specialDeductions) || specialDeductions < 0) return { success: false, error: "专项扣除无效" };
 
   const payload = {
+    owner_id: user.id,
     monthly_gross: monthlyGross,
     housing_fund_rate: housingFundRate,
     housing_fund_base: housingFundBase,
@@ -74,17 +76,19 @@ export async function saveSalaryConfig(
       .from("salary_configs")
       .update(payload)
       .eq("id", existingId)
-      .select()
-      .single();
+      .eq("owner_id", user.id)
+      .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
+      .maybeSingle();
   } else {
     result = await supabase
       .from("salary_configs")
       .insert(payload)
-      .select()
+      .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
       .single();
   }
 
   if (result.error) return { success: false, error: result.error.message };
+  if (!result.data) return { success: false, error: "薪资配置不存在" };
   revalidatePath("/income");
 
   // 薪资变更后自动重新生成里程碑
@@ -102,7 +106,8 @@ export async function getBonusEvents(): Promise<ActionResult<BonusEvent[]>> {
   if (!user) return { success: false, error: "未登录" };
   const { data, error } = await supabase
     .from("bonus_events")
-    .select("*")
+    .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
+    .eq("owner_id", user.id)
     .order("expected_date");
 
   if (error) return { success: false, error: error.message };
@@ -130,6 +135,7 @@ export async function addBonusEvent(
   const { data, error } = await supabase
     .from("bonus_events")
     .insert({
+      owner_id: user.id,
       type,
       label: formData.get("label") as string,
       amount,
@@ -137,7 +143,7 @@ export async function addBonusEvent(
       target_account_id: (formData.get("target_account_id") as string) || null,
       note: (formData.get("note") as string) || null,
     })
-    .select()
+    .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
     .single();
 
   if (error) return { success: false, error: error.message };
@@ -163,7 +169,7 @@ export async function updateBonusEvent(
   if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "金额无效" };
   if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "预期日期格式无效" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bonus_events")
     .update({
       type,
@@ -173,9 +179,13 @@ export async function updateBonusEvent(
       target_account_id: (formData.get("target_account_id") as string) || null,
       note: (formData.get("note") as string) || null,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: "奖金事件不存在" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -186,9 +196,16 @@ export async function deleteBonusEvent(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
-  const { error } = await supabase.from("bonus_events").delete().eq("id", id);
+  const { data, error } = await supabase
+    .from("bonus_events")
+    .delete()
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: "奖金事件不存在" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -203,12 +220,16 @@ export async function markBonusReceived(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bonus_events")
     .update({ is_received: true, actual_amount: actualAmount })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: "奖金事件不存在" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -229,7 +250,8 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
   // 获取最新薪资配置（确定起始月份）
   const { data: salaryConfig } = await supabase
     .from("salary_configs")
-    .select("*")
+    .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
+    .eq("owner_id", user.id)
     .order("effective_from", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -240,19 +262,31 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
 
   const [templatesRes, accountsRes, bonusRes, snapshotsRes, existingMilestonesRes, sopRecordsRes] =
     await Promise.all([
-      supabase.from("sop_templates").select("*").eq("is_active", true),
-      supabase.from("accounts").select("id, purpose"),
-      supabase.from("bonus_events").select("*").order("expected_date"),
+      supabase
+        .from("sop_templates")
+        .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
+        .eq("owner_id", user.id)
+        .eq("is_active", true),
+      supabase.from("accounts").select("id, purpose").eq("owner_id", user.id),
+      supabase
+        .from("bonus_events")
+        .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
+        .eq("owner_id", user.id)
+        .order("expected_date"),
       supabase
         .from("balance_snapshots")
         .select("account_id, balance, recorded_at")
         .order("recorded_at", { ascending: true }),
-      supabase.from("monthly_milestones").select("*"),
+      supabase
+        .from("monthly_milestones")
+        .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+        .eq("owner_id", user.id),
       supabase
         .from("sop_records")
         .select(
           "year_month, completed, counts_toward_milestone, milestone_amount"
         )
+        .eq("owner_id", user.id)
         .order("year_month", { ascending: true }),
     ]);
 
@@ -426,7 +460,7 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
     const existing = existingMap.get(milestone.year_month);
 
     if (existing) {
-      await supabase
+      const { error: writeError } = await supabase
         .from("monthly_milestones")
         .update({
           planned_savings: milestone.planned_savings,
@@ -435,15 +469,22 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
           actual_total_savings: milestone.actual_total_savings,
           status: milestone.status,
         })
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .eq("owner_id", user.id);
+      if (writeError) return { success: false, error: writeError.message };
     } else {
-      await supabase.from("monthly_milestones").insert(milestone);
+      const { error: writeError } = await supabase.from("monthly_milestones").insert({
+        ...milestone,
+        owner_id: user.id,
+      });
+      if (writeError) return { success: false, error: writeError.message };
     }
   }
 
   const { data: result, error } = await supabase
     .from("monthly_milestones")
-    .select("*")
+    .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+    .eq("owner_id", user.id)
     .order("year_month");
 
   if (error) return { success: false, error: error.message };
@@ -459,12 +500,16 @@ export async function deleteMilestone(yearMonth: string): Promise<ActionResult> 
   if (!user) return { success: false, error: "未登录" };
   if (!/^\d{4}-\d{2}$/.test(yearMonth)) return { success: false, error: "格式无效" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("monthly_milestones")
     .delete()
-    .eq("year_month", yearMonth);
+    .eq("year_month", yearMonth)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: "里程碑不存在" };
   revalidatePath("/milestones");
   revalidatePath("/");
   return { success: true, data: undefined };

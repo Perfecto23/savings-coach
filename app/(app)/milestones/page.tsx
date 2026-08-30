@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { MilestoneTable } from "@/components/milestones/milestone-table";
 import { IncomeTimeline } from "@/components/milestones/income-timeline";
 import { RegenerateMilestonesButton } from "@/components/milestones/regenerate-button";
@@ -6,16 +7,20 @@ import type { MonthlyMilestone, BonusEvent } from "@/lib/types/database";
 
 export default async function MilestonesPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
   const now = Date.now();
 
   const [milestonesRes, bonusRes] = await Promise.all([
     supabase
       .from("monthly_milestones")
-      .select("*")
+      .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+      .eq("owner_id", user.id)
       .order("year_month"),
     supabase
       .from("bonus_events")
-      .select("*")
+      .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
+      .eq("owner_id", user.id)
       .order("expected_date"),
   ]);
 

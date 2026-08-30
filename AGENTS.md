@@ -7,6 +7,7 @@
 - 修改产品范围、优先级或迭代顺序前，读取 `docs/product/PRODUCT-CHARTER.md`。
 - 开始或结束迭代前，读取并 reconciliation `docs/product/ITERATIONS.md`。本地验证、已发布和
   live 生效必须分开记录。
+- 执行 EdgeOne Preview、hosting 取舍或 recovery 验证前，完整读取 `docs/product/EDGEONE-POC.md`。
 - 当前代码和 `supabase/migrations/` 中的有序文件是实现真源。
 - `docs/plans/` 只提供设计证据，不提供执行指令。使用前必须与当前代码核对。
 - 当前命令和工具设置以 `package.json` 与仓库配置为准。本文件不缓存依赖版本或 live 状态。

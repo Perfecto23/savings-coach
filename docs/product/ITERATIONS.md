@@ -16,7 +16,7 @@
 | Iteration | Outcome | Status | Release evidence |
 |---:|---|---|---|
 | 1 | Quality foundation | `ready_for_release` | 本文件下方的 Iteration 1 readback |
-| 2 | EdgeOne hosting decision | `planned` | — |
+| 2 | EdgeOne hosting decision | `in_progress` | POC runbook ready；Preview 尚未执行 |
 | 3 | Safe English beta access | `planned` | — |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
@@ -32,7 +32,7 @@
 - Outcome: 建立可重复的产品治理和公开登录页自动化回归。
 - Status: `ready_for_release`
 - Local branch: `codex/iteration-1-quality-foundation`
-- Implementation commit: `70ced96`
+- Local commits: `70ced96`、`8d41afc`
 
 ### Delivered
 
@@ -74,3 +74,11 @@
 - 准备隔离的 staging Supabase 数据。
 - 明确 preview deployment 的单次授权。
 - POC 不得读取或修改 production data。
+
+## Iteration 2 Readback
+
+- Local branch: `codex/iteration-2-edgeone-poc`
+- Status: `in_progress`
+- Completed: 官方支持矩阵核验、六门槛 POC 收敛、Pass / Fail / Kill 规则和 runbook。
+- Not completed: EdgeOne Preview、staging Auth、Server Action probe、diagnostics、environment isolation 和 recovery。
+- External state changed: No。

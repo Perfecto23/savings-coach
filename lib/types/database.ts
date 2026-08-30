@@ -153,6 +153,7 @@ export interface OwnerSetup {
   base_currency: string;
   savings_account_id: string | null;
   plan_activated_at: string | null;
+  behavior_activated_at: string | null;
   created_at: string;
   updated_at: string;
 }

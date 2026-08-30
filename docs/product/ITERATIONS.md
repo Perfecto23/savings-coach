@@ -21,7 +21,7 @@
 | 3 | Safe invited-user access | `verified_live` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted A/B RLS and browser readback |
 | 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
 | 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006 and Vercel production |
-| 6 | Monthly execution Home | `planned` | — |
+| 6 | Monthly execution Home | `ready_for_release` | Local DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
 | 7 | Trustworthy Progress | `planned` | — |
 | 8 | Monthly close and rollover | `planned` | — |
 | 9 | One-channel reminder experiment | `planned` | — |
@@ -221,3 +221,48 @@
 - Vercel production：merge commit `3d1eb1e` 部署完成；`/plan` → `/login`；新日志 0 error / 0 warning。
 - Remaining live gate：创建一个 disposable invited user，完成 Setup、Plan activation、reload、edit 和 deactivate 后精确清理。该账号创建需要单次明确确认。
 - Production state changed: Yes；006 applied、PR #8 merged and Vercel production deployed。
+
+## Iteration 6 Current State
+
+- Local branch: `codex/iteration-6-monthly-execution-home`
+- Status: `ready_for_release`
+- Outcome: 已激活储蓄计划的用户在 Home 看到下一行动，手工完成后确认步骤完成，并形成行为激活。
+- In scope: Home 的下一行动、月度行动完成确认、当前月度行动进度、逾期显示、行为激活、Plan Path 摘要和 desktop/mobile 验收。
+- Out of scope: 银行同步、真实资金转移、余额快照录入、净值变化、计划规则编辑、月度复盘、Reminder、AI、Billing、Household 和多币种资产组合。
+
+### Frozen Seam
+
+- Home 只优先呈现当前自然月中计入里程碑的未完成月度行动。没有已激活储蓄计划时，Home 引导用户建立储蓄计划。
+- 下一行动按用户 timezone 的当前自然月和计划执行顺序确定。逾期月度行动仍然可确认完成。
+- 用户确认步骤完成后，产品更新月度行动和执行进度。产品不创建余额快照，不更新净值变化，也不表示银行已经确认资金转移。
+- 行为激活是 owner 首次确认计入里程碑月度行动完成的一次性事实。撤销后续步骤完成确认不会撤销行为激活。
+- Home 不编辑计划规则、计划规则金额、来源账户、目标账户或余额快照。计划规则管理继续在 `/plan`，余额观察继续在 `/balances`。
+- 行为激活不新增独立 event 实体。实现必须保持 owner-scoped、幂等和并发安全。
+
+### Delivered
+
+- Home 以用户 timezone 选择当前月最早未完成的下一行动。
+- Home 支持完成确认、安静撤销、月度行动进度和 Plan Path 摘要。
+- 首次合格完成在同一事务内写入一次行为激活。
+- Migration 007 关闭月度行动的 direct INSERT / UPDATE / DELETE；legacy SOP CRUD 保持可用。
+- 月度行动、Plan Path 和行为激活在同一 owner-locked RPC 内更新。
+- Home 不展示旧 dashboard 的收入、成就、冲动拦截或账户总额卡片。
+- 不新增 event、task、home 或 schedule 表。
+
+### Verified
+
+- Full pgTAP：247/247；Monthly execution suite：32/32。
+- Monthly execution concurrency：两行动并发完成、complete / reopen 串行化、一次性行为激活、Plan Path / 净值独立和 cross-owner negative 均通过。
+- Public Playwright：4/4；Setup Playwright：2/2；Plan + Home Playwright：2/2。
+- `lint`：0 error，保留 2 条迭代前 warning。
+- `tsc --noEmit`、production build 和 `git diff --check` 通过。
+- Impeccable detector：0 finding。
+- Security review：`ship`，无 confirmed finding。
+- Bounded code review：`ship`。
+- Codex 侧边栏浏览器：Next Action、Behavior Activation Aha、reload、undo 和 Plan Path summary 通过；新日志 0 error / 0 warning。
+
+### Not Claimed
+
+- 尚未创建 commit、PR、Preview 或 production 发布。
+- Hosted migration 007 尚未应用。
+- Production state changed: No。

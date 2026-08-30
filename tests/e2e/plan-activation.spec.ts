@@ -170,6 +170,31 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(planPath.getByRole("listitem").nth(1)).toContainText("S$2,200.00");
   await expectNoHorizontalOverflow(page);
 
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "This month" })).toBeVisible();
+  const nextAction = page.getByRole("region", { name: "Next Monthly Action" });
+  await expect(nextAction).toContainText(fixture.ruleName);
+  await expect(nextAction).toContainText("S$500.00");
+  await expect(nextAction).toContainText("Savings Coach does not move money");
+  await expectNoHorizontalOverflow(page);
+
+  await page
+    .getByRole("button", { name: `Confirm completion for ${fixture.ruleName}` })
+    .click();
+  await expect(page.getByRole("heading", { name: "Your plan is now in motion." })).toBeVisible();
+  const progress = page.getByRole("region", { name: "Monthly Action progress" });
+  await expect(progress).toContainText("1 of 1");
+  await expect(page.getByRole("heading", { name: "This month’s Monthly Actions are complete." })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "This month’s Monthly Actions are complete." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your plan is now in motion." })).toHaveCount(0);
+  await page
+    .getByRole("button", { name: `Undo confirmation for ${fixture.ruleName}` })
+    .click();
+  await expect(page.getByRole("region", { name: "Next Monthly Action" })).toContainText(fixture.ruleName);
+  await expectNoHorizontalOverflow(page);
+
   const responsePayload = await captured.read();
   for (const forbiddenValue of [
     "owner_id",
@@ -178,6 +203,7 @@ test("an invited owner activates and safely changes a Savings Plan without incom
     "step_key",
     "is_plan_rule",
     "is_monthly_action",
+    "behavior_activated_at",
     fixture.otherOwnerCanary,
     fixture.secretCanary,
   ]) {

@@ -20,7 +20,7 @@
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe invited-user access | `verified_live` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted A/B RLS and browser readback |
 | 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
-| 5 | Income-independent Plan activation | `ready_for_release` | Local DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
+| 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006 and Vercel production |
 | 6 | Monthly execution Home | `planned` | — |
 | 7 | Trustworthy Progress | `planned` | — |
 | 8 | Monthly close and rollover | `planned` | — |
@@ -162,7 +162,10 @@
 ## Iteration 5 Current State
 
 - Local branch: `codex/iteration-5-plan-activation`
-- Status: `ready_for_release`
+- Commits: `91c694e`、`9e84af0`
+- Pull request: [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)
+- Merge commit: `3d1eb1e`
+- Status: `released`
 - Outcome: Setup 已完成的受邀用户无需薪资配置，也能建立可执行的储蓄计划、生成当前月度行动并查看 12 个月计划路径。
 - In scope: 每名 owner 一个隐式储蓄计划、一条或多条月度计划规则、正数计划规则金额、可选来源账户、Setup 选定的目标账户、当前月度行动、12 个月计划路径、幂等计划激活和现有 SOP 兼容。
 - Out of scope: 多储蓄计划、多目标账户、银行同步、真实资金转移、收入能力校验、零或负数规则、非月度频率、Household、AI、Reminder、计划关闭和月度复盘。
@@ -203,6 +206,18 @@
 
 ### Not Claimed
 
-- 尚未创建 commit、PR、Preview 或生产发布。
-- Hosted migration 006 尚未应用。
-- Production state changed: No。
+- 尚未完成 authenticated production Plan activation journey。
+- 尚未在 production 创建计划规则、计划路径或 activation timestamp。
+
+### Release Readback
+
+- GitGuardian：pass；Vercel Preview：pass；Vercel production：pass。
+- Hosted preflight：1 Auth user、81 business rows、5 Accounts、30 Balance Snapshots、0 Setup、0 Plan columns、0 Plan RPC。
+- Hosted backfill candidates：0 计划规则、4 月度行动、0 non-finite amount、0 duplicate group。
+- Hosted migration：006 在单事务内成功；81 business rows 保持不变。
+- Hosted catalog：10 个 Plan 字段、4 个 authenticated-only definer RPC；private projector 未对 authenticated 开放。
+- Hosted activation evidence：direct INSERT / UPDATE 均关闭；Setup column INSERT allowlist 保持有效。
+- Hosted state：0 计划规则、4 月度行动、0 计划路径、0 activation timestamp、0 duplicate group。
+- Vercel production：merge commit `3d1eb1e` 部署完成；`/plan` → `/login`；新日志 0 error / 0 warning。
+- Remaining live gate：创建一个 disposable invited user，完成 Setup、Plan activation、reload、edit 和 deactivate 后精确清理。该账号创建需要单次明确确认。
+- Production state changed: Yes；006 applied、PR #8 merged and Vercel production deployed。

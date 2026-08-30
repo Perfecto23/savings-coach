@@ -26,14 +26,16 @@ export async function initMonthSop(
     .from("sop_records")
     .select("id")
     .eq("year_month", yearMonth)
+    .eq("owner_id", user.id)
     .limit(1);
 
   if (existing && existing.length > 0) {
     // 已存在，直接返回
     const { data, error } = await supabase
       .from("sop_records")
-      .select("*")
+      .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
       .eq("year_month", yearMonth)
+      .eq("owner_id", user.id)
       .order("sort_order");
 
     if (error) return { success: false, error: error.message };
@@ -41,8 +43,13 @@ export async function initMonthSop(
   }
 
   const [templatesRes, accountsRes] = await Promise.all([
-    supabase.from("sop_templates").select("*").eq("is_active", true).order("sort_order"),
-    supabase.from("accounts").select("id, purpose"),
+    supabase
+      .from("sop_templates")
+      .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
+      .eq("owner_id", user.id)
+      .eq("is_active", true)
+      .order("sort_order"),
+    supabase.from("accounts").select("id, purpose").eq("owner_id", user.id),
   ]);
 
   if (templatesRes.error) return { success: false, error: templatesRes.error.message };
@@ -67,6 +74,7 @@ export async function initMonthSop(
     });
 
     return {
+      owner_id: user.id,
       year_month: yearMonth,
       template_id: tpl.id,
       step_key: tpl.step_key,
@@ -81,7 +89,7 @@ export async function initMonthSop(
   const { data: inserted, error: insertError } = await supabase
     .from("sop_records")
     .insert(records)
-    .select();
+    .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at");
 
   if (insertError) return { success: false, error: insertError.message };
 
@@ -101,15 +109,19 @@ export async function toggleSopStep(
   if (!user) return { success: false, error: "未登录" };
   if (!id || typeof id !== "string" || id.trim() === "") return { success: false, error: "ID无效" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("sop_records")
     .update({
       completed,
       completed_at: completed ? new Date().toISOString() : null,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: "记录不存在" };
 
   await regenerateMilestones();
   revalidatePath("/sop");
@@ -138,6 +150,7 @@ export async function addAdHocSopStep(
     .from("sop_records")
     .select("sort_order")
     .eq("year_month", yearMonth)
+    .eq("owner_id", user.id)
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -147,6 +160,7 @@ export async function addAdHocSopStep(
   const { data: inserted, error } = await supabase
     .from("sop_records")
     .insert({
+      owner_id: user.id,
       year_month: yearMonth,
       template_id: null,
       step_key: stepKey,
@@ -158,7 +172,7 @@ export async function addAdHocSopStep(
       counts_toward_milestone: false,
       milestone_amount: null,
     })
-    .select()
+    .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
     .single();
 
   if (error) return { success: false, error: error.message };
@@ -179,13 +193,21 @@ export async function deleteAdHocSopStep(id: string): Promise<ActionResult> {
     .from("sop_records")
     .select("template_id")
     .eq("id", id)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (!record) return { success: false, error: "记录不存在" };
   if (record.template_id !== null) return { success: false, error: "模板步骤不能删除，请在设置中管理" };
 
-  const { error } = await supabase.from("sop_records").delete().eq("id", id);
+  const { data: deleted, error } = await supabase
+    .from("sop_records")
+    .delete()
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
   if (error) return { success: false, error: error.message };
+  if (!deleted) return { success: false, error: "记录不存在" };
   revalidatePath("/sop");
   return { success: true, data: undefined };
 }
@@ -205,6 +227,7 @@ export async function updateSopStep(
     .from("sop_records")
     .select("counts_toward_milestone")
     .eq("id", id)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (existingError) return { success: false, error: existingError.message };
@@ -224,9 +247,16 @@ export async function updateSopStep(
     }
   }
 
-  const { error } = await supabase.from("sop_records").update(updates).eq("id", id);
+  const { data: updated, error } = await supabase
+    .from("sop_records")
+    .update(updates)
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: error.message };
+  if (!updated) return { success: false, error: "记录不存在" };
 
   if (data.amount !== undefined) {
     await regenerateMilestones();

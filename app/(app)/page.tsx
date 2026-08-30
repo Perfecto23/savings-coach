@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { SavingsProgressCard } from "@/components/dashboard/savings-progress-card";
 import { AccountsOverviewCard } from "@/components/dashboard/accounts-overview-card";
 import { CurrentMonthCard } from "@/components/dashboard/current-month-card";
@@ -22,6 +23,8 @@ function getCurrentYearMonth() {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
   const now = Date.now();
   const yearMonth = getCurrentYearMonth();
 
@@ -35,31 +38,47 @@ export default async function DashboardPage() {
     impulseRes,
     impulseTotalRes,
   ] = await Promise.all([
-    supabase.from("accounts").select("*").order("sort_order"),
+    supabase
+      .from("accounts")
+      .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
+      .eq("owner_id", user.id)
+      .order("sort_order"),
     supabase
       .from("balance_snapshots")
       .select("*")
       .order("recorded_at", { ascending: false }),
-    supabase.from("monthly_milestones").select("*").order("year_month"),
+    supabase
+      .from("monthly_milestones")
+      .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+      .eq("owner_id", user.id)
+      .order("year_month"),
     supabase
       .from("sop_records")
-      .select("*")
+      .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
+      .eq("owner_id", user.id)
       .eq("year_month", yearMonth)
       .order("sort_order"),
-    supabase.from("sop_records").select("year_month, completed").order("year_month"),
+    supabase
+      .from("sop_records")
+      .select("year_month, completed")
+      .eq("owner_id", user.id)
+      .order("year_month"),
     supabase
       .from("bonus_events")
-      .select("*")
+      .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
+      .eq("owner_id", user.id)
       .order("expected_date"),
     supabase
       .from("impulse_logs")
-      .select("*")
+      .select("id, item_name, estimated_price, reason, resisted, logged_at, created_at")
+      .eq("owner_id", user.id)
       .eq("resisted", true)
       .order("created_at", { ascending: false })
       .limit(5),
     supabase
       .from("impulse_logs")
       .select("estimated_price")
+      .eq("owner_id", user.id)
       .eq("resisted", true),
   ]);
 

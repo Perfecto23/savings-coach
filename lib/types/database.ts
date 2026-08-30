@@ -1,5 +1,5 @@
-// 单用户设计：所有表无 user_id 字段
-// 所有配置（账户、SOP、收入）通过 UI 动态管理
+// 浏览器 DTO 不包含访问控制字段。
+// 九张直接归属表通过对应 Row 类型包含 owner_id。
 
 export type AccountPurpose =
   | "salary"
@@ -137,6 +137,18 @@ export interface ImpulseLog {
   logged_at: string;
   created_at: string;
 }
+
+type OwnedRow<T> = T & { owner_id: string };
+
+export type AccountRow = OwnedRow<Account>;
+export type SalaryConfigRow = OwnedRow<SalaryConfig>;
+export type BonusEventRow = OwnedRow<BonusEvent>;
+export type MonthlyMilestoneRow = OwnedRow<MonthlyMilestone>;
+export type SopTemplateRow = OwnedRow<SopTemplate>;
+export type SopRecordRow = OwnedRow<SopRecord>;
+export type AiConversationRow = OwnedRow<AiConversation>;
+export type AiConfigRow = OwnedRow<AiConfig>;
+export type ImpulseLogRow = OwnedRow<ImpulseLog>;
 
 // ============================================
 // 计算型（非持久化）

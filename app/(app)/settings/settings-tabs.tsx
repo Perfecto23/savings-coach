@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { Account, SopTemplate, AiConfig } from "@/lib/types/database";
+import type { Account, SopTemplate } from "@/lib/types/database";
 import { AccountManager } from "@/components/settings/account-manager";
 import { SopTemplateEditor } from "@/components/settings/sop-template-editor";
-import { AiConfigManager } from "@/components/settings/ai-config-form";
 
 const TABS = [
   { id: "accounts", label: "账户管理" },
   { id: "sop", label: "SOP 模板" },
-  { id: "ai", label: "AI 模型" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -17,10 +15,9 @@ type TabId = (typeof TABS)[number]["id"];
 interface SettingsTabsProps {
   accounts: Account[];
   templates: SopTemplate[];
-  aiConfigs: AiConfig[];
 }
 
-export function SettingsTabs({ accounts, templates, aiConfigs }: SettingsTabsProps) {
+export function SettingsTabs({ accounts, templates }: SettingsTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("accounts");
 
   return (
@@ -53,9 +50,6 @@ export function SettingsTabs({ accounts, templates, aiConfigs }: SettingsTabsPro
             initialTemplates={templates}
             accounts={accounts}
           />
-        )}
-        {activeTab === "ai" && (
-          <AiConfigManager initialConfigs={aiConfigs} />
         )}
       </div>
     </div>

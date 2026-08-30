@@ -7,7 +7,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:db": "supabase test db",
+    "test:migration-preflight": "bash scripts/test-owner-migration-preflight.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

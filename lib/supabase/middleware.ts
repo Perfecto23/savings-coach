@@ -26,6 +26,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  if (request.nextUrl.pathname === "/api/chat") {
+    return supabaseResponse;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

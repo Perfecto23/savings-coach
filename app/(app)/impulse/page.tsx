@@ -1,19 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import type { ImpulseLog } from "@/lib/types/database";
 import { ImpulsePageClient } from "./impulse-client";
 
 export default async function ImpulsePage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const [logsRes, totalRes] = await Promise.all([
     supabase
       .from("impulse_logs")
-      .select("*")
+      .select("id, item_name, estimated_price, reason, resisted, logged_at, created_at")
+      .eq("owner_id", user.id)
       .eq("resisted", true)
       .order("created_at", { ascending: false }),
     supabase
       .from("impulse_logs")
       .select("estimated_price")
+      .eq("owner_id", user.id)
       .eq("resisted", true),
   ]);
 

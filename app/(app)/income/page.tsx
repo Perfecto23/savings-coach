@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { calculateYearlyTax } from "@/lib/tax-calculator";
 import { SalaryConfigForm } from "@/components/income/salary-config-form";
 import { BonusEventsList } from "@/components/income/bonus-events-list";
@@ -7,16 +8,27 @@ import type { SalaryConfig, BonusEvent, Account } from "@/lib/types/database";
 
 export default async function IncomePage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const [salaryRes, bonusRes, accountsRes] = await Promise.all([
     supabase
       .from("salary_configs")
-      .select("*")
+      .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
+      .eq("owner_id", user.id)
       .order("effective_from", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("bonus_events").select("*").order("expected_date"),
-    supabase.from("accounts").select("*").order("sort_order"),
+    supabase
+      .from("bonus_events")
+      .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
+      .eq("owner_id", user.id)
+      .order("expected_date"),
+    supabase
+      .from("accounts")
+      .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
+      .eq("owner_id", user.id)
+      .order("sort_order"),
   ]);
 
   const salaryConfig = salaryRes.data as SalaryConfig | null;

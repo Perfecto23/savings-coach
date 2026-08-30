@@ -18,7 +18,7 @@
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
-| 3 | Safe English beta access | `planned` | — |
+| 3 | Safe invited-user access | `ready_for_release` | Local migration rehearsal 5/5；pgTAP 82/82；E2E 4/4 |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
 | 6 | Monthly execution Home | `planned` | — |
@@ -105,3 +105,19 @@
 - Revisit only with new evidence defined in `EDGEONE-POC.md`。
 - Vercel production build: pass。
 - Production browser readback: `/` 跳转 `/login`，标题与登录表单正常。
+
+## Iteration 3 Readback
+
+- Local branch: `codex/iteration-3-owner-isolation`
+- Status: `ready_for_release`
+- Outcome: 两名受邀用户可以使用同一 deployment，且不能读取或修改对方的财务数据。
+- Access model: `one auth user = one owner`；不新增 Tenant、Organization、Profile、Membership 或 RBAC。
+- In scope: owner migration、RLS、owner-scoped unique、cross-owner FK、两用户负向测试、Consumer AI 关闭。
+- Out of scope: public signup、Household、共享、角色、Billing、Onboarding 和 English shell。
+- Local migration preflight: 5 个场景通过；错误 owner mapping 在 schema 变更前停止。
+- Local RLS and constraint suite: 82 assertions passed。
+- Local application suite: lint 0 error、typecheck pass、build pass、Playwright 4/4。
+- Codex 侧边栏浏览器：desktop/mobile 登录页正常；无 signup；无水平溢出；`/api/chat` 返回 `404 feature_disabled`。
+- Browser data boundary: RSC DTO 不包含 `owner_id`；Consumer BYOK 没有 Data API grant。
+- Release boundary: production migration 必须先于应用部署；当前缺少 hosted Supabase 控制面访问。
+- Production state changed: No。

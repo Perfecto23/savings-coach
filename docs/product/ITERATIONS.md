@@ -17,7 +17,7 @@
 | Iteration | Outcome | Status | Release evidence |
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
-| 2 | EdgeOne hosting decision | `ready_for_release` | [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
+| 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe English beta access | `planned` | — |
 | 4 | Setup checkpoint | `planned` | — |
 | 5 | Income-independent Plan activation | `planned` | — |
@@ -87,8 +87,9 @@
 ## Iteration 2 Readback
 
 - Local branch: `codex/iteration-2-edgeone-poc`
-- Status: `ready_for_release`
-- Pull request: [Draft PR #2](https://github.com/Perfecto23/savings-coach/pull/2)
+- Status: `verified_live`
+- Pull request: [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)
+- Merge commit: `f06a348`
 - GitGuardian and Vercel checks: pass。
 - EdgeOne project: `makers-5llzko3fa3m5`，仅用于 POC。
 - Deployment A: `dpfr2ly4pgcc`；clean Preview。
@@ -102,3 +103,5 @@
 - Tenant isolation: `NOT TESTED`。
 - External state changed: 创建隔离 EdgeOne POC 项目及四个 deployment；未连接生产数据或 secret。
 - Revisit only with new evidence defined in `EDGEONE-POC.md`。
+- Vercel production build: pass。
+- Production browser readback: `/` 跳转 `/login`，标题与登录表单正常。

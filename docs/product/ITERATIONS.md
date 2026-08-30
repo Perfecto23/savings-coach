@@ -111,6 +111,8 @@
 - Local branch: `codex/iteration-3-owner-isolation`
 - Commit: `64f2f73`
 - Pull request: [Draft PR #4](https://github.com/Perfecto23/savings-coach/pull/4)
+- GitGuardian and Vercel Preview checks: pass。
+- Vercel Preview browser readback: `NOT TESTED`；Preview 需要 Vercel 登录。
 - Status: `ready_for_release`
 - Outcome: 两名受邀用户可以使用同一 deployment，且不能读取或修改对方的财务数据。
 - Access model: `one auth user = one owner`；不新增 Tenant、Organization、Profile、Membership 或 RBAC。

@@ -46,7 +46,7 @@ export function AccountManager({ initialAccounts }: AccountManagerProps) {
             ? {
                 ...a,
                 name: formData.get("name") as string,
-                bank: formData.get("bank") as string,
+                bank: String(formData.get("bank") || "").trim() || null,
                 purpose: formData.get("purpose") as string,
                 icon: (formData.get("icon") as string) || "🏦",
               } as Account
@@ -87,7 +87,7 @@ export function AccountManager({ initialAccounts }: AccountManagerProps) {
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="px-4 py-3 text-left font-medium text-gray-500">图标</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">名称</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">银行</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">机构</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-500">用途</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-500">操作</th>
               </tr>
@@ -97,7 +97,7 @@ export function AccountManager({ initialAccounts }: AccountManagerProps) {
                 <tr key={account.id} className="border-b border-gray-50 last:border-0">
                   <td className="px-4 py-3 text-lg">{account.icon}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">{account.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{account.bank}</td>
+                  <td className="px-4 py-3 text-gray-600">{account.bank || "—"}</td>
                   <td className="px-4 py-3">
                     <span className="inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700">
                       {PURPOSE_LABELS[account.purpose] || account.purpose}

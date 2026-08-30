@@ -8,8 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",
+    "test:e2e:setup": "playwright test --config=playwright.setup.config.ts",
     "test:db": "supabase test db",
-    "test:migration-preflight": "bash scripts/test-owner-migration-preflight.sh"
+    "test:migration-preflight": "bash scripts/test-owner-migration-preflight.sh",
+    "test:setup-concurrency": "bash scripts/test-setup-concurrency.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

@@ -12,7 +12,7 @@ export type AccountPurpose =
 export interface Account {
   id: string;
   name: string;
-  bank: string;
+  bank: string | null;
   purpose: AccountPurpose;
   icon: string;
   sort_order: number;
@@ -138,6 +138,15 @@ export interface ImpulseLog {
   created_at: string;
 }
 
+export interface OwnerSetup {
+  locale: string;
+  time_zone: string;
+  base_currency: string;
+  savings_account_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 type OwnedRow<T> = T & { owner_id: string };
 
 export type AccountRow = OwnedRow<Account>;
@@ -149,6 +158,7 @@ export type SopRecordRow = OwnedRow<SopRecord>;
 export type AiConversationRow = OwnedRow<AiConversation>;
 export type AiConfigRow = OwnedRow<AiConfig>;
 export type ImpulseLogRow = OwnedRow<ImpulseLog>;
+export type OwnerSetupRow = OwnedRow<OwnerSetup>;
 
 // ============================================
 // 计算型（非持久化）

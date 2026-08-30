@@ -1,20 +1,16 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
+import { getSetupState } from "@/lib/setup/server";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const setupState = await getSetupState();
+  if (!setupState.isComplete) redirect("/setup");
 
   return (
     <div className="flex h-dvh overflow-hidden bg-linear-to-br from-amber-50 to-orange-50">

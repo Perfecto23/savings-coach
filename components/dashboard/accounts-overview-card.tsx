@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Account, BalanceSnapshot } from "@/lib/types/database";
+import { formatMoney } from "@/lib/format-money";
 
 const PURPOSE_COLORS: Record<string, string> = {
   salary: "from-blue-50 to-blue-100 border-blue-200",
@@ -22,11 +23,15 @@ const PURPOSE_TEXT: Record<string, string> = {
 interface AccountsOverviewCardProps {
   accounts: Account[];
   latestSnapshots: Map<string, BalanceSnapshot>;
+  locale: string;
+  baseCurrency: string;
 }
 
 export function AccountsOverviewCard({
   accounts,
   latestSnapshots,
+  locale,
+  baseCurrency,
 }: AccountsOverviewCardProps) {
   if (accounts.length === 0) {
     return (
@@ -52,7 +57,7 @@ export function AccountsOverviewCard({
       <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-linear-to-r from-amber-50 to-orange-50 px-5 py-3">
         <span className="text-sm font-medium text-amber-800">总资产</span>
         <span className="text-xl font-bold tabular-nums text-amber-900">
-          ¥{totalAssets.toLocaleString()}
+          {formatMoney(totalAssets, locale, baseCurrency)}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -75,7 +80,7 @@ export function AccountsOverviewCard({
               </span>
             </div>
             <p className={`mt-2 text-lg font-bold tabular-nums ${textColor}`}>
-              {snap ? `¥${snap.balance.toLocaleString()}` : "—"}
+              {snap ? formatMoney(snap.balance, locale, baseCurrency) : "—"}
             </p>
           </Link>
         );

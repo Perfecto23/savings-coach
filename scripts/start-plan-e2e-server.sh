@@ -57,6 +57,13 @@ source "${plan_status_file}"
 : "${ANON_KEY:?local Supabase ANON_KEY is missing}"
 : "${SERVICE_ROLE_KEY:?local Supabase SERVICE_ROLE_KEY is missing}"
 
+if [[ "${REVIEW_EMAIL_FEATURE_ENABLED:-false}" == "true" ]]; then
+  psql "${DB_URL}" -v ON_ERROR_STOP=1 -qAt <<'SQL'
+grant execute on function public.configure_review_email_reminder(boolean) to authenticated;
+grant execute on function public.get_review_email_reminder_state() to authenticated;
+SQL
+fi
+
 printf '%s\n' \
   'silent' \
   'show-error' \
@@ -497,6 +504,7 @@ env -i \
   SUPABASE_SECRET_KEY="" \
   SERVICE_ROLE_KEY="" \
   OPENAI_API_KEY="" \
+  REVIEW_EMAIL_FEATURE_ENABLED="${REVIEW_EMAIL_FEATURE_ENABLED:-false}" \
   pnpm exec next dev --hostname 127.0.0.1 --port "${plan_port}" \
   >"${next_log_file}" 2>&1 &
 

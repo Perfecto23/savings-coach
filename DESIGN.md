@@ -97,7 +97,7 @@ components:
 
 ## Colors
 
-The palette separates a warm, low-pressure workspace from explicit action. Use the warm canvases for page backgrounds, white for ordinary cards and controls, and dark ink for setup orientation or a completion state. Use the orange family only for primary action, selected navigation, checkpoint progress, focus reinforcement, and progress indicators. Green marks completion; red marks errors.
+The palette separates a warm, low-pressure workspace from explicit action. Use the warm canvases for page backgrounds, white for ordinary cards and controls, and dark ink for setup orientation or a completion state. Use the orange family only for primary action, selected navigation, checkpoint progress, focus reinforcement, and progress indicators. Emerald marks completion and an explicitly enabled status; red marks errors.
 
 **The Orange Is Evidence Rule.** Orange must communicate the current or next meaningful state. Do not use it as a second neutral, a decorative page wash, or a substitute for hierarchy.
 

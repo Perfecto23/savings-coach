@@ -183,6 +183,30 @@ _Avoid_: 付费方案、已购权益、订阅
 用户在看到明确价格和无收费声明后，主动记录对 Pro beta 的兴趣。付费意愿不是付款、订阅、trial、entitlement 或价格承诺。
 _Avoid_: 付费成功、订阅成功、购买
 
+**月度复盘邮件提醒（Monthly Review Email Reminder）**:
+用户明确同意后，产品在新自然月通过 Email 提醒用户完成上一月的月度复盘。邮件提醒不包含财务金额、账户、余额或月度行动内容。
+_Avoid_: 营销邮件、账单邮件、应用内提示
+
+**提醒同意（Reminder Consent）**:
+用户明确启用月度复盘邮件提醒的当前授权。Paid Intent、登录、计划激活和复盘完成都不能推断提醒同意。
+_Avoid_: 营销同意、默认订阅
+
+**提醒交付（Reminder Delivery）**:
+一个 owner 在一个复盘月份的一次 Email 交付生命周期。Provider 接受、送达、退信、投诉和未知结果必须保持不同状态。
+_Avoid_: 提醒事件、邮件日志、营销触达
+
+**发送提交（Send Commit）**:
+提醒交付通过发送前二次授权，外部 Provider 请求可以开始的状态转换。发送提交后，退订和复盘完成仍会阻止后续提醒，但不能保证当前 Email 停止。
+_Avoid_: 已发送、Provider 接受、已送达
+
+**Provider 接受（Provider Acceptance）**:
+Email provider 已接受发送请求并返回 message ID。Provider 接受不表示邮件已经送达。
+_Avoid_: 已发送、已送达
+
+**退订（Unsubscribe）**:
+用户撤回月度复盘邮件提醒同意。退订立即阻止尚未发送提交的提醒。退订不能保证已经发送提交的 Email 停止。
+_Avoid_: 删除账号、关闭月度复盘
+
 **AI 教练对话**:
 围绕月度复盘、建议和计划调整展开的对话。
 _Avoid_: AI 财务顾问

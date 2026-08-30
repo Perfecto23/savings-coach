@@ -157,6 +157,47 @@ export interface OwnerSetup {
   behavior_activated_at: string | null;
   paid_intent_offer_code: string | null;
   paid_intent_recorded_at: string | null;
+  review_reminder_enabled_at: string | null;
+  review_reminder_unsubscribed_at: string | null;
+  review_reminder_unsubscribe_token: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ReviewReminderDeliveryStatus =
+  | "pending"
+  | "claimed"
+  | "sending"
+  | "retry_wait"
+  | "accepted"
+  | "delivered"
+  | "bounced"
+  | "complained"
+  | "suppressed"
+  | "cancelled"
+  | "failed"
+  | "unknown";
+
+export interface ReviewReminderDelivery {
+  id: string;
+  review_year_month: string;
+  kind: "monthly_review_email";
+  status: ReviewReminderDeliveryStatus;
+  scheduled_for: string;
+  attempt_count: number;
+  first_attempt_at: string | null;
+  claimed_at: string | null;
+  claim_expires_at: string | null;
+  claim_token: string | null;
+  next_attempt_at: string | null;
+  provider_message_id: string | null;
+  provider_accepted_at: string | null;
+  provider_result_ambiguous_at: string | null;
+  provider_event_at: string | null;
+  provider_event_id: string | null;
+  delivered_at: string | null;
+  terminal_at: string | null;
+  last_error_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -173,6 +214,7 @@ export type AiConversationRow = OwnedRow<AiConversation>;
 export type AiConfigRow = OwnedRow<AiConfig>;
 export type ImpulseLogRow = OwnedRow<ImpulseLog>;
 export type OwnerSetupRow = OwnedRow<OwnerSetup>;
+export type ReviewReminderDeliveryRow = OwnedRow<ReviewReminderDelivery>;
 
 // ============================================
 // 计算型（非持久化）

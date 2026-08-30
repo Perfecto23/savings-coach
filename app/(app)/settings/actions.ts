@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult, Account, SopTemplate, AiConfig } from "@/lib/types/database";
 import { regenerateMilestones } from "@/app/(app)/income/actions";
+import type { ReviewEmailReminderActionState } from "@/lib/reminders/contracts";
 
 const ACCOUNT_PURPOSES = ["salary", "fixed_expense", "dating_fund", "savings", "flexible", "housing_fund"] as const;
 
@@ -318,4 +319,85 @@ export async function deleteAiConfig(_id: string): Promise<ActionResult> {
 export async function setActiveAiConfig(_id: string): Promise<ActionResult> {
   void _id;
   return { success: false, error: AI_DISABLED_ERROR };
+}
+
+interface ReviewEmailReminderReceipt {
+  enabled?: unknown;
+  schedule_day?: unknown;
+  schedule_local_time?: unknown;
+}
+
+function reminderError(message: string): ReviewEmailReminderActionState {
+  return { status: "error", message };
+}
+
+export async function configureReviewEmailReminder(
+  _previousState: ReviewEmailReminderActionState,
+  formData: FormData
+): Promise<ReviewEmailReminderActionState> {
+  void _previousState;
+  if (process.env.REVIEW_EMAIL_FEATURE_ENABLED !== "true") {
+    return reminderError("Email reminders are not available yet.");
+  }
+  const intent = formData.get("intent");
+  const hasConsent = formData.get("reminder_consent") === "on";
+
+  let enabled: boolean;
+  if (intent === "enable") {
+    if (!hasConsent) {
+      return reminderError("Agree to receive the Monthly Review email before enabling reminders.");
+    }
+    enabled = true;
+  } else if (intent === "unsubscribe") {
+    enabled = false;
+  } else {
+    return reminderError("The email reminder request was invalid. Reload Settings and try again.");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return reminderError("Please sign in again.");
+
+  const { data: setup, error: setupError } = await supabase
+    .from("owner_setup")
+    .select("time_zone")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (setupError || !setup?.time_zone) {
+    return reminderError("Email reminder settings could not be loaded. Reload Settings and try again.");
+  }
+
+  const { data, error } = await supabase.rpc("configure_review_email_reminder", {
+    p_enabled: enabled,
+  });
+  if (error?.code === "P0001" && error.message === "confirmed_email_required") {
+    return reminderError("Confirm your email address before enabling email reminders.");
+  }
+  if (error?.code === "P0001" && error.message === "setup_incomplete") {
+    return reminderError("Complete Setup before changing email reminders.");
+  }
+  if (error) {
+    return reminderError("Email reminder settings could not be updated. Try again.");
+  }
+
+  const receipt = data as ReviewEmailReminderReceipt | null;
+  if (
+    receipt?.enabled !== enabled ||
+    receipt.schedule_day !== 2 ||
+    receipt.schedule_local_time !== "09:00:00"
+  ) {
+    return reminderError("Email reminder settings returned an invalid receipt. Reload Settings and try again.");
+  }
+
+  revalidatePath("/settings");
+  return {
+    status: "success",
+    message: enabled ? "Email reminders are enabled." : "You are unsubscribed from email reminders.",
+    reminder: {
+      status: enabled ? "enabled" : "disabled",
+      timeZone: setup.time_zone,
+    },
+  };
 }

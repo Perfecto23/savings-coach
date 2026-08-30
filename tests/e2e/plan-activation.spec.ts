@@ -233,6 +233,10 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(page.getByText(/¥/)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
+  await page.goto("/settings");
+  await expect(page.getByRole("tab", { name: "Email reminders" })).toHaveCount(0);
+  await expect(page.getByText("管理账户和 SOP 模板", { exact: true })).toBeVisible();
+
   const responsePayload = await captured.read();
   for (const forbiddenValue of [
     "owner_id",

@@ -7,6 +7,7 @@ import { INITIAL_MONTHLY_REVIEW_ACTION_STATE } from "@/lib/monthly-review/contra
 
 interface MonthlyReviewPanelProps {
   yearMonth: string;
+  currentYearMonth: string;
   locale: string;
   reviewCompletedAt: string | null;
   isReviewWindow: boolean;
@@ -24,6 +25,7 @@ function formatMonth(yearMonth: string, locale: string) {
 
 export function MonthlyReviewPanel({
   yearMonth,
+  currentYearMonth,
   locale,
   reviewCompletedAt,
   isReviewWindow,
@@ -59,14 +61,12 @@ export function MonthlyReviewPanel({
           Monthly execution is preserved. Balance Snapshots remain observations
           and can still be corrected.
         </p>
-        {state.status === "success" ? (
-          <Link
-            href="/"
-            className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-emerald-900 px-4 text-sm font-semibold text-white"
-          >
-            Open {formatMonth(state.nextYearMonth, locale)}
-          </Link>
-        ) : null}
+        <Link
+          href="/"
+          className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-emerald-900 px-4 text-sm font-semibold text-white"
+        >
+          Open {formatMonth(currentYearMonth, locale)}
+        </Link>
       </section>
     );
   }

@@ -24,8 +24,8 @@
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
-| 9 | One-channel reminder experiment | `planned` | — |
-| 10 | Paid-intent beta and release candidate | `planned` | — |
+| 9 | One-channel reminder experiment | `blocked` | In-app prompt rejected；outbound provider and verified sender required |
+| 10 | Paid-intent beta and release candidate | `ready_for_release` | DB、concurrency、full Playwright、browser and security readback passed |
 
 ## Iteration 1 Readback
 
@@ -419,3 +419,81 @@
 - Vercel production：merge commit `b03ad4f` 部署完成；公开 `/` → `/login`；标题与登录表单正常。
 - Status boundary：代码和 schema 已发布。authenticated production Monthly Review journey 尚未执行，因此状态为 `released`，不是 `verified_live`。
 - Production state changed: Yes；009 applied、PR #14 merged and Vercel production deployed。
+
+## Iteration 9 Decision
+
+- Status: `blocked`
+- Intended outcome: opt-in owner 在新月份收到一次 Monthly Review reminder，并可随时 unsubscribe。
+- Required contract: one outbound channel、owner timezone、explicit consent、background scheduler、idempotent delivery 和 unsubscribe。
+
+### Decision
+
+- in-app Home prompt 不满足 Iteration 9。用户不访问 Home 时不会发生调度或交付。
+- Iteration 8 已经在 Home 显示 Monthly Review gate。新增同页 prompt 没有独立产品价值。
+- Home GET / RSC 不得通过隐式 claim 产生 render-write。重复显示也不能表示“只发送一次”。
+- 当前项目没有可用的 outbound email provider credential、verified sender 或 vendor spend authorization。
+- 在这些输入存在前，不创建 reminder、delivery、event 表，也不新增冗余 owner_setup 字段。
+
+### Required Input To Resume
+
+- 一个 outbound email provider 的 production credential。
+- 一个 verified sender domain 或 sender address。
+- 对该 provider 费用和 production delivery 的明确授权。
+
+### Not Claimed
+
+- 没有实现 email、push、SMS、browser notification 或 background scheduler。
+- 没有 reminder delivery、delivery receipt 或 unsubscribe production evidence。
+- Production state changed: No。
+
+## Iteration 10 Current State
+
+- Local branch: `codex/iteration-10-paid-intent`
+- Status: `ready_for_release`
+- Outcome: 完成过月度复盘的 owner 可以在不付款、不提供银行卡和不创建订阅的前提下，表达对未来 Pro beta 的付费意愿。
+- In scope: Review Completion eligibility、固定 Pro beta offer、明确价格、一次性 Paid Intent、owner isolation、idempotence、desktop/mobile 和 release candidate evidence。
+- Out of scope: payment provider、checkout、银行卡、trial、subscription、entitlement、feature unlock、invoice、refund 和 billing portal。
+
+### Frozen Seam
+
+- Pro beta offer code 固定为 `pro_beta_usd_499_monthly_v1`。UI 将该 code 映射为 `US$4.99/month after launch`。
+- Offer 只对至少存在一条 Review Completion 的 owner 显示。
+- Offer 必须同屏说明：今天不收费、不收卡、不创建订阅、不启动 trial、不锁定未来价格。
+- Paid Intent 只表示用户点击明确的兴趣 CTA。产品不把 Paid Intent 表示为付款、订阅、trial、entitlement 或 Pro access。
+- Paid Intent 首次写入后保持原始 offer code 和 timestamp。重复或并发请求返回同一 receipt。
+- RPC 不接收 owner、offer code、价格、Review month 或 timestamp。
+- 数据只复用 `owner_setup` 的两个字段，不新增 payment、billing、subscription、entitlement 或 event 实体。
+- US$4.99 是窄范围 manual-first 产品的价格假设。作为参照，[YNAB](https://www.ynab.com/pricing) 当前月付为 US$14.99，[Monarch Money](https://partners.monarchmoney.com/pricing) 年付折算为 US$8.33/month；本产品不宣称具备同等功能或价值。
+
+### Delivered
+
+- `owner_setup` 新增固定 offer code 和首次 Paid Intent timestamp。两个字段必须同时为空或同时有效。
+- 新增 authenticated-only safe read RPC 和 zero-argument Paid Intent command RPC。
+- RPC 使用 `auth.uid()`、owner advisory lock、Review Completion eligibility 和固定数据库 offer code。
+- 首次 Paid Intent 保存 `pro_beta_usd_499_monthly_v1` 与数据库时间。重复或并发请求返回原 receipt。
+- Offer 只显示在已完成 Monthly Review 的报告中。Client 只接收 `eligible` 和 `recorded` 两个布尔值。
+- Offer 和成功态均明确 no charge、no card、no subscription、no trial、no price reservation 和 no Pro unlock。
+- `Not now` 不写入负向事件。当前页面 dismiss 后，reload 会重新显示 offer。
+- 不新增 billing、payment、checkout、subscription、entitlement 或 event 实体。
+
+### Verified
+
+- Focused Paid Intent pgTAP：25/25；Full pgTAP：380/380。
+- Paid Intent concurrency：duplicate request、A/B isolation 和 Close / record 通过。
+- Monthly Close concurrency 回归通过。
+- Public Playwright：4/4；Setup Playwright：2/2；Plan + Home + Progress Playwright：2/2；Monthly Review + Paid Intent Playwright：2/2。
+- Paid Intent E2E 覆盖 Desktop Chrome 与 Pixel 5、价格文案、消费保护、首次记录、reload、Desktop logout/login、RSC canary 和 0 payment provider request。
+- 静态搜索确认没有 Stripe、checkout session、payment intent、subscription 或 entitlement dependency / implementation。
+- `lint`：0 error，保留 1 条迭代前 warning。
+- `tsc --noEmit`、production build、shell syntax 和 `git diff --check` 通过。
+- Product review：`ship`；bounded code review：`ship`；security review：`ship`，无 confirmed finding。
+- Codex 侧边栏浏览器：Pro beta offer、价格与消费保护、Paid Intent success 通过；local server log 无 error / warning。
+
+### Not Claimed
+
+- 尚未创建 commit、PR、Preview 或 production 发布。
+- Hosted migration 010 尚未应用。
+- 没有付款、订阅、trial、entitlement、Pro access 或收入证据。
+- 没有 offer exposure event。指标只能称为 retained-owner paid-intent rate，不能称为 CTA conversion rate。
+- 当前样本为 0，不能声称价格验证、购买转化或市场验证。
+- Production state changed: No。

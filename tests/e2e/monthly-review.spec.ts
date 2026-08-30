@@ -74,6 +74,12 @@ test("an owner closes the previous Monthly Review and starts the current month",
   const reviewMonth = formatMonth(fixture.reviewYearMonth);
   const currentMonth = formatMonth(fixture.currentYearMonth);
   const captured = captureRscAndHtml(page);
+  const paymentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/js\.stripe\.com|checkout\.stripe\.com|paypal\.com/i.test(request.url())) {
+      paymentRequests.push(request.url());
+    }
+  });
 
   await page.goto("/login");
   await page.getByLabel("邮箱").fill(fixture.email);
@@ -94,6 +100,33 @@ test("an owner closes the previous Monthly Review and starts the current month",
   await page.getByRole("button", { name: `Close ${reviewMonth}` }).click();
   await expect(page.getByText("Review complete", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: `${reviewMonth} is closed.` })).toBeVisible();
+
+  const offer = page.getByRole("region", { name: "Savings Coach Pro beta offer" });
+  await expect(offer.getByRole("heading", { name: "Help shape Savings Coach Pro" })).toBeVisible();
+  await expect(offer.getByText("US$4.99/month after launch", { exact: true })).toBeVisible();
+  await expect(offer.getByText(/Today: no charge\. No card\. No subscription\./)).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /card/i })).toHaveCount(0);
+  await offer.getByRole("button", { name: "I'm interested in Pro beta" }).click();
+  await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "You were not charged, and no subscription was created.",
+    })
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
+  expect(paymentRequests).toEqual([]);
+
+  if (testInfo.project.name === "desktop-chromium") {
+    await page.getByRole("button", { name: "退出登录" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByLabel("邮箱").fill(fixture.email);
+    await page.getByLabel("密码").fill(fixture.password);
+    await page.getByRole("button", { name: "登录" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await page.goto(`/milestones/${fixture.reviewYearMonth}/report`);
+    await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
+  }
 
   await page.getByRole("link", { name: `Open ${currentMonth}` }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -119,6 +152,8 @@ test("an owner closes the previous Monthly Review and starts the current month",
     "api_key",
     "template_id",
     "step_key",
+    "paid_intent_offer_code",
+    "paid_intent_recorded_at",
     fixture.otherOwnerCanary,
     fixture.secretCanary,
   ]) {

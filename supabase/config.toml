@@ -366,6 +366,15 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+[functions.send-review-reminders]
+verify_jwt = false
+
+[functions.resend-review-reminder-webhook]
+verify_jwt = false
+
+[functions.review-reminder-unsubscribe]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

@@ -152,9 +152,13 @@ export function BalanceHistoryChart({
               }
             />
             <Tooltip
-              formatter={(value: number | undefined) =>
-                value != null ? formatMoney(value, locale, baseCurrency) : ""
-              }
+              formatter={(value) => {
+                const rawValue = Array.isArray(value) ? value[0] : value;
+                const numericValue = Number(rawValue);
+                return Number.isFinite(numericValue)
+                  ? formatMoney(numericValue, locale, baseCurrency)
+                  : "";
+              }}
               contentStyle={{
                 borderRadius: "8px",
                 border: "1px solid #d6d3d1",

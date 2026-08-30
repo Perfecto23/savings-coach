@@ -311,7 +311,12 @@ select is(
   (
     select
       (select count(*) from public.salary_configs where owner_id = '00000000-0000-4000-8000-00000000010a')
-      + (select count(*) from public.balance_snapshots)
+      + (
+        select count(*)
+        from public.balance_snapshots as snapshot
+        join public.accounts as account on account.id = snapshot.account_id
+        where account.owner_id = '00000000-0000-4000-8000-00000000010a'
+      )
       + (select count(*) from public.sop_templates where owner_id = '00000000-0000-4000-8000-00000000010a')
   ),
   0::bigint,

@@ -24,7 +24,7 @@
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
-| 9 | One-channel reminder experiment | `blocked` | In-app prompt rejected；outbound provider and verified sender required |
+| 9 | One-channel reminder experiment | `ready_for_release` | Local delivery pipeline verified；production activation inputs pending |
 | 10 | Paid-intent beta and release candidate | `released` | [PR #16](https://github.com/Perfecto23/savings-coach/pull/16)；hosted 010 and Vercel production |
 
 ## Iteration 1 Readback
@@ -422,7 +422,8 @@
 
 ## Iteration 9 Decision
 
-- Status: `blocked`
+- Local branch: `codex/iteration-9-email-reminder`
+- Status: `ready_for_release`
 - Intended outcome: opt-in owner 在新月份收到一次 Monthly Review reminder，并可随时 unsubscribe。
 - Required contract: one outbound channel、owner timezone、explicit consent、background scheduler、idempotent delivery 和 unsubscribe。
 
@@ -432,9 +433,49 @@
 - Iteration 8 已经在 Home 显示 Monthly Review gate。新增同页 prompt 没有独立产品价值。
 - Home GET / RSC 不得通过隐式 claim 产生 render-write。重复显示也不能表示“只发送一次”。
 - 当前项目没有可用的 outbound email provider credential、verified sender 或 vendor spend authorization。
-- 在这些输入存在前，不创建 reminder、delivery、event 表，也不新增冗余 owner_setup 字段。
+- 代码和本地测试可以继续。Production sending 在 provider credential、verified sender 和费用授权存在前保持关闭。
 
-### Required Input To Resume
+### Frozen Seam
+
+- Email 是唯一 reminder channel。Iteration 9 不实现 Push、SMS、WhatsApp 或 browser notification。
+- owner-local 每月 2 日 09:00 后，若上一月 Plan Path 存在、Review Completion 为空且月度行动存在，则该月 reminder eligible。
+- Supabase Cron 每 5 分钟调用 sender Edge Function。Edge Function 原子 claim delivery。发送前二次授权会把 delivery 转为 `sending`。随后 Edge Function 调用 Resend，再写入 Provider Acceptance。
+- Reminder Consent 默认关闭。启用和退订只能由显式 POST 完成。Paid Intent、登录、计划激活或复盘完成都不能推断 Reminder Consent。
+- `review_reminder_deliveries` 是必要 delivery ledger。唯一键为 owner、review month 和固定 reminder kind；不保存 email、正文、金额、账户名、余额或密钥。
+- 同一 delivery 的 Resend idempotency key 在重试中保持不变。Provider 24 小时去重窗口结束后，模糊结果进入 `unknown`，不自动重发。
+- Resend API success 只写 Provider Acceptance。只有签名 webhook 可以写 `delivered`、`bounced`、`complained` 或 `suppressed`。
+- 早于 Provider Acceptance 到达的签名 webhook 返回非 2xx。Resend 重试后才能写入 receipt。
+- 退订和 Review Completion 会取消尚未 Send Commit 的 delivery。Send Commit 后外部请求可能已经开始，当前 Email 不能保证停止。Provider Acceptance 仍需独立 receipt。
+- Email 只包含 Monthly Review month、固定 CTA 和退订链接。禁止包含财务金额、账户名、余额、月度行动名称或 Paid Intent。
+- Open tracking 和 click tracking 保持关闭。
+- Delivery ledger 保留 90 天。Service-only purge 不删除 active lease。
+- Reminder Delivery 是本迭代唯一新增持久化实体。不得扩展为通用 notification、event 或 campaign 平台。
+
+### Delivered
+
+- Reminder Consent 默认关闭。Settings 提供显式启用、reload 恢复和 unsubscribe。
+- Vercel availability gate 默认关闭。数据库 RPC ACL 默认撤销 authenticated 执行权，并作为权威 availability gate。关闭时，Settings 不显示 Email tab，直连 RPC 也不能写入 Reminder Consent。
+- `review_reminder_deliveries` 保存 owner、review month、Provider Acceptance 和签名 webhook receipt。表不保存 Email、正文或财务内容。
+- Sender 使用 Supabase named secret、全局 kill switch、23 小时 retry cutoff 和稳定 Resend idempotency key。
+- Send Commit 是不可取消边界。模糊 Provider 结果保持同一个 idempotency key，并在 23 小时内恢复。
+- Webhook 使用 raw body Svix verification。未知 provider message 返回非 2xx。状态使用单调 precedence。
+- Unsubscribe GET 不写入。POST 幂等。公开 request body 分别限制为 64 KiB 和 8 KiB。
+- Service-only retention purge 支持 dry-run、actual readback 和 90 天清理。
+- Activation runbook 要求 Cron 在 Single-Owner Activation 后创建。
+
+### Verified
+
+- Database：454/454。测试在完整 E2E fixture 存在时仍通过。
+- Reminder concurrency：duplicate claim、authorize vs unsubscribe、claim vs Review Completion 全部通过。
+- Edge Function：29/29。三个 Function entrypoint 使用 frozen `deno.lock` 并通过 `deno check`。
+- Public、Setup、Plan、Monthly Review 和 Reminder Playwright：12/12。
+- `lint`、`tsc --noEmit`、production build 和 `git diff --check` 通过。
+- Next.js 16.3.3、Supabase JS 2.112.4 和 eslint-config-next 16.3.3 完成安全升级。Production dependency audit 为 0 个已知漏洞。
+- Codex 侧边栏浏览器：Supabase production 当前 0 自定义 Edge Function、0 自定义 Function Secret。
+- Product review：`ship`。邮件只包含 Review month、固定 CTA、同意来源和 unsubscribe。
+- Final code review：`ship`。Final security review：`ship`。Production activation 仍需 live gates。
+
+### Required Production Activation Inputs
 
 - 一个 outbound email provider 的 production credential。
 - 一个 verified sender domain 或 sender address。
@@ -442,8 +483,10 @@
 
 ### Not Claimed
 
-- 没有实现 email、push、SMS、browser notification 或 background scheduler。
-- 没有 reminder delivery、delivery receipt 或 unsubscribe production evidence。
+- Schema、Edge Function 和 App UI 尚未发布到 production。
+- 没有 Provider Acceptance、signed delivery receipt 或 unsubscribe production evidence。
+- 没有创建 Sender Cron、retention Cron、Vault secret 或自定义 Function Secret。
+- 没有实现 push、SMS、WhatsApp 或 browser notification。
 - Production state changed: No。
 
 ## Iteration 10 Current State
@@ -509,5 +552,5 @@
 - Hosted state：0 Review Completion、0 Paid Intent、0 billing/payment/subscription/entitlement tables。
 - Vercel production：merge commit `8d1214e` 部署完成；公开 `/` → `/login`；标题与登录表单正常。
 - Status boundary：代码和 schema 已发布。authenticated production Paid Intent journey 尚未执行，因此状态为 `released`，不是 `verified_live`。
-- Program boundary：Iteration 10 已发布。Iteration 9 仍因 outbound provider credential、verified sender 和费用授权缺失而 `blocked`。
+- Program boundary：Iteration 10 已发布。Iteration 9 本地状态为 `ready_for_release`。Production activation 仍需要 outbound provider credential、verified sender 和费用授权。
 - Production state changed: Yes；010 applied、PR #16 merged and Vercel production deployed。

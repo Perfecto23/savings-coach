@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:e2e:plan": "playwright test --config=playwright.plan.config.ts",
+    "test:e2e:reminder": "playwright test --config=playwright.reminder.config.ts",
     "test:e2e:review": "playwright test --config=playwright.review.config.ts",
     "test:e2e:setup": "playwright test --config=playwright.setup.config.ts",
     "test:db": "supabase test db",
@@ -17,13 +18,15 @@
     "test:monthly-execution-concurrency": "bash scripts/test-monthly-execution-concurrency.sh",
     "test:trustworthy-progress-concurrency": "bash scripts/test-trustworthy-progress-concurrency.sh",
     "test:monthly-close-concurrency": "bash scripts/test-monthly-close-concurrency.sh",
-    "test:paid-intent-concurrency": "bash scripts/test-paid-intent-concurrency.sh"
+    "test:paid-intent-concurrency": "bash scripts/test-paid-intent-concurrency.sh",
+    "test:review-reminder-concurrency": "bash scripts/test-review-reminder-concurrency.sh",
+    "test:review-reminder-functions": "bash scripts/test-review-reminder-functions.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.95.3",
+    "@supabase/supabase-js": "^2.112.4",
     "ai": "^6.0.86",
-    "next": "16.1.6",
+    "next": "16.3.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0"
@@ -40,7 +43,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.3.3",
     "supabase": "^2.76.8",
     "tailwindcss": "^4",
     "typescript": "^5"

@@ -19,7 +19,7 @@
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe invited-user access | `released` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted 004 readback；Vercel production |
-| 4 | Setup checkpoint | `ready_for_release` | Local migration、authenticated E2E、concurrency and design gates passed |
+| 4 | Setup checkpoint | `ready_for_release` | [Draft PR #5](https://github.com/Perfecto23/savings-coach/pull/5)；local gates passed |
 | 5 | Income-independent Plan activation | `planned` | — |
 | 6 | Monthly execution Home | `planned` | — |
 | 7 | Trustworthy Progress | `planned` | — |
@@ -135,6 +135,8 @@
 ## Iteration 4 Readback
 
 - Local branch: `codex/iteration-4-setup-checkpoint`
+- Commit: `47ff7b7`
+- Pull request: [Draft PR #5](https://github.com/Perfecto23/savings-coach/pull/5)
 - Base branch: `main` after PR #4
 - Status: `ready_for_release`
 - Outcome: 受邀用户保存地区设置、一个储蓄账户和当前余额；返回后恢复同一个储蓄起点。

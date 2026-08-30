@@ -1,6 +1,6 @@
 # EdgeOne Preview POC
 
-> Status: 准备中 | Owner: Codex | Verified on: 2026-08-30
+> Status: 执行中 | Owner: Codex | Verified on: 2026-08-30
 
 ## Decision Question
 
@@ -10,11 +10,12 @@ EdgeOne Makers 能否在不维护 source fork、不泄露 secret、且具备诊�
 
 ## Preconditions
 
-- Perfecto 明确批准本次 Preview deployment。
-- 使用 `codex/iteration-2-edgeone-poc` 的干净 commit。
-- 使用独立 staging Supabase，不使用 production endpoint 或 production data。
-- 使用 staging 测试用户和唯一 `probe_id`。
-- EdgeOne 只使用 Preview scope 的变量和 domain。
+- Perfecto 已授权 Codex 自主发布。
+- Build 与 recovery 使用 merge commit `eeab88c` 的干净 detached worktree。
+- EdgeOne project 是隔离 POC 项目，没有 production data 或 custom domain。
+- Direct-upload control plane 需要 nominal production baseline。该 baseline 只使用 fake public 配置，不是业务 production。
+- Auth 与 Server Action gate 必须使用独立 staging Supabase、staging 用户和唯一 `probe_id`。
+- Decision probe 只使用 Preview deployment 和 domain。
 - 记录 commit、lockfile hash、deployment ID、Preview URL 和配置 hash。
 - 证据不包含 Cookie、密码、财务值、API Key 或 secret canary 原文。
 
@@ -120,32 +121,32 @@ Hosted AI 重新进入 Scope 时，这些 probe 才升级为 release gate。
 
 ## Decision Record
 
-POC 完成后填写：
+当前 readback：
 
 | Field | Value |
 |---|---|
-| Date | |
-| Sponsor approval | |
-| Commit | |
-| EdgeOne project / Preview | |
-| Deployment A / B / A′ | |
-| Staging Supabase alias | |
-| Build gate | NOT RUN |
-| Auth gate | NOT RUN |
+| Date | 2026-08-30 |
+| Sponsor approval | Codex autonomous release authorized |
+| Commit | `eeab88c` |
+| EdgeOne project | `makers-5llzko3fa3m5` |
+| Nominal production baseline | `dp4ov07v48g3` |
+| Deployment A / B / A′ | `dpfr2ly4pgcc` / `dpx9iypqi6g4` / `dpx4kn6wo1b4` |
+| Staging Supabase alias | NOT PROVIDED |
+| Build gate | PASS |
+| Auth gate | PARTIAL — public redirect only |
 | Server Action gate | NOT RUN |
-| Diagnostics gate | NOT RUN |
-| Environment isolation gate | NOT RUN |
-| Recovery gate | NOT RUN |
+| Diagnostics gate | PARTIAL — response request ID only；Console correlation 未验证 |
+| Environment isolation gate | FAIL — canary 未进入 Client，但进入 `edge-functions/index.js` |
+| Recovery gate | PARTIAL — clean rebuild、marker removal 和 public journey 通过；Auth/write 未运行 |
 | Tenant isolation | NOT TESTED |
-| Result | NOT RUN |
-| Selected host | |
+| Result | IN PROGRESS |
+| Selected host | UNDECIDED |
 | Fallback | Standard Next.js host |
-| Production state changed | No |
+| Business production state changed | Vercel main 已发布；EdgeOne 只创建隔离 POC 项目 |
 
 ## Current Blockers
 
-- Iteration 1 尚未 push 或进入 Preview。
-- 没有当前 EdgeOne project 和 Preview readback。
 - 没有隔离 staging Supabase。
-- 没有本次 Preview deployment 的单次授权。
-- 本机 EdgeOne CLI 是 `1.6.17`；官方 latest 是 `1.6.28`。未获授权前不执行全局升级。
+- Codex 侧边栏浏览器没有 EdgeOne Console 登录态，无法关联 runtime logs。
+- EdgeOne build-time `.env` 会进入 Edge Function artifact。尚未证明存在不入 artifact 的 runtime secret 路径。
+- 本机全局 CLI 是 `1.6.17`。`1.6.28` 已通过 `npx` 验证，但 `env set` 仍只写本地 `.env`，没有远端 readback。

@@ -8,7 +8,7 @@ export default async function ImpulsePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [logsRes, totalRes] = await Promise.all([
+  const [logsRes, totalRes, setupRes] = await Promise.all([
     supabase
       .from("impulse_logs")
       .select("id, item_name, estimated_price, reason, resisted, logged_at, created_at")
@@ -20,6 +20,11 @@ export default async function ImpulsePage() {
       .select("estimated_price")
       .eq("owner_id", user.id)
       .eq("resisted", true),
+    supabase
+      .from("owner_setup")
+      .select("locale, base_currency")
+      .eq("owner_id", user.id)
+      .maybeSingle(),
   ]);
 
   const logs = (logsRes.data || []) as ImpulseLog[];
@@ -28,5 +33,12 @@ export default async function ImpulsePage() {
     0
   );
 
-  return <ImpulsePageClient initialLogs={logs} initialTotal={total} />;
+  return (
+    <ImpulsePageClient
+      initialLogs={logs}
+      initialTotal={total}
+      locale={setupRes.data?.locale ?? "en-US"}
+      baseCurrency={setupRes.data?.base_currency ?? "USD"}
+    />
+  );
 }

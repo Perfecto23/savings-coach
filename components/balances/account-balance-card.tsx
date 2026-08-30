@@ -1,4 +1,6 @@
-import type { Account, BalanceSnapshot } from "@/lib/types/database";
+import type { Account } from "@/lib/types/database";
+import type { BalanceDisplaySnapshot } from "@/lib/balances/contracts";
+import { formatMoney } from "@/lib/format-money";
 
 const PURPOSE_COLORS: Record<string, string> = {
   salary: "border-blue-200 bg-blue-50",
@@ -20,12 +22,16 @@ const PURPOSE_TEXT_COLORS: Record<string, string> = {
 
 interface AccountBalanceCardProps {
   account: Account;
-  latestSnapshot: BalanceSnapshot | null;
+  latestSnapshot: BalanceDisplaySnapshot | null;
+  locale: string;
+  baseCurrency: string;
 }
 
 export function AccountBalanceCard({
   account,
   latestSnapshot,
+  locale,
+  baseCurrency,
 }: AccountBalanceCardProps) {
   const colorClass = PURPOSE_COLORS[account.purpose] || "border-gray-200 bg-gray-50";
   const textColor = PURPOSE_TEXT_COLORS[account.purpose] || "text-gray-700";
@@ -38,12 +44,12 @@ export function AccountBalanceCard({
       </div>
       <div className={`mt-2 text-xl font-bold ${textColor}`}>
         {latestSnapshot
-          ? `¥${latestSnapshot.balance.toLocaleString()}`
+          ? formatMoney(latestSnapshot.balance, locale, baseCurrency)
           : "—"}
       </div>
       {latestSnapshot && (
         <p className="mt-1 text-xs text-gray-400">
-          更新于 {latestSnapshot.recorded_at}
+          Observed {latestSnapshot.recorded_at}
         </p>
       )}
     </div>

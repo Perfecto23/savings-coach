@@ -72,7 +72,7 @@ run_success_pair() {
   printf 'PASS: %s\n' "$description"
 }
 
-run_conflict_pair() {
+run_locked_pair() {
   local description="$1"
   local step="$2"
   local first_payload="$3"
@@ -91,20 +91,16 @@ run_conflict_pair() {
   second_status=$?
   set -e
 
-  if ! { [[ $first_status -eq 0 && $second_status -ne 0 ]] \
-    || [[ $first_status -ne 0 && $second_status -eq 0 ]]; }
-  then
-    printf 'FAIL: %s (expected one success, got %s/%s)\n' \
+  if [[ $first_status -eq 0 || $second_status -eq 0 ]]; then
+    printf 'FAIL: %s (expected two locked failures, got %s/%s)\n' \
       "$description" "$first_status" "$second_status" >&2
     exit 1
   fi
 
-  local failed_log="$SC_TMP_DIR/conflict-first.log"
-  if [[ $first_status -eq 0 ]]; then
-    failed_log="$SC_TMP_DIR/conflict-second.log"
-  fi
-  if ! grep -q 'initial_balance_conflict' "$failed_log"; then
-    printf 'FAIL: %s (failed session did not report the expected conflict)\n' \
+  if ! grep -q 'initial_balance_locked' "$SC_TMP_DIR/conflict-first.log" \
+    || ! grep -q 'initial_balance_locked' "$SC_TMP_DIR/conflict-second.log"
+  then
+    printf 'FAIL: %s (sessions did not report initial_balance_locked)\n' \
       "$description" >&2
     exit 1
   fi
@@ -156,15 +152,15 @@ assert_value "identical balance writes create one snapshot" "1" \
 assert_value "identical balance value is preserved" "1234.56" \
   "select snapshot.balance from public.owner_setup as setup join public.balance_snapshots as snapshot on snapshot.account_id = setup.savings_account_id where setup.owner_id = '$SC_USER_ID' and snapshot.recorded_at = '$SC_LOCAL_DATE';"
 
-run_conflict_pair \
-  "concurrent different balances accept exactly one first value" \
+run_locked_pair \
+  "concurrent second-date balances are both locked" \
   "initial_balance" \
   "{\"balance\":\"10.00\",\"recorded_at\":\"$SC_CONFLICT_DATE\"}" \
   "{\"balance\":\"20.00\",\"recorded_at\":\"$SC_CONFLICT_DATE\"}"
 
-assert_value "different balance writes leave one snapshot" "1" \
+assert_value "locked second-date writes create no snapshot" "0" \
   "select count(*) from public.owner_setup as setup join public.balance_snapshots as snapshot on snapshot.account_id = setup.savings_account_id where setup.owner_id = '$SC_USER_ID' and snapshot.recorded_at = '$SC_CONFLICT_DATE';"
-assert_value "stored conflict value came from one contender" "1" \
-  "select count(*) from public.owner_setup as setup join public.balance_snapshots as snapshot on snapshot.account_id = setup.savings_account_id where setup.owner_id = '$SC_USER_ID' and snapshot.recorded_at = '$SC_CONFLICT_DATE' and snapshot.balance in (10.00, 20.00);"
+assert_value "locked retries preserve the first observation" "1234.56" \
+  "select snapshot.balance from public.owner_setup as setup join public.balance_snapshots as snapshot on snapshot.account_id = setup.savings_account_id where setup.owner_id = '$SC_USER_ID' and snapshot.recorded_at = '$SC_LOCAL_DATE';"
 
 printf 'PASS: Setup concurrency invariants\n'

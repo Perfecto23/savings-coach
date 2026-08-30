@@ -421,10 +421,10 @@ select is(
     where conrelid = 'public.balance_snapshots'::regclass
       and confrelid = 'public.accounts'::regclass
       and contype = 'f'
-      and confdeltype = 'c'
+      and confdeltype = 'r'
   ),
   1::bigint,
-  'balance snapshots cascade with their account'
+  'balance snapshots restrict implicit account deletion'
 );
 
 select is(
@@ -1007,6 +1007,8 @@ select throws_ok(
 -- Parent-derived balance snapshots enforce old and new parent ownership.
 -- ---------------------------------------------------------------------------
 
+reset role;
+
 select lives_ok(
   $$
     insert into public.balance_snapshots (id, account_id, recorded_at, balance)
@@ -1017,14 +1019,15 @@ select lives_ok(
       1000
     )
   $$,
-  'owner A can create a snapshot for owner A account'
+  'a privileged fixture can create owner A Balance Snapshot'
 );
 
-reset role;
 set local role authenticated;
-set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000000b';
+set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000000a';
 set local "request.jwt.claim.role" = 'authenticated';
-set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000000b","role":"authenticated"}';
+set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}';
+
+reset role;
 
 select lives_ok(
   $$
@@ -1036,8 +1039,13 @@ select lives_ok(
       2000
     )
   $$,
-  'owner B can create a snapshot for owner B account'
+  'a privileged fixture can create owner B Balance Snapshot'
 );
+
+set local role authenticated;
+set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000000b';
+set local "request.jwt.claim.role" = 'authenticated';
+set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000000b","role":"authenticated"}';
 
 reset role;
 set local role authenticated;
@@ -1066,15 +1074,14 @@ select throws_ok(
   'owner A cannot insert a snapshot under owner B account'
 );
 
-select throws_ok(
+select is_empty(
   $$
     update public.balance_snapshots
     set account_id = '10000000-0000-4000-8000-00000000000b'
     where id = '50000000-0000-4000-8000-00000000000a'
+    returning id
   $$,
-  '42501',
-  null,
-  'owner A cannot move a visible snapshot to owner B account'
+  'owner A cannot update Balance Snapshots outside the Progress RPC'
 );
 
 reset role;
@@ -1234,9 +1241,10 @@ values (
   '10000000-0000-4000-8000-00000000000a'
 );
 
-select lives_ok(
+select throws_ok(
   $$ delete from public.accounts where id = '10000000-0000-4000-8000-00000000000a' $$,
-  'owner A can delete their own account with linked rows'
+  '23503', null,
+  'owner A cannot delete an account with a historical Balance Snapshot'
 );
 
 reset role;
@@ -1246,9 +1254,15 @@ select is(
     from public.balance_snapshots
     where id = '50000000-0000-4000-8000-00000000000a'
   ),
-  0::bigint,
-  'deleting owner A account cascades owner A balance snapshot'
+  1::bigint,
+  'restricted account deletion preserves owner A Balance Snapshot'
 );
+
+delete from public.balance_snapshots
+where id = '50000000-0000-4000-8000-00000000000a';
+
+delete from public.accounts
+where id = '10000000-0000-4000-8000-00000000000a';
 
 select ok(
   (

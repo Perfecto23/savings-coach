@@ -33,6 +33,7 @@ const RPC_ERRORS: Record<string, { code: SetupFormErrorCode; field?: string; mes
   invalid_balance: { code: "INVALID_BALANCE", field: "balance", message: "Enter a non-negative balance with at most two decimal places." },
   invalid_recorded_at: { code: "INVALID_RECORDED_AT", field: "recorded_at", message: "Choose a valid date that is not in the future." },
   initial_balance_conflict: { code: "INITIAL_BALANCE_CONFLICT", field: "balance", message: "A different balance already exists for this date." },
+  initial_balance_locked: { code: "INITIAL_BALANCE_LOCKED", field: "balance", message: "Use Balance Snapshots to record later observations." },
 };
 
 function errorState(error: SetupFormError): SetupFormState {

@@ -90,6 +90,7 @@ export type SetupFormErrorCode =
   | "INVALID_BALANCE"
   | "INVALID_RECORDED_AT"
   | "INITIAL_BALANCE_CONFLICT"
+  | "INITIAL_BALANCE_LOCKED"
   | "SETUP_SAVE_FAILED";
 
 export interface SetupFormError {

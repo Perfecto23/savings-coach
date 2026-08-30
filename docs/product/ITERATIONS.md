@@ -22,7 +22,7 @@
 | 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
 | 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006 and Vercel production |
 | 6 | Monthly execution Home | `released` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and Vercel production |
-| 7 | Trustworthy Progress | `planned` | — |
+| 7 | Trustworthy Progress | `ready_for_release` | Local DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
 | 8 | Monthly close and rollover | `planned` | — |
 | 9 | One-channel reminder experiment | `planned` | — |
 | 10 | Paid-intent beta and release candidate | `planned` | — |
@@ -280,3 +280,55 @@
 - Vercel production：merge commit `1bb2ef6` 部署完成；`/` → `/login`；新日志 0 error / 0 warning。
 - Remaining live gate：创建一个 disposable invited user，完成 Setup、Plan Activation、Home completion、reload、undo 和精确清理。该单次账号创建确认可同时关闭 Iteration 5 与 6 的 authenticated production gate。
 - Production state changed: Yes；007 applied、PR #10 merged and Vercel production deployed。
+
+## Iteration 7 Current State
+
+- Local branch: `codex/iteration-7-trustworthy-progress`
+- Status: `ready_for_release`
+- Outcome: 用户在手工储蓄执行路径中区分计划转入、余额快照、净值变化和拦截金额，并以基础货币查看金额。
+- In scope: 余额观察、月度里程碑、月度报告、月度行动、冲动拦截和关联删除确认的金额口径、术语、基础货币格式化和历史保留规则。
+- Out of scope: 银行同步、真实资金转移、交易导入、全球税务计算、Income 模型重写、AI、月度复盘、Reminder、Billing、Household、FX 和多币种账户实体。
+
+### Frozen Seam
+
+- 计划转入、目标余额、净值变化、余额快照和拦截金额保持独立。产品不把任何一种金额表示为其他种金额。
+- 活跃手工储蓄执行路径中的金额使用 owner 的 locale 和基础货币。中国薪资税务能力不在本迭代中转换为全球税务能力。
+- 月度行动金额是当月计划金额。用户调整月度行动金额时，产品不把该操作描述为实际转入或到账。
+- 月度报告只把实际存在的余额快照描述为余额观察。产品不把当月第一条或最后一条余额快照默认描述为月初或月末余额。
+- 产品不将净值变化与计划转入的差额表示为储蓄表现或执行状态。里程碑执行状态继续只取决于计入里程碑的步骤完成。
+- 拦截金额是放弃购买的预估价格。产品不把拦截金额表示为已省下或已确认储蓄。
+- 删除账户前必须说明真实影响。产品保留历史月度 SOP 步骤和月度行动快照；产品不允许删除活跃 Plan Path 节点，且不会静默破坏 Setup 或储蓄计划。
+- 本迭代不新增银行交易、余额、计划或 event 实体。
+
+### Delivered
+
+- Balance Snapshot 保存和按日期删除通过 owner-locked RPC 与 Progress 重算保持原子。
+- Progress 使用 Savings Account 的月末最近观察和账户 carry-forward；首个观察月净值变化为空，后续使用相邻观察月差值。
+- 计划转入、目标余额、净值变化和 Balance Snapshot total 在 UI 中分列，不显示“净值偏差”。
+- Balance、Progress、报告、SOP、Impulse 和 Settings 金额使用 owner locale 与基础货币。
+- 报告使用 Earliest / Latest Balance Snapshot，不再假设月初或月末。
+- Impulse amount 明确是预估价格，不是 confirmed savings。
+- Setup-linked Account、最后一条 Setup Snapshot 和 marked Plan Path 删除均受保护。
+- Setup initial balance 只允许首次写入和精确幂等重试；后续观察必须走 Balance Snapshot seam。
+- SOP 初始读取和 mutation 返回 safe display DTO，不传 owner、template、step key 或 account IDs。
+- 不新增数据实体。
+
+### Verified
+
+- Full pgTAP：313/313；Trustworthy Progress suite：66/66。
+- Trustworthy Progress concurrency：full-payload save race、same-date delete / save race、cross-owner negative 均通过。
+- Setup concurrency：精确重试通过，第二日期和不同金额重试均被锁定。
+- Public Playwright：4/4；Setup Playwright：2/2；Plan + Home + Progress Playwright：2/2。
+- `lint`：0 error，保留 1 条迭代前 warning。
+- `tsc --noEmit`、production build 和 `git diff --check` 通过。
+- Impeccable detector：2 个 token drift 已修复。
+- Security review：`ship`，无 confirmed finding。
+- Bounded code review：`ship`。
+- Codex 侧边栏浏览器：Balance save → Progress readback、Monthly report、Impulse semantics 通过；新日志 0 error / 0 warning。
+
+### Not Claimed
+
+- 尚未创建 commit、PR、Preview 或 production 发布。
+- Hosted migration 008 尚未应用。
+- 尚未完成 authenticated production Balance Snapshot 与 Progress journey。
+- Production state changed: No。

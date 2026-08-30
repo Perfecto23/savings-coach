@@ -384,15 +384,6 @@ select results_eq(
   'reopening returns the current Plan Path to pending'
 );
 
-update public.monthly_milestones
-set actual_savings = 33, actual_total_savings = 1033
-where owner_id = '00000000-0000-4000-8000-00000000006a'
-  and is_plan_path
-  and year_month = to_char(
-    date_trunc('month', current_timestamp at time zone 'Asia/Singapore'),
-    'YYYY-MM'
-  );
-
 select results_eq(
   $$
     select
@@ -435,8 +426,8 @@ select results_eq(
         'YYYY-MM'
       )
   $$,
-  $$ values ('on_track'::text, 33.00::numeric, 1033.00::numeric) $$,
-  'Monthly Action completion updates execution status without changing Net Worth fields'
+  $$ values ('on_track'::text, null::numeric, 1000.00::numeric) $$,
+  'Monthly Action completion updates execution status while observations remain authoritative'
 );
 
 select is(
@@ -539,8 +530,20 @@ select lives_ok(
   'owner B can activate the rollback scenario'
 );
 
-delete from public.balance_snapshots
-where account_id = '10000000-0000-4000-8000-00000000006b';
+reset role;
+
+update public.monthly_milestones
+set is_plan_path = false
+where owner_id = '00000000-0000-4000-8000-00000000006b'
+  and year_month = to_char(
+    date_trunc('month', current_timestamp at time zone 'America/New_York'),
+    'YYYY-MM'
+  );
+
+set local role authenticated;
+set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000006b';
+set local "request.jwt.claim.role" = 'authenticated';
+set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000006b","role":"authenticated"}';
 
 select throws_ok(
   $$
@@ -556,7 +559,7 @@ select throws_ok(
     )
   $$,
   'P0001', null,
-  'a Plan Path projector failure aborts Monthly Action completion'
+  'a missing active Plan Path aborts Monthly Action completion'
 );
 
 select results_eq(
@@ -565,18 +568,18 @@ select results_eq(
       action.completed,
       action.completed_at,
       setup.behavior_activated_at,
-      milestone.status
+      milestone.status,
+      milestone.is_plan_path
     from public.sop_records as action
     join public.owner_setup as setup on setup.owner_id = action.owner_id
     join public.monthly_milestones as milestone
       on milestone.owner_id = action.owner_id
       and milestone.year_month = action.year_month
-      and milestone.is_plan_path
     where action.owner_id = '00000000-0000-4000-8000-00000000006b'
       and action.is_monthly_action
       and action.template_id = '20000000-0000-4000-8000-000000000062'
   $$,
-  $$ values (false, null::timestamptz, null::timestamptz, 'pending'::text) $$,
+  $$ values (false, null::timestamptz, null::timestamptz, 'pending'::text, false) $$,
   'projector failure rolls back action, Behavior Activation, and Plan Path status'
 );
 

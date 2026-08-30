@@ -3,7 +3,19 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AccountBalanceCard } from "@/components/balances/account-balance-card";
 import { BalanceForm } from "@/components/balances/balance-form";
-import type { Account, BalanceSnapshot } from "@/lib/types/database";
+import type { Account } from "@/lib/types/database";
+import type { BalanceDisplaySnapshot } from "@/lib/balances/contracts";
+
+function localDate(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const byType = new Map(parts.map((part) => [part.type, part.value]));
+  return `${byType.get("year")}-${byType.get("month")}-${byType.get("day")}`;
+}
 
 const BalanceHistoryChart = dynamic(
   () =>
@@ -17,7 +29,7 @@ export default async function BalancesPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [accountsRes, snapshotsRes] = await Promise.all([
+  const [accountsRes, snapshotsRes, setupRes] = await Promise.all([
     supabase
       .from("accounts")
       .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
@@ -25,15 +37,22 @@ export default async function BalancesPage() {
       .order("sort_order"),
     supabase
       .from("balance_snapshots")
-      .select("*")
+      .select("account_id, recorded_at, balance")
       .order("recorded_at", { ascending: true }),
+    supabase
+      .from("owner_setup")
+      .select("locale, time_zone, base_currency")
+      .eq("owner_id", user.id)
+      .maybeSingle(),
   ]);
 
   const accounts = (accountsRes.data || []) as Account[];
-  const snapshots = (snapshotsRes.data || []) as BalanceSnapshot[];
+  const snapshots = (snapshotsRes.data || []) as BalanceDisplaySnapshot[];
+  const locale = setupRes.data?.locale || "en-US";
+  const baseCurrency = setupRes.data?.base_currency || "USD";
 
   // 每个账户的最新快照
-  const latestByAccount = new Map<string, BalanceSnapshot>();
+  const latestByAccount = new Map<string, BalanceDisplaySnapshot>();
   for (const snap of snapshots) {
     latestByAccount.set(snap.account_id, snap);
   }
@@ -41,9 +60,11 @@ export default async function BalancesPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">余额记录</h1>
+        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-stone-950">
+          Balance Snapshots
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
-          追踪所有账户余额变化
+          Record what you observe. Savings Coach does not verify a bank balance.
         </p>
       </div>
 
@@ -55,16 +76,27 @@ export default async function BalancesPage() {
               key={account.id}
               account={account}
               latestSnapshot={latestByAccount.get(account.id) ?? null}
+              locale={locale}
+              baseCurrency={baseCurrency}
             />
           ))}
         </div>
       )}
 
       {/* 余额录入 */}
-      <BalanceForm accounts={accounts} />
+      <BalanceForm
+        accounts={accounts}
+        baseCurrency={baseCurrency}
+        defaultDate={localDate(setupRes.data?.time_zone || "UTC")}
+      />
 
       {/* 趋势图 */}
-      <BalanceHistoryChart accounts={accounts} snapshots={snapshots} />
+      <BalanceHistoryChart
+        accounts={accounts}
+        snapshots={snapshots}
+        locale={locale}
+        baseCurrency={baseCurrency}
+      />
     </div>
   );
 }

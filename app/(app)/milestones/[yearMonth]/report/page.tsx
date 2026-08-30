@@ -24,7 +24,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [accountsRes, snapshotsRes, milestoneRes, sopRes, impulseRes] =
+  const [accountsRes, snapshotsRes, milestoneRes, sopRes, impulseRes, setupRes] =
     await Promise.all([
       supabase
         .from("accounts")
@@ -43,7 +43,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
         .maybeSingle(),
       supabase
         .from("sop_records")
-        .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
+        .select("id, year_month, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
         .eq("owner_id", user.id)
         .eq("year_month", yearMonth)
         .order("sort_order"),
@@ -53,6 +53,11 @@ export default async function ReportPage({ params }: ReportPageProps) {
         .eq("owner_id", user.id)
         .eq("resisted", true)
         .order("created_at"),
+      supabase
+        .from("owner_setup")
+        .select("locale, base_currency")
+        .eq("owner_id", user.id)
+        .maybeSingle(),
     ]);
 
   const reportData = generateReportData({
@@ -78,14 +83,18 @@ export default async function ReportPage({ params }: ReportPageProps) {
           </svg>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {yearMonth} 月度报告
+          <h1 className="text-3xl font-semibold tracking-[-0.035em] text-stone-950">
+            {yearMonth} Monthly report
           </h1>
-          <p className="mt-1 text-sm text-gray-500">本月财务总结</p>
+          <p className="mt-1 text-sm text-gray-500">Plan, confirmations, and Balance Snapshot observations.</p>
         </div>
       </div>
 
-      <MonthlyReport data={reportData} />
+      <MonthlyReport
+        data={reportData}
+        locale={setupRes.data?.locale || "en-US"}
+        baseCurrency={setupRes.data?.base_currency || "USD"}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [accountsRes, templatesRes] = await Promise.all([
+  const [accountsRes, templatesRes, setupRes] = await Promise.all([
     supabase
       .from("accounts")
       .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
@@ -20,6 +20,11 @@ export default async function SettingsPage() {
       .eq("owner_id", user.id)
       .eq("is_plan_rule", false)
       .order("sort_order"),
+    supabase
+      .from("owner_setup")
+      .select("locale, base_currency")
+      .eq("owner_id", user.id)
+      .maybeSingle(),
   ]);
 
   const accounts = (accountsRes.data || []) as Account[];
@@ -36,6 +41,8 @@ export default async function SettingsPage() {
         <SettingsTabs
           accounts={accounts}
           templates={templates}
+          locale={setupRes.data?.locale || "en-US"}
+          baseCurrency={setupRes.data?.base_currency || "USD"}
         />
       </div>
     </div>

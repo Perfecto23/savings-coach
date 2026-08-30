@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult, BalanceSnapshot } from "@/lib/types/database";
-import { regenerateMilestones } from "@/app/(app)/income/actions";
 
 const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -23,46 +22,41 @@ export async function saveBalanceSnapshot(
     if (!Number.isFinite(b.balance) || b.balance < 0) return { success: false, error: "余额无效" };
   }
 
-  const accountIds = balances.map((balance) => balance.account_id);
-  if (new Set(accountIds).size !== accountIds.length) {
+  if (new Set(balances.map((balance) => balance.account_id)).size !== balances.length) {
     return { success: false, error: "账户余额包含重复账户" };
   }
 
-  const { data: ownedAccounts, error: accountsError } = await supabase
-    .from("accounts")
-    .select("id")
-    .eq("owner_id", user.id)
-    .in("id", accountIds);
-
-  if (accountsError) return { success: false, error: accountsError.message };
-  if ((ownedAccounts || []).length !== accountIds.length) {
-    return { success: false, error: "账户不存在" };
-  }
-
-  // upsert: 同一账户同一天只有一条记录
-  const records = balances
-    .filter((b) => b.balance != null)
-    .map((b) => ({
-      account_id: b.account_id,
-      recorded_at: date,
-      balance: b.balance,
-      note: b.note || null,
+  const observations = balances.map((balance) => ({
+      account_id: balance.account_id,
+      balance: String(balance.balance),
+      note: balance.note?.trim() || null,
     }));
 
-  if (records.length === 0) {
-    return { success: false, error: "请至少填写一个账户余额" };
+  const { error } = await supabase.rpc("save_balance_observations", {
+    p_recorded_at: date,
+    p_balances: observations,
+  });
+  if (error?.code === "P0001") {
+    const stableErrors: Record<string, string> = {
+      invalid_observation_date: "Choose a valid observation date that is not in the future.",
+      invalid_observations: "Enter at least one valid Balance Snapshot.",
+      invalid_observation: "Check each Balance Snapshot and try again.",
+      invalid_observation_balance: "Enter non-negative balances with at most two decimal places.",
+      duplicate_observation_account: "Each account can appear once per observation date.",
+      account_not_found: "One selected account was not found.",
+      plan_path_incomplete: "Your Plan Path needs attention before Balance Snapshots can change.",
+    };
+    return {
+      success: false,
+      error: stableErrors[error.message] || "Balance Snapshots could not be saved. Try again.",
+    };
   }
+  if (error) return { success: false, error: "Balance Snapshots could not be saved. Try again." };
 
-  const { error } = await supabase
-    .from("balance_snapshots")
-    .upsert(records, { onConflict: "account_id,recorded_at" });
-
-  if (error) return { success: false, error: error.message };
   revalidatePath("/balances");
-
-  // 余额变更时自动更新里程碑（实际数据 + 后续目标级联）
-  await regenerateMilestones();
-
+  revalidatePath("/milestones");
+  revalidatePath("/plan");
+  revalidatePath("/");
   return { success: true, data: undefined };
 }
 
@@ -74,31 +68,34 @@ export async function deleteBalanceSnapshotsByDate(
   if (!user) return { success: false, error: "未登录" };
   if (!YYYY_MM_DD.test(date)) return { success: false, error: "日期格式无效" };
 
-  const { data: ownedAccounts, error: accountsError } = await supabase
-    .from("accounts")
-    .select("id")
-    .eq("owner_id", user.id);
-  if (accountsError) return { success: false, error: accountsError.message };
-
-  const ownedAccountIds = (ownedAccounts || []).map((account) => account.id);
-  if (ownedAccountIds.length === 0) {
-    return { success: false, error: "记录不存在" };
+  const { error } = await supabase.rpc("delete_balance_observations", {
+    p_recorded_at: date,
+  });
+  if (error?.code === "P0001") {
+    const stableErrors: Record<string, string> = {
+      observation_not_found: "No Balance Snapshots exist for this observation date.",
+      last_setup_observation_delete_forbidden:
+        "Keep at least one Balance Snapshot for your Setup Savings Account.",
+      plan_path_incomplete: "Your Plan Path needs attention before Balance Snapshots can change.",
+    };
+    return {
+      success: false,
+      error: stableErrors[error.message] || "Balance Snapshots could not be deleted. Try again.",
+    };
   }
+  if (error) return { success: false, error: "Balance Snapshots could not be deleted. Try again." };
 
-  const { data, error } = await supabase
-    .from("balance_snapshots")
-    .delete()
-    .eq("recorded_at", date)
-    .in("account_id", ownedAccountIds)
-    .select("id");
-
-  if (error) return { success: false, error: error.message };
-  if (!data || data.length === 0) return { success: false, error: "记录不存在" };
   revalidatePath("/balances");
-  await regenerateMilestones();
+  revalidatePath("/milestones");
+  revalidatePath("/plan");
+  revalidatePath("/");
   return { success: true, data: undefined };
 }
 
+/*
+  Read-only history remains a direct owner-scoped query. Writes above use the
+  transactional Balance Observation RPCs.
+*/
 export async function getBalanceHistory(
   months: number = 6
 ): Promise<ActionResult<BalanceSnapshot[]>> {

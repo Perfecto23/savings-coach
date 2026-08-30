@@ -265,7 +265,7 @@ select is(
       and procedure.proargtypes
         = array['text'::regtype::oid, 'jsonb'::regtype::oid]::oidvector
       and procedure.prorettype = 'jsonb'::regtype
-      and not procedure.prosecdef
+      and procedure.prosecdef
       and has_function_privilege('authenticated', procedure.oid, 'EXECUTE')
       and not has_function_privilege('anon', procedure.oid, 'EXECUTE')
       and exists (
@@ -280,7 +280,7 @@ select is(
       )
   ),
   1::bigint,
-  'save_owner_setup_step is the fixed, invoker-safe authenticated RPC seam'
+  'save_owner_setup_step is the fixed, owner-safe definer RPC seam'
 );
 
 -- ---------------------------------------------------------------------------
@@ -562,17 +562,10 @@ select lives_ok(
         'flexible'
       );
 
-      insert into public.balance_snapshots (id, account_id, recorded_at, balance)
-      values (
-        '50000000-0000-4000-8000-00000000004b',
-        '10000000-0000-4000-8000-00000000004b',
-        '2099-04-30',
-        2500
-      );
     end;
     $legacy_fixture$
   $$,
-  'owner B can have legacy savings, non-savings, and snapshot fixtures'
+  'owner B can have legacy savings and non-savings account fixtures'
 );
 
 select lives_ok(
@@ -596,19 +589,19 @@ select results_eq(
 
 select results_eq(
   $$
-    select exists (
-      select 1
-      from public.owner_setup as setup
-      join public.accounts as account
-        on account.owner_id = setup.owner_id
-        and account.id = setup.savings_account_id
-        and account.purpose = 'savings'
-      join public.balance_snapshots as snapshot on snapshot.account_id = account.id
-      where setup.owner_id = '00000000-0000-4000-8000-00000000004b'
-    )
+    select (
+      public.save_owner_setup_step(
+        'initial_balance',
+        jsonb_build_object(
+          'balance', '2500.00',
+          'recorded_at',
+          (current_timestamp at time zone 'America/New_York')::date
+        )
+      ) -> 'initial_balance' ->> 'balance'
+    )::numeric
   $$,
-  $$ values (true) $$,
-  'attaching a legacy savings account with a snapshot completes Setup'
+  $$ values (2500.00::numeric) $$,
+  'owner B creates the first Balance Snapshot through the Setup RPC'
 );
 
 select throws_ok(
@@ -803,7 +796,7 @@ select results_eq(
 -- Deleting Setup dependencies derives the first incomplete step again.
 -- ---------------------------------------------------------------------------
 
-select lives_ok(
+select throws_ok(
   $$
     delete from public.accounts
     where id = (
@@ -812,17 +805,17 @@ select lives_ok(
       where owner_id = '00000000-0000-4000-8000-00000000004a'
     )
   $$,
-  'owner A can delete the linked savings account through the account interface'
+  'P0001', null,
+  'owner A cannot delete the linked savings account'
 );
 
-select results_eq(
-  $$
-    select savings_account_id
+select ok(
+  (
+    select savings_account_id is not null
     from public.owner_setup
     where owner_id = '00000000-0000-4000-8000-00000000004a'
-  $$,
-  $$ values (null::uuid) $$,
-  'deleting the linked account preserves preferences and clears only the account link'
+  ),
+  'a rejected linked-account deletion preserves the Setup account link'
 );
 
 select results_eq(
@@ -838,8 +831,8 @@ select results_eq(
       where setup.owner_id = '00000000-0000-4000-8000-00000000004a'
     )
   $$,
-  $$ values (false) $$,
-  'deleting the linked account makes owner A Setup incomplete'
+  $$ values (true) $$,
+  'a rejected linked-account deletion preserves Setup completeness'
 );
 
 reset role;
@@ -848,12 +841,14 @@ set local "request.jwt.claim.sub" = '00000000-0000-4000-8000-00000000004b';
 set local "request.jwt.claim.role" = 'authenticated';
 set local "request.jwt.claims" = '{"sub":"00000000-0000-4000-8000-00000000004b","role":"authenticated"}';
 
-select lives_ok(
+select throws_ok(
   $$
-    delete from public.balance_snapshots
-    where id = '50000000-0000-4000-8000-00000000004b'
+    select public.delete_balance_observations(
+      (current_timestamp at time zone 'America/New_York')::date
+    )
   $$,
-  'owner B can delete the last linked-account snapshot'
+  'P0001', null,
+  'owner B cannot delete the last Setup-linked Balance Observation'
 );
 
 select results_eq(
@@ -869,8 +864,8 @@ select results_eq(
       where setup.owner_id = '00000000-0000-4000-8000-00000000004b'
     )
   $$,
-  $$ values (false) $$,
-  'deleting the last snapshot makes owner B Setup incomplete'
+  $$ values (true) $$,
+  'a rejected last-observation deletion preserves owner B Setup completeness'
 );
 
 -- ---------------------------------------------------------------------------

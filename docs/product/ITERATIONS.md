@@ -21,7 +21,7 @@
 | 3 | Safe invited-user access | `verified_live` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted A/B RLS and browser readback |
 | 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
 | 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006 and Vercel production |
-| 6 | Monthly execution Home | `ready_for_release` | Local DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
+| 6 | Monthly execution Home | `released` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and Vercel production |
 | 7 | Trustworthy Progress | `planned` | — |
 | 8 | Monthly close and rollover | `planned` | — |
 | 9 | One-channel reminder experiment | `planned` | — |
@@ -225,7 +225,10 @@
 ## Iteration 6 Current State
 
 - Local branch: `codex/iteration-6-monthly-execution-home`
-- Status: `ready_for_release`
+- Commit: `839a2d1`
+- Pull request: [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)
+- Merge commit: `1bb2ef6`
+- Status: `released`
 - Outcome: 已激活储蓄计划的用户在 Home 看到下一行动，手工完成后确认步骤完成，并形成行为激活。
 - In scope: Home 的下一行动、月度行动完成确认、当前月度行动进度、逾期显示、行为激活、Plan Path 摘要和 desktop/mobile 验收。
 - Out of scope: 银行同步、真实资金转移、余额快照录入、净值变化、计划规则编辑、月度复盘、Reminder、AI、Billing、Household 和多币种资产组合。
@@ -263,6 +266,17 @@
 
 ### Not Claimed
 
-- 尚未创建 commit、PR、Preview 或 production 发布。
-- Hosted migration 007 尚未应用。
-- Production state changed: No。
+- 尚未完成 authenticated production Home completion journey。
+- Production 尚未创建行为激活。
+
+### Release Readback
+
+- GitGuardian：pass；Vercel Preview：pass；Vercel production：pass。
+- Hosted preflight：1 Auth user、81 business rows、0 Setup、0 Plan Activation、4 条已完成的兼容月度行动、0 Behavior Activation column。
+- Hosted migration：007 在单事务内成功；81 business rows 和 4 条历史月度行动保持不变；0 Behavior Activation backfill。
+- Hosted ACL：3 个 Monthly Action direct-write policies 已关闭；owner SELECT 保持；legacy SOP CRUD 条件保持。
+- Hosted RPC：`update_monthly_action` 为 authenticated-only definer；PUBLIC / anon 无执行权限。
+- Hosted evidence：Behavior Activation direct INSERT / UPDATE 均关闭；Plan-before-Behavior CHECK 生效；无 event / home 表。
+- Vercel production：merge commit `1bb2ef6` 部署完成；`/` → `/login`；新日志 0 error / 0 warning。
+- Remaining live gate：创建一个 disposable invited user，完成 Setup、Plan Activation、Home completion、reload、undo 和精确清理。该单次账号创建确认可同时关闭 Iteration 5 与 6 的 authenticated production gate。
+- Production state changed: Yes；007 applied、PR #10 merged and Vercel production deployed。

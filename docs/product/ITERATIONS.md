@@ -25,7 +25,7 @@
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
 | 9 | One-channel reminder experiment | `blocked` | In-app prompt rejected；outbound provider and verified sender required |
-| 10 | Paid-intent beta and release candidate | `ready_for_release` | DB、concurrency、full Playwright、browser and security readback passed |
+| 10 | Paid-intent beta and release candidate | `released` | [PR #16](https://github.com/Perfecto23/savings-coach/pull/16)；hosted 010 and Vercel production |
 
 ## Iteration 1 Readback
 
@@ -449,7 +449,10 @@
 ## Iteration 10 Current State
 
 - Local branch: `codex/iteration-10-paid-intent`
-- Status: `ready_for_release`
+- Commit: `5bff5eb`
+- Pull request: [PR #16](https://github.com/Perfecto23/savings-coach/pull/16)
+- Merge commit: `8d1214e`
+- Status: `released`
 - Outcome: 完成过月度复盘的 owner 可以在不付款、不提供银行卡和不创建订阅的前提下，表达对未来 Pro beta 的付费意愿。
 - In scope: Review Completion eligibility、固定 Pro beta offer、明确价格、一次性 Paid Intent、owner isolation、idempotence、desktop/mobile 和 release candidate evidence。
 - Out of scope: payment provider、checkout、银行卡、trial、subscription、entitlement、feature unlock、invoice、refund 和 billing portal。
@@ -491,9 +494,20 @@
 
 ### Not Claimed
 
-- 尚未创建 commit、PR、Preview 或 production 发布。
-- Hosted migration 010 尚未应用。
+- 尚未完成 authenticated production Paid Intent journey。
 - 没有付款、订阅、trial、entitlement、Pro access 或收入证据。
 - 没有 offer exposure event。指标只能称为 retained-owner paid-intent rate，不能称为 CTA conversion rate。
 - 当前样本为 0，不能声称价格验证、购买转化或市场验证。
-- Production state changed: No。
+
+### Release Readback
+
+- GitGuardian：pass；Vercel Preview：pass；Vercel production：pass。
+- Hosted preflight：1 Auth user、0 Setup、0 Review Completion、0 Paid Intent fields、0 Paid Intent RPC 和 0 billing/payment/subscription/entitlement tables。
+- Hosted migration：010 在单事务内成功；81 行业务数据保持不变；无 historical backfill。
+- Hosted catalog：Paid Intent fields 2 个；paired fixed-offer CHECK 1 个；hardened zero-argument RPC 2 个。
+- Hosted ACL：authenticated execute 2；PUBLIC / anon execute 0；authenticated direct Paid Intent column write grant 0。
+- Hosted state：0 Review Completion、0 Paid Intent、0 billing/payment/subscription/entitlement tables。
+- Vercel production：merge commit `8d1214e` 部署完成；公开 `/` → `/login`；标题与登录表单正常。
+- Status boundary：代码和 schema 已发布。authenticated production Paid Intent journey 尚未执行，因此状态为 `released`，不是 `verified_live`。
+- Program boundary：Iteration 10 已发布。Iteration 9 仍因 outbound provider credential、verified sender 和费用授权缺失而 `blocked`。
+- Production state changed: Yes；010 applied、PR #16 merged and Vercel production deployed。

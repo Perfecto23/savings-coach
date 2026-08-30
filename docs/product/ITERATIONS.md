@@ -23,7 +23,7 @@
 | 5 | Income-independent Plan activation | `released` | [PR #8](https://github.com/Perfecto23/savings-coach/pull/8)；hosted 006、Vercel production and live activation readback |
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
-| 8 | Monthly close and rollover | `ready_for_release` | DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
+| 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
 | 9 | One-channel reminder experiment | `planned` | — |
 | 10 | Paid-intent beta and release candidate | `planned` | — |
 
@@ -356,7 +356,10 @@
 ## Iteration 8 Current State
 
 - Local branch: `codex/iteration-8-monthly-close`
-- Status: `ready_for_release`
+- Commit: `89abeac`
+- Pull request: [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)
+- Merge commit: `b03ad4f`
+- Status: `released`
 - Outcome: 用户在新自然月查看上一月报告，显式完成月度复盘，并获得当前月的月度行动和计划路径。
 - In scope: 上一 owner-local 自然月、月度报告入口、复盘完成、已关闭月份执行冻结、当前月月度行动实例化、计划路径重建、Home 引导和 desktop/mobile 验收。
 - Out of scope: 财务结账、强制余额快照、银行确认、历史月份补造、reopen、Reminder、AI、Billing、Plan Rule version 和新事件实体。
@@ -400,8 +403,19 @@
 
 ### Not Claimed
 
-- 尚未创建 commit、PR、Preview 或 production 发布。
-- Hosted migration 009 尚未应用。
+- 尚未完成 authenticated production Monthly Review → Close → rollover journey。
+- Production 仍有 0 Review Completion；未创建历史复盘数据。
 - external analytics exactly-once 未实现。留存 baseline 只使用数据库 `review_completed_at`。
 - 缺失多月不做历史 catch-up。Iteration 8 不提供 reopen。
-- Production state changed: No。
+
+### Release Readback
+
+- GitGuardian：pass；Vercel Preview：pass；Vercel production：pass。
+- Hosted preflight：1 Auth user、81 行业务数据、5 Accounts、30 Balance Snapshots、0 Setup、0 Plan Activation、0 Plan Rules、4 条兼容 Monthly Actions、0 Plan Path 和 0 duplicate Monthly Action group。
+- Hosted migration：009 在单事务内成功；81 行业务数据、5 Accounts 和 30 Balance Snapshots 保持不变；无历史 backfill。
+- Hosted catalog：`review_completed_at` 字段 1 个；review triggers 2 个；hardened Close RPC 1 个。
+- Hosted ACL：authenticated 可执行 Close RPC；PUBLIC / anon 不可执行。
+- Hosted state：0 Review Completion、0 Plan Path、0 Plan Rule 和 0 Plan Activation。
+- Vercel production：merge commit `b03ad4f` 部署完成；公开 `/` → `/login`；标题与登录表单正常。
+- Status boundary：代码和 schema 已发布。authenticated production Monthly Review journey 尚未执行，因此状态为 `released`，不是 `verified_live`。
+- Production state changed: Yes；009 applied、PR #14 merged and Vercel production deployed。

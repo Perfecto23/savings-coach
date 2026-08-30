@@ -395,7 +395,12 @@ select is(
       and nulled_column.attnum = constraint_row.confdelsetcols[1]
     where constraint_row.contype = 'f'
       and child_namespace.nspname = 'public'
-      and child_relation.relname in ('bonus_events', 'sop_templates', 'sop_records')
+      and constraint_row.conname in (
+        'bonus_events_owner_target_account_fkey',
+        'sop_templates_owner_from_account_fkey',
+        'sop_templates_owner_to_account_fkey',
+        'sop_records_owner_template_fkey'
+      )
       and constraint_row.confdeltype = 'n'
       and cardinality(constraint_row.confdelsetcols) = 1
       and nulled_column.attname in (

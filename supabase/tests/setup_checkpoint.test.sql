@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(58);
+select plan(59);
 
 -- ---------------------------------------------------------------------------
 -- Catalog contract
@@ -219,10 +219,26 @@ select is(
     where table_schema = 'public'
       and table_name = 'owner_setup'
       and grantee = 'authenticated'
-      and privilege_type in ('SELECT', 'INSERT', 'UPDATE')
+      and privilege_type = 'SELECT'
   ),
-  3::bigint,
-  'authenticated clients have the three released owner_setup grants'
+  1::bigint,
+  'authenticated clients have only the released owner_setup table grant'
+);
+
+select is(
+  (
+    select string_agg(
+      privilege_type || ':' || column_name,
+      ',' order by privilege_type, column_name
+    )
+    from information_schema.column_privileges
+    where table_schema = 'public'
+      and table_name = 'owner_setup'
+      and grantee = 'authenticated'
+      and privilege_type in ('INSERT', 'UPDATE')
+  ),
+  'INSERT:base_currency,INSERT:locale,INSERT:owner_id,INSERT:savings_account_id,INSERT:time_zone,UPDATE:base_currency,UPDATE:locale,UPDATE:savings_account_id,UPDATE:time_zone',
+  'authenticated clients can write Setup fields but not plan activation evidence'
 );
 
 select is(

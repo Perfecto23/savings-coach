@@ -20,7 +20,7 @@
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
 | 3 | Safe invited-user access | `verified_live` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted A/B RLS and browser readback |
 | 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
-| 5 | Income-independent Plan activation | `planned` | — |
+| 5 | Income-independent Plan activation | `ready_for_release` | Local DB、concurrency、Desktop/Pixel 5 E2E and browser readback passed |
 | 6 | Monthly execution Home | `planned` | — |
 | 7 | Trustworthy Progress | `planned` | — |
 | 8 | Monthly close and rollover | `planned` | — |
@@ -156,5 +156,53 @@
 - Hosted migration: 005 applied；Account and Snapshot counts preserved；institution nullable；`owner_setup` RLS and 3 policies enabled。
 - Hosted RPC: 2 parameters、JSONB return、Security Invoker；authenticated execute enabled；anon execute disabled。
 - Production journey: incomplete owner redirected to Setup；three checkpoints、completion、reload、logout/login、dashboard currency and complete redirect passed。
-- Temporary hosted test user: retained for cleanup；deletion requires a separate approval。
+- Temporary hosted test user: separate deletion approval received；test owner、1 Setup、1 Account、1 Balance Snapshot 均已删除。独立回读为 1 Auth user、81 business rows、5 Accounts、30 Balance Snapshots、0 Setup。
 - Production state changed: Yes；005 applied、PR #6 merged and Vercel production verified。
+
+## Iteration 5 Current State
+
+- Local branch: `codex/iteration-5-plan-activation`
+- Status: `ready_for_release`
+- Outcome: Setup 已完成的受邀用户无需薪资配置，也能建立可执行的储蓄计划、生成当前月度行动并查看 12 个月计划路径。
+- In scope: 每名 owner 一个隐式储蓄计划、一条或多条月度计划规则、正数计划规则金额、可选来源账户、Setup 选定的目标账户、当前月度行动、12 个月计划路径、幂等计划激活和现有 SOP 兼容。
+- Out of scope: 多储蓄计划、多目标账户、银行同步、真实资金转移、收入能力校验、零或负数规则、非月度频率、Household、AI、Reminder、计划关闭和月度复盘。
+
+### Frozen Seam
+
+- 不新增独立 Savings Plan 实体。现有兼容 SOP 模板承载计划规则，规则生成的月度 SOP 步骤承载月度行动，月度里程碑承载计划路径节点。
+- 现有 SOP 模板只有在 active、金额大于零且目标账户为 Setup 选定的储蓄账户时，才属于当前储蓄计划。其他 SOP 数据保持原语义。
+- 计划激活要求 Setup 完成、至少一条有效计划规则、当前月度行动和当前月起连续 12 个月计划路径同时成立。薪资配置和奖金事件不是激活前提。
+- 来源账户可为空。目标账户必须是 Setup 选定的储蓄账户。计划规则金额必须大于零。
+- 月度频率支持每月 1–31 日。短月没有指定日期时，月度行动落在该月最后一天。
+- 当前月即使已经超过执行日，也必须生成月度行动并显示为到期或逾期。
+- 计划规则修改和停用只影响未实例化月份。当前和历史月度行动保留快照；产生过月度行动的计划规则不做硬删除。
+- 部分 legacy 月份按计划规则 identity 补齐缺失月度行动，不重复或改写已有月度行动。
+- `plan_activated` 是一次性幂等状态转换。重复或并发请求不得重复生成激活记录、月度行动或计划路径节点。
+
+### Delivered
+
+- 新增 `/plan`，支持创建、编辑、停用和重新启用计划规则。
+- 计划激活生成当前月度行动和 12 个月计划路径，不依赖薪资配置。
+- 月度行动保存规则金额、日期、来源账户和目标账户快照。
+- 月度行动更新与计划路径重算在同一数据库事务完成。
+- legacy SOP 初始化和 Settings 不读取或修改计划规则。
+- 不新增 Savings Plan、event、schedule 或 version 表。
+
+### Verified
+
+- Full pgTAP：215/215；Plan suite：74/74。
+- Concurrency：相同 activation、activation + edit、跨 owner 相同 UUID 均通过。
+- Migration preflight：5 个 owner mapping 场景通过。
+- Setup concurrency：4 个并发场景和最终不变量通过。
+- Public Playwright：4/4；Setup Playwright：2/2；Plan Playwright：2/2。
+- `lint`：0 error，保留 3 条迭代前 warning。
+- `tsc --noEmit`、production build 和 `git diff --check` 通过。
+- Security review：无 Critical / High；timestamp spoof、non-finite amount、Target Account lifecycle 和同 UUID 假成功已修复并覆盖测试。
+- Bounded code re-review：`ship`。
+- Codex 侧边栏浏览器：Plan activation、12 个月路径、edit future-only、deactivate history 和 reload 通过；新日志 0 error / 0 warning。
+
+### Not Claimed
+
+- 尚未创建 commit、PR、Preview 或生产发布。
+- Hosted migration 006 尚未应用。
+- Production state changed: No。

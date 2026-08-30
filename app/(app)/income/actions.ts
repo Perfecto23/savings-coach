@@ -17,6 +17,16 @@ import {
   sumMilestoneTarget,
 } from "@/lib/milestones";
 
+function getYearMonthInTimeZone(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const byType = new Map(parts.map((part) => [part.type, part.value]));
+  return `${byType.get("year")}-${byType.get("month")}`;
+}
+
 // ============================================
 // 薪资配置
 // ============================================
@@ -247,6 +257,51 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
 
+  const planSetupResult = await supabase
+    .from("owner_setup")
+    .select("plan_activated_at, time_zone")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (planSetupResult.error) {
+    return { success: false, error: "计划路径读取失败" };
+  }
+
+  if (planSetupResult.data?.plan_activated_at) {
+    const currentYearMonth = getYearMonthInTimeZone(
+      planSetupResult.data.time_zone
+    );
+    const currentPlanPathResult = await supabase
+      .from("monthly_milestones")
+      .select("id")
+      .eq("owner_id", user.id)
+      .eq("is_plan_path", true)
+      .eq("year_month", currentYearMonth)
+      .limit(1);
+    if (currentPlanPathResult.error) {
+      return { success: false, error: "计划路径读取失败" };
+    }
+
+    if ((currentPlanPathResult.data?.length ?? 0) === 0) {
+      return { success: false, error: "计划尚未激活" };
+    }
+
+    const { error: planError } = await supabase.rpc("activate_savings_plan");
+    if (planError) return { success: false, error: "计划路径更新失败" };
+
+    const { data: planMilestones, error: planReadError } = await supabase
+      .from("monthly_milestones")
+      .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+      .eq("owner_id", user.id)
+      .order("year_month");
+    if (planReadError) return { success: false, error: "计划路径读取失败" };
+
+    revalidatePath("/plan");
+    revalidatePath("/milestones");
+    revalidatePath("/");
+    return { success: true, data: planMilestones as MonthlyMilestone[] };
+  }
+
   // 获取最新薪资配置（确定起始月份）
   const { data: salaryConfig } = await supabase
     .from("salary_configs")
@@ -266,7 +321,8 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
         .from("sop_templates")
         .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
         .eq("owner_id", user.id)
-        .eq("is_active", true),
+        .eq("is_active", true)
+        .eq("is_plan_rule", false),
       supabase.from("accounts").select("id, purpose").eq("owner_id", user.id),
       supabase
         .from("bonus_events")
@@ -279,7 +335,7 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
         .order("recorded_at", { ascending: true }),
       supabase
         .from("monthly_milestones")
-        .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, created_at, updated_at")
+        .select("id, year_month, planned_savings, planned_total_savings, actual_savings, actual_total_savings, status, is_plan_path, created_at, updated_at")
         .eq("owner_id", user.id),
       supabase
         .from("sop_records")
@@ -287,6 +343,7 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
           "year_month, completed, counts_toward_milestone, milestone_amount"
         )
         .eq("owner_id", user.id)
+        .eq("is_monthly_action", false)
         .order("year_month", { ascending: true }),
     ]);
 
@@ -458,6 +515,8 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
 
   for (const milestone of milestones) {
     const existing = existingMap.get(milestone.year_month);
+
+    if (existing?.is_plan_path) continue;
 
     if (existing) {
       const { error: writeError } = await supabase

@@ -1,0 +1,314 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+plan_port="${1:-43119}"
+plan_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+plan_runtime_dir="${plan_root}/.setup-e2e/plan"
+plan_status_file="${plan_runtime_dir}/supabase.env"
+plan_curl_config="${plan_runtime_dir}/curl.conf"
+plan_log_file="${plan_runtime_dir}/supabase.log"
+next_log_file="${plan_runtime_dir}/next.log"
+next_pid=""
+
+umask 077
+rm -rf "${plan_runtime_dir}"
+mkdir -p "${plan_runtime_dir}"
+
+cleanup() {
+  if [[ -n "${next_pid}" ]] && kill -0 "${next_pid}" 2>/dev/null; then
+    kill "${next_pid}" 2>/dev/null || true
+    wait "${next_pid}" 2>/dev/null || true
+  fi
+  rm -rf "${plan_runtime_dir}"
+}
+
+terminate() {
+  exit 0
+}
+
+trap cleanup EXIT
+trap terminate INT TERM
+
+cd "${plan_root}"
+
+if ! pnpm exec supabase status -o env >"${plan_status_file}" 2>"${plan_log_file}"; then
+  if ! pnpm exec supabase start >"${plan_log_file}" 2>&1; then
+    echo "Plan E2E could not start local Supabase." >&2
+    exit 1
+  fi
+fi
+
+if ! pnpm exec supabase db reset >"${plan_log_file}" 2>&1; then
+  echo "Plan E2E could not reset the local database." >&2
+  exit 1
+fi
+
+if ! pnpm exec supabase status -o env >"${plan_status_file}" 2>>"${plan_log_file}"; then
+  echo "Plan E2E could not capture local Supabase status." >&2
+  exit 1
+fi
+
+# The local CLI owns this private file. It is never printed and is removed by
+# the EXIT trap. shellcheck disable=SC1090
+source "${plan_status_file}"
+
+: "${API_URL:?local Supabase API_URL is missing}"
+: "${ANON_KEY:?local Supabase ANON_KEY is missing}"
+: "${SERVICE_ROLE_KEY:?local Supabase SERVICE_ROLE_KEY is missing}"
+
+printf '%s\n' \
+  'silent' \
+  'show-error' \
+  'fail-with-body' \
+  "header = \"apikey: ${SERVICE_ROLE_KEY}\"" \
+  "header = \"Authorization: Bearer ${SERVICE_ROLE_KEY}\"" \
+  'header = "Content-Type: application/json"' \
+  >"${plan_curl_config}"
+
+run_id="$(date -u +%Y%m%d%H%M%S)-$$"
+owner_a_email="plan-a-${run_id}@example.invalid"
+owner_b_email="plan-b-${run_id}@example.invalid"
+owner_c_email="plan-canary-${run_id}@example.invalid"
+owner_a_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
+owner_b_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
+owner_c_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
+other_owner_canary="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("hex"))')"
+secret_canary="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("base64url"))')"
+
+create_local_user() {
+  local label="$1"
+  local email="$2"
+  local password="$3"
+  local request_file="${plan_runtime_dir}/${label}-request.json"
+  local response_file="${plan_runtime_dir}/${label}-response.json"
+
+  OUTPUT_FILE="${request_file}" USER_EMAIL="${email}" USER_PASSWORD="${password}" \
+    node <<'NODE'
+const fs = require("node:fs");
+
+fs.writeFileSync(
+  process.env.OUTPUT_FILE,
+  JSON.stringify({
+    email: process.env.USER_EMAIL,
+    password: process.env.USER_PASSWORD,
+    email_confirm: true,
+  }),
+  { mode: 0o600 },
+);
+NODE
+
+  curl --config "${plan_curl_config}" \
+    --request POST \
+    --data-binary "@${request_file}" \
+    --output "${response_file}" \
+    "${API_URL}/auth/v1/admin/users"
+
+  RESPONSE_FILE="${response_file}" node <<'NODE'
+const fs = require("node:fs");
+const response = JSON.parse(fs.readFileSync(process.env.RESPONSE_FILE, "utf8"));
+
+if (typeof response.id !== "string" || response.id.length === 0) {
+  process.exit(1);
+}
+
+process.stdout.write(response.id);
+NODE
+}
+
+post_rows() {
+  local table="$1"
+  local body_file="$2"
+
+  curl --config "${plan_curl_config}" \
+    --header "Prefer: return=minimal" \
+    --request POST \
+    --data-binary "@${body_file}" \
+    --output /dev/null \
+    "${API_URL}/rest/v1/${table}"
+}
+
+owner_a_id="$(create_local_user owner-a "${owner_a_email}" "${owner_a_password}")"
+owner_b_id="$(create_local_user owner-b "${owner_b_email}" "${owner_b_password}")"
+owner_c_id="$(create_local_user owner-canary "${owner_c_email}" "${owner_c_password}")"
+
+owner_a_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
+owner_b_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
+owner_c_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
+balance_as_of="$(node <<'NODE'
+const parts = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Singapore",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+}).formatToParts(new Date());
+const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+process.stdout.write(`${value.year}-${value.month}-${value.day}`);
+NODE
+)"
+
+accounts_request="${plan_runtime_dir}/accounts.json"
+setup_request="${plan_runtime_dir}/owner-setup.json"
+snapshots_request="${plan_runtime_dir}/snapshots.json"
+canary_ai_request="${plan_runtime_dir}/canary-ai.json"
+
+OUTPUT_FILE="${accounts_request}" \
+OWNER_A_ID="${owner_a_id}" OWNER_B_ID="${owner_b_id}" OWNER_C_ID="${owner_c_id}" \
+OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
+OWNER_C_ACCOUNT_ID="${owner_c_account_id}" OTHER_OWNER_CANARY="${other_owner_canary}" \
+  node <<'NODE'
+const fs = require("node:fs");
+
+fs.writeFileSync(
+  process.env.OUTPUT_FILE,
+  JSON.stringify([
+    {
+      id: process.env.OWNER_A_ACCOUNT_ID,
+      owner_id: process.env.OWNER_A_ID,
+      name: "Desktop Starting Point",
+      bank: null,
+      purpose: "savings",
+    },
+    {
+      id: process.env.OWNER_B_ACCOUNT_ID,
+      owner_id: process.env.OWNER_B_ID,
+      name: "Mobile Starting Point",
+      bank: null,
+      purpose: "savings",
+    },
+    {
+      id: process.env.OWNER_C_ACCOUNT_ID,
+      owner_id: process.env.OWNER_C_ID,
+      name: process.env.OTHER_OWNER_CANARY,
+      bank: null,
+      purpose: "savings",
+    },
+  ]),
+  { mode: 0o600 },
+);
+NODE
+post_rows accounts "${accounts_request}"
+
+OUTPUT_FILE="${setup_request}" \
+OWNER_A_ID="${owner_a_id}" OWNER_B_ID="${owner_b_id}" OWNER_C_ID="${owner_c_id}" \
+OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
+OWNER_C_ACCOUNT_ID="${owner_c_account_id}" \
+  node <<'NODE'
+const fs = require("node:fs");
+
+fs.writeFileSync(
+  process.env.OUTPUT_FILE,
+  JSON.stringify([
+    {
+      owner_id: process.env.OWNER_A_ID,
+      locale: "en-SG",
+      time_zone: "Asia/Singapore",
+      base_currency: "SGD",
+      savings_account_id: process.env.OWNER_A_ACCOUNT_ID,
+    },
+    {
+      owner_id: process.env.OWNER_B_ID,
+      locale: "en-SG",
+      time_zone: "Asia/Singapore",
+      base_currency: "SGD",
+      savings_account_id: process.env.OWNER_B_ACCOUNT_ID,
+    },
+    {
+      owner_id: process.env.OWNER_C_ID,
+      locale: "en-SG",
+      time_zone: "Asia/Singapore",
+      base_currency: "SGD",
+      savings_account_id: process.env.OWNER_C_ACCOUNT_ID,
+    },
+  ]),
+  { mode: 0o600 },
+);
+NODE
+post_rows owner_setup "${setup_request}"
+
+OUTPUT_FILE="${snapshots_request}" BALANCE_AS_OF="${balance_as_of}" \
+OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
+OWNER_C_ACCOUNT_ID="${owner_c_account_id}" \
+  node <<'NODE'
+const fs = require("node:fs");
+
+fs.writeFileSync(
+  process.env.OUTPUT_FILE,
+  JSON.stringify([
+    { account_id: process.env.OWNER_A_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
+    { account_id: process.env.OWNER_B_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
+    { account_id: process.env.OWNER_C_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
+  ]),
+  { mode: 0o600 },
+);
+NODE
+post_rows balance_snapshots "${snapshots_request}"
+
+OUTPUT_FILE="${canary_ai_request}" OWNER_ID="${owner_c_id}" SECRET_CANARY="${secret_canary}" \
+  node <<'NODE'
+const fs = require("node:fs");
+
+fs.writeFileSync(
+  process.env.OUTPUT_FILE,
+  JSON.stringify({
+    owner_id: process.env.OWNER_ID,
+    provider_name: "plan-e2e-canary",
+    api_url: "https://example.invalid/v1",
+    api_key: process.env.SECRET_CANARY,
+    model_name: "disabled-canary",
+    is_active: false,
+  }),
+  { mode: 0o600 },
+);
+NODE
+post_rows ai_configs "${canary_ai_request}"
+
+FIXTURE_FILE="${plan_runtime_dir}/fixtures.json" \
+OWNER_A_EMAIL="${owner_a_email}" OWNER_A_PASSWORD="${owner_a_password}" \
+OWNER_B_EMAIL="${owner_b_email}" OWNER_B_PASSWORD="${owner_b_password}" \
+OTHER_OWNER_CANARY="${other_owner_canary}" SECRET_CANARY="${secret_canary}" \
+  node <<'NODE'
+const fs = require("node:fs");
+
+fs.writeFileSync(
+  process.env.FIXTURE_FILE,
+  JSON.stringify({
+    "desktop-chromium": {
+      email: process.env.OWNER_A_EMAIL,
+      password: process.env.OWNER_A_PASSWORD,
+      ruleName: "Desktop Monthly Transfer",
+      otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+      secretCanary: process.env.SECRET_CANARY,
+    },
+    "mobile-chromium": {
+      email: process.env.OWNER_B_EMAIL,
+      password: process.env.OWNER_B_PASSWORD,
+      ruleName: "Mobile Monthly Transfer",
+      otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+      secretCanary: process.env.SECRET_CANARY,
+    },
+  }),
+  { mode: 0o600 },
+);
+NODE
+
+# The application receives only the local public Supabase boundary. Known
+# server-secret names are fixed empty so dotenv loading cannot populate them.
+env -i \
+  PATH="${PATH}" \
+  HOME="${HOME:-/tmp}" \
+  TMPDIR="${TMPDIR:-/tmp}" \
+  SHELL="${SHELL:-/bin/sh}" \
+  NODE_ENV="development" \
+  NEXT_TELEMETRY_DISABLED="1" \
+  NEXT_PUBLIC_SUPABASE_URL="${API_URL}" \
+  NEXT_PUBLIC_SUPABASE_ANON_KEY="${ANON_KEY}" \
+  SUPABASE_SERVICE_ROLE_KEY="" \
+  SUPABASE_SECRET_KEY="" \
+  SERVICE_ROLE_KEY="" \
+  OPENAI_API_KEY="" \
+  pnpm exec next dev --hostname 127.0.0.1 --port "${plan_port}" \
+  >"${next_log_file}" 2>&1 &
+
+next_pid="$!"
+wait "${next_pid}"

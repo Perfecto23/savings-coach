@@ -24,7 +24,7 @@ export default async function SopPage({ searchParams }: SopPageProps) {
   const [recordsRes, templatesRes, accountsRes] = await Promise.all([
     supabase
       .from("sop_records")
-      .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at")
+      .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, rule_amount, scheduled_for, source_account_id, source_account_name, target_account_id, target_account_name, created_at")
       .eq("owner_id", user.id)
       .eq("year_month", yearMonth)
       .order("sort_order"),
@@ -32,6 +32,7 @@ export default async function SopPage({ searchParams }: SopPageProps) {
       .from("sop_templates")
       .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
       .eq("owner_id", user.id)
+      .eq("is_plan_rule", false)
       .order("sort_order"),
     supabase
       .from("accounts")

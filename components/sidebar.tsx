@@ -6,6 +6,7 @@ import { logout } from "@/app/login/actions";
 
 const NAV_ITEMS = [
   { href: "/", label: "仪表盘", icon: HomeIcon },
+  { href: "/plan", label: "Savings Plan", icon: PlanIcon },
   { href: "/sop", label: "月度 SOP", icon: ChecklistIcon },
   { href: "/balances", label: "余额记录", icon: WalletIcon },
   { href: "/income", label: "收入管理", icon: BanknoteIcon },
@@ -46,7 +47,7 @@ export function Sidebar({ className }: { className?: string }) {
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-orange-100 text-orange-700"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-gray-900"
+                  : "text-stone-600 hover:bg-orange-50 hover:text-orange-950"
               }`}
             >
               <item.icon className="h-5 w-5 shrink-0" />
@@ -60,7 +61,7 @@ export function Sidebar({ className }: { className?: string }) {
         <form action={logout}>
           <button
             type="submit"
-            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-stone-500 transition-colors hover:bg-red-50 hover:text-red-700"
           >
             <LogoutIcon className="h-5 w-5" />
             退出登录
@@ -85,6 +86,15 @@ function ChecklistIcon({ className }: { className?: string }) {
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} aria-hidden="true">
       <title>月度 SOP</title>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  );
+}
+
+function PlanIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} aria-hidden="true">
+      <title>Savings Plan</title>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5v-4.125m5.25 4.125v-7.875M15 19.5V8.25m5.25 11.25V4.5M3 19.5h18" />
     </svg>
   );
 }

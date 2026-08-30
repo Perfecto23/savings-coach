@@ -18,6 +18,7 @@ export default async function SettingsPage() {
       .from("sop_templates")
       .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
       .eq("owner_id", user.id)
+      .eq("is_plan_rule", false)
       .order("sort_order"),
   ]);
 

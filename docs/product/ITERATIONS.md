@@ -6,7 +6,7 @@
 
 - `planned`：尚未开始。
 - `in_progress`：正在实现或验证。
-- `ready_for_release`：本地验收完成，尚未 commit、push 或部署。
+- `ready_for_release`：本地验收完成，尚未 push 或部署。
 - `released`：代码已经发布，但不自动代表 live 行为正确。
 - `verified_live`：目标环境已经完成独立 readback。
 - `blocked`：满足项目 blocker 定义，且没有安全的继续路径。
@@ -31,6 +31,8 @@
 - Date: 2026-08-30
 - Outcome: 建立可重复的产品治理和公开登录页自动化回归。
 - Status: `ready_for_release`
+- Local branch: `codex/iteration-1-quality-foundation`
+- Implementation commit: `70ced96`
 
 ### Delivered
 
@@ -51,7 +53,7 @@
 
 ### Not Claimed
 
-- 尚未 commit、push 或部署。
+- 尚未 push、创建 PR 或部署。
 - 尚未验证 EdgeOne、真实 Supabase 登录或 session refresh。
 - 尚未运行 Firefox、WebKit 或真实移动设备。
 - 尚未修改 production schema 或 production data。

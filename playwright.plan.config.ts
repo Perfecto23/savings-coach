@@ -1,25 +1,26 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = 43117;
+const port = 43119;
 const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
+  globalTeardown: "./tests/e2e/setup-global-teardown.ts",
   testDir: "./tests/e2e",
-  testIgnore: ["setup-checkpoint.spec.ts", "plan-activation.spec.ts"],
+  testMatch: "plan-activation.spec.ts",
   fullyParallel: false,
+  workers: 1,
+  timeout: 90_000,
   use: {
     baseURL,
     screenshot: "only-on-failure",
-    trace: "retain-on-failure",
+    trace: "off",
+    video: "off",
   },
   webServer: {
-    command: `pnpm exec next dev --hostname 127.0.0.1 --port ${port}`,
+    command: `bash scripts/start-plan-e2e-server.sh ${port}`,
     url: `${baseURL}/login`,
     reuseExistingServer: false,
-    env: {
-      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-local-anon-key",
-    },
+    timeout: 180_000,
   },
   projects: [
     {

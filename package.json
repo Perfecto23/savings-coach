@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",
+    "test:e2e:plan": "playwright test --config=playwright.plan.config.ts",
     "test:e2e:setup": "playwright test --config=playwright.setup.config.ts",
     "test:db": "supabase test db",
     "test:migration-preflight": "bash scripts/test-owner-migration-preflight.sh",

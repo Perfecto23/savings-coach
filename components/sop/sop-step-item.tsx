@@ -66,12 +66,16 @@ export function SopStepItem({
     setLoading(false);
   }
 
-  const fromLabel = templateFromAccount
-    ? `${templateFromAccount.icon} ${templateFromAccount.name}`
-    : null;
-  const toLabel = templateToAccount
-    ? `${templateToAccount.icon} ${templateToAccount.name}`
-    : null;
+  const fromLabel = record.scheduled_for
+    ? record.source_account_name
+    : templateFromAccount
+      ? `${templateFromAccount.icon} ${templateFromAccount.name}`
+      : null;
+  const toLabel = record.scheduled_for
+    ? record.target_account_name
+    : templateToAccount
+      ? `${templateToAccount.icon} ${templateToAccount.name}`
+      : null;
 
   const transferLabel =
     fromLabel && toLabel ? `${fromLabel} → ${toLabel}` : record.step_label;

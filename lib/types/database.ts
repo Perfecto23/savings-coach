@@ -56,6 +56,7 @@ export interface MonthlyMilestone {
   actual_savings: number | null; // 储蓄账户净值变化
   actual_total_savings: number | null; // 储蓄账户月末总净值
   status: "pending" | "on_track" | "exceeded" | "missed";
+  is_plan_path: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +80,7 @@ export interface SopTemplate {
   default_amount: number | null;
   sort_order: number;
   is_active: boolean;
+  is_plan_rule: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -97,6 +99,13 @@ export interface SopRecord {
   sort_order: number;
   counts_toward_milestone: boolean;
   milestone_amount: number | null;
+  is_monthly_action: boolean;
+  rule_amount: number | null;
+  scheduled_for: string | null;
+  source_account_id: string | null;
+  source_account_name: string | null;
+  target_account_id: string | null;
+  target_account_name: string | null;
   created_at: string;
 }
 
@@ -143,6 +152,7 @@ export interface OwnerSetup {
   time_zone: string;
   base_currency: string;
   savings_account_id: string | null;
+  plan_activated_at: string | null;
   created_at: string;
   updated_at: string;
 }

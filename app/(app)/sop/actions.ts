@@ -48,6 +48,7 @@ export async function initMonthSop(
       .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
       .eq("owner_id", user.id)
       .eq("is_active", true)
+      .eq("is_plan_rule", false)
       .order("sort_order"),
     supabase.from("accounts").select("id, purpose").eq("owner_id", user.id),
   ]);
@@ -108,6 +109,29 @@ export async function toggleSopStep(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (!id || typeof id !== "string" || id.trim() === "") return { success: false, error: "ID无效" };
+
+  const { data: existing, error: existingError } = await supabase
+    .from("sop_records")
+    .select("is_monthly_action")
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (existingError) return { success: false, error: existingError.message };
+  if (!existing) return { success: false, error: "记录不存在" };
+
+  if (existing.is_monthly_action) {
+    const { error } = await supabase.rpc("update_monthly_action", {
+      p_action_id: id,
+      p_patch: { completed },
+    });
+    if (error) return { success: false, error: "月度行动更新失败" };
+
+    revalidatePath("/sop");
+    revalidatePath("/plan");
+    revalidatePath("/milestones");
+    revalidatePath("/");
+    return { success: true, data: undefined };
+  }
 
   const { data, error } = await supabase
     .from("sop_records")
@@ -222,16 +246,35 @@ export async function updateSopStep(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
   if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount < 0)) return { success: false, error: "金额无效" };
+  if (data.note !== undefined && data.note.length > 1000) return { success: false, error: "备注过长" };
 
   const { data: existing, error: existingError } = await supabase
     .from("sop_records")
-    .select("counts_toward_milestone")
+    .select("counts_toward_milestone, is_monthly_action")
     .eq("id", id)
     .eq("owner_id", user.id)
     .maybeSingle();
 
   if (existingError) return { success: false, error: existingError.message };
   if (!existing) return { success: false, error: "记录不存在" };
+
+  if (existing.is_monthly_action) {
+    const patch: { note?: string; amount?: string } = {};
+    if (data.note !== undefined) patch.note = data.note;
+    if (data.amount !== undefined) patch.amount = String(data.amount);
+
+    const { error } = await supabase.rpc("update_monthly_action", {
+      p_action_id: id,
+      p_patch: patch,
+    });
+    if (error) return { success: false, error: "月度行动更新失败" };
+
+    revalidatePath("/sop");
+    revalidatePath("/plan");
+    revalidatePath("/milestones");
+    revalidatePath("/");
+    return { success: true, data: undefined };
+  }
 
   const updates: { note?: string; amount?: number; counts_toward_milestone?: boolean; milestone_amount?: number | null } = {
     ...data,

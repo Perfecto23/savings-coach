@@ -166,6 +166,7 @@ export async function getSopTemplates() {
     .from("sop_templates")
     .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
     .eq("owner_id", user.id)
+    .eq("is_plan_rule", false)
     .order("sort_order");
 
   if (error) return { success: false as const, error: error.message };
@@ -198,6 +199,7 @@ export async function createSopTemplate(
         : null,
       sort_order: Number(formData.get("sort_order") || 0),
       is_active: formData.get("is_active") === "true",
+      is_plan_rule: false,
     })
     .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
     .single();
@@ -236,6 +238,7 @@ export async function updateSopTemplate(
     })
     .eq("id", id)
     .eq("owner_id", user.id)
+    .eq("is_plan_rule", false)
     .select("id")
     .maybeSingle();
 
@@ -255,6 +258,7 @@ export async function deleteSopTemplate(id: string): Promise<ActionResult> {
     .delete()
     .eq("id", id)
     .eq("owner_id", user.id)
+    .eq("is_plan_rule", false)
     .select("id")
     .maybeSingle();
 

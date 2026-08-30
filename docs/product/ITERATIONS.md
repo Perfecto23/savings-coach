@@ -18,8 +18,8 @@
 |---:|---|---|---|
 | 1 | Quality foundation | `verified_live` | [PR #1](https://github.com/Perfecto23/savings-coach/pull/1)；Vercel production readback |
 | 2 | EdgeOne hosting decision | `verified_live` | [PR #2](https://github.com/Perfecto23/savings-coach/pull/2)；`FAIL_FOR_CURRENT_SEQUENCE` |
-| 3 | Safe invited-user access | `released` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted 004 readback；Vercel production |
-| 4 | Setup checkpoint | `ready_for_release` | [Draft PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；local gates passed |
+| 3 | Safe invited-user access | `verified_live` | [PR #4](https://github.com/Perfecto23/savings-coach/pull/4)；hosted A/B RLS and browser readback |
+| 4 | Setup checkpoint | `verified_live` | [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)；hosted 005 and production recovery journey |
 | 5 | Income-independent Plan activation | `planned` | — |
 | 6 | Monthly execution Home | `planned` | — |
 | 7 | Trustworthy Progress | `planned` | — |
@@ -114,7 +114,7 @@
 - Merge commit: `bc72e81`
 - GitGuardian and Vercel Preview checks: pass。
 - Vercel Preview browser readback: `NOT TESTED`；Preview 需要 Vercel 登录。
-- Status: `released`
+- Status: `verified_live`
 - Outcome: 两名受邀用户可以使用同一 deployment，且不能读取或修改对方的财务数据。
 - Access model: `one auth user = one owner`；不新增 Tenant、Organization、Profile、Membership 或 RBAC。
 - In scope: owner migration、RLS、owner-scoped unique、cross-owner FK、两用户负向测试、Consumer AI 关闭。
@@ -129,20 +129,22 @@
 - Hosted grants and FKs: business anon CRUD 0；BYOK CRUD 0；released authenticated CRUD 40；owner RESTRICT FKs 9。
 - Hosted Auth: Email provider enabled；public signup disabled；anonymous sign-in disabled；reload readback passed。
 - Vercel production: merge deployment passed；`/` → `/login`；`/api/chat` returns `404 feature_disabled`。
-- Remaining live gate: second invited user creation and A/B browser isolation readback。
+- Hosted A/B RLS transaction: second owner sees 0 existing rows；owner spoof rejected；cross-owner update affects 0 rows；own CRUD succeeds inside rollback。
+- Hosted second-owner browser: login passed；existing Account visibility 0；dashboard empty state rendered；browser error/warning 0。
 - Production state changed: Yes；Supabase project resumed、004 applied、public signup disabled、PR #4 merged and deployed。
 
 ## Iteration 4 Readback
 
-- Local branch: `codex/iteration-4-setup-checkpoint`
+- Local branch: `codex/iteration-4-setup-checkpoint-clean`
 - Commit: `dcf66fa`
-- Pull request: [Draft PR #6](https://github.com/Perfecto23/savings-coach/pull/6)
+- Pull request: [PR #6](https://github.com/Perfecto23/savings-coach/pull/6)
+- Merge commit: `faef63e`
 - Base branch: `main` after PR #4
-- Status: `ready_for_release`
+- Status: `verified_live`
 - Outcome: 受邀用户保存地区设置、一个储蓄账户和当前余额；返回后恢复同一个储蓄起点。
 - In scope: locale、timezone、基础货币、储蓄账户、首个余额快照、Setup completion 和 redirect。
 - Out of scope: public signup、Plan、月度里程碑、Income、AI、Reminder、Billing、Household、FX 和完整 i18n。
-- Release boundary: Iteration 3 已完成 hosted migration；第二名受邀用户的 A/B live readback 必须先通过。
+- Release boundary: Iteration 3 已完成 hosted A/B live readback。
 - Database: migration 005；owner-scoped `owner_setup`；58 Setup assertions；existing isolation suite 82 assertions。
 - Concurrency: preferences、Account create、same-balance retry 和 conflicting-balance race passed。
 - Authenticated Playwright: desktop and Pixel 5 passed；真实 local Auth、three-checkpoint recovery、logout/login、RSC canary and currency readback。
@@ -150,4 +152,9 @@
 - Application validation: lint 0 error、typecheck pass、build pass。
 - Design review: Impeccable verdict `ship` after CTA contrast、mobile hierarchy、field errors、loading、rail summary and copy fixes。
 - Manual browser: desktop/mobile Setup、completion、dashboard currency and complete redirect passed；no browser error or warning。
-- Production state changed: No。
+- Hosted preflight: 2 Auth users、5 Accounts、30 Balance Snapshots、institution `NOT NULL`、0 Setup table/RPC。
+- Hosted migration: 005 applied；Account and Snapshot counts preserved；institution nullable；`owner_setup` RLS and 3 policies enabled。
+- Hosted RPC: 2 parameters、JSONB return、Security Invoker；authenticated execute enabled；anon execute disabled。
+- Production journey: incomplete owner redirected to Setup；three checkpoints、completion、reload、logout/login、dashboard currency and complete redirect passed。
+- Temporary hosted test user: retained for cleanup；deletion requires a separate approval。
+- Production state changed: Yes；005 applied、PR #6 merged and Vercel production verified。

@@ -10,4 +10,5 @@ Deno.test("Edge Function modules export fetch handlers without starting listener
   for (const entrypoint of [sender, webhook, unsubscribe]) {
     assert.equal(typeof entrypoint.default?.fetch, "function");
   }
+  assert.equal(sender.REMINDER_CRON_SECRET_NAME, "reminder_cron");
 });

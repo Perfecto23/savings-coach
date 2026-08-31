@@ -19,7 +19,7 @@ Vercel availability gate `REVIEW_EMAIL_FEATURE_ENABLED` 默认保持 `false`。G
 - Resend production credential。
 - Resend verified sender domain 或 subdomain。
 - 费用与 production delivery 授权。
-- Supabase named secret key：`reminder-cron`。
+- Supabase named secret key：`reminder_cron`。
 
 不要把任何 secret 写入本文件、migration、Git、RSC、Client props、delivery ledger 或日志。
 
@@ -213,7 +213,7 @@ select cron.schedule(
 select cron.unschedule('send-review-reminders');
 ```
 
-5. 轮换或撤销 `reminder-cron` named secret key。
+5. 轮换或撤销 `reminder_cron` named secret key。
 6. 轮换 Resend API key 和 webhook signing secret。
 7. delivery ledger 最多保留 90 天用于 reconciliation。禁止盲目重发 unknown delivery。
 8. 停止 retention job：

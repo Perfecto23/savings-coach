@@ -3,17 +3,25 @@
 import { useMemo } from "react";
 import type { MonthlyBreakdown } from "@/lib/tax-calculator";
 import type { BonusEvent } from "@/lib/types/database";
+import { formatMoney } from "@/lib/format-money";
+import type { IncomeCopy } from "@/lib/income/presentation";
 
 interface MonthlyForecastTableProps {
   breakdown: MonthlyBreakdown[];
   bonusEvents: BonusEvent[];
   startYear: number;
+  locale: string;
+  baseCurrency: string;
+  copy: IncomeCopy["forecast"];
 }
 
 export function MonthlyForecastTable({
   breakdown,
   bonusEvents,
   startYear,
+  locale,
+  baseCurrency,
+  copy,
 }: MonthlyForecastTableProps) {
   const cumulativeFunds = useMemo(
     () =>
@@ -33,23 +41,23 @@ export function MonthlyForecastTable({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">月度到手预测</h3>
+      <h3 className="text-lg font-semibold text-gray-900">{copy.title}</h3>
       <p className="mt-1 text-sm text-gray-500">
-        基于累计预扣法，年初个税低、年末高
+        {copy.description}
       </p>
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-175 text-sm">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="px-3 py-2 text-left font-medium text-gray-500">月份</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">税前</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">社保</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">公积金</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">个税</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">到手</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">公积金累计</th>
-              <th className="px-3 py-2 text-left font-medium text-gray-500">奖金</th>
+              <th className="px-3 py-2 text-left font-medium text-gray-500">{copy.month}</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.gross}</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.socialInsurance}</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.housingFund}</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.tax}</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.net}</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.housingCumulative}</th>
+              <th className="px-3 py-2 text-left font-medium text-gray-500">{copy.bonus}</th>
             </tr>
           </thead>
           <tbody>
@@ -64,25 +72,25 @@ export function MonthlyForecastTable({
                   }`}
                 >
                   <td className="px-3 py-2 font-medium text-gray-900">
-                    {row.month}月
+                    {row.month}{copy.monthSuffix}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-700">
-                    {row.gross.toLocaleString()}
+                    {formatMoney(row.gross, locale, baseCurrency)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
-                    -{row.socialInsurance.toLocaleString()}
+                    {formatMoney(-row.socialInsurance, locale, baseCurrency)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
-                    -{row.housingFund.toLocaleString()}
+                    {formatMoney(-row.housingFund, locale, baseCurrency)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-red-500">
-                    -{row.monthlyTax.toLocaleString()}
+                    {formatMoney(-row.monthlyTax, locale, baseCurrency)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-green-700">
-                    {row.netIncome.toLocaleString()}
+                    {formatMoney(row.netIncome, locale, baseCurrency)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-blue-600">
-                    {cumulativeFunds[index].toLocaleString()}
+                    {formatMoney(cumulativeFunds[index], locale, baseCurrency)}
                   </td>
                   <td className="px-3 py-2">
                     {bonuses.map((b) => (
@@ -94,7 +102,7 @@ export function MonthlyForecastTable({
                             : "bg-amber-100 text-amber-800"
                         }`}
                       >
-                        +¥{(b.actual_amount ?? b.amount).toLocaleString()}
+                        +{formatMoney(b.actual_amount ?? b.amount, locale, baseCurrency)}
                         {b.is_received ? " ✓" : ""}
                       </span>
                     ))}
@@ -105,24 +113,24 @@ export function MonthlyForecastTable({
           </tbody>
           <tfoot>
             <tr className="border-t border-gray-200 bg-gray-50/50">
-              <td className="px-3 py-2 font-semibold text-gray-900">合计</td>
+              <td className="px-3 py-2 font-semibold text-gray-900">{copy.total}</td>
               <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
-                {breakdown.reduce((s, r) => s + r.gross, 0).toLocaleString()}
+                {formatMoney(breakdown.reduce((s, r) => s + r.gross, 0), locale, baseCurrency)}
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
-                -{breakdown.reduce((s, r) => s + r.socialInsurance, 0).toLocaleString()}
+                {formatMoney(-breakdown.reduce((s, r) => s + r.socialInsurance, 0), locale, baseCurrency)}
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums text-gray-500">
-                -{breakdown.reduce((s, r) => s + r.housingFund, 0).toLocaleString()}
+                {formatMoney(-breakdown.reduce((s, r) => s + r.housingFund, 0), locale, baseCurrency)}
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums text-red-500">
-                -{breakdown.reduce((s, r) => s + r.monthlyTax, 0).toLocaleString()}
+                {formatMoney(-breakdown.reduce((s, r) => s + r.monthlyTax, 0), locale, baseCurrency)}
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-green-700">
-                {breakdown.reduce((s, r) => s + r.netIncome, 0).toLocaleString()}
+                {formatMoney(breakdown.reduce((s, r) => s + r.netIncome, 0), locale, baseCurrency)}
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums text-blue-600">
-                {totalCumulative.toLocaleString()}
+                {formatMoney(totalCumulative, locale, baseCurrency)}
               </td>
               <td className="px-3 py-2" />
             </tr>

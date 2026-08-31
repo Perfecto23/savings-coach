@@ -6,6 +6,10 @@ import { useState } from "react";
 import { deleteMilestone } from "@/app/(app)/income/actions";
 import { formatMoney } from "@/lib/format-money";
 import type { BonusEvent, MonthlyMilestone } from "@/lib/types/database";
+import type {
+  MilestoneDeleteErrorCode,
+  MilestonesCopy,
+} from "@/lib/milestones/presentation";
 
 interface MilestoneTableProps {
   milestones: MonthlyMilestone[];
@@ -13,14 +17,16 @@ interface MilestoneTableProps {
   locale: string;
   baseCurrency: string;
   currentYearMonth: string;
+  copy: MilestonesCopy["table"];
 }
 
-const STATUS_BADGES: Record<string, { label: string; className: string }> = {
-  pending: { label: "Execution pending", className: "bg-stone-100 text-stone-600" },
-  on_track: { label: "Execution complete", className: "bg-emerald-100 text-emerald-800" },
-  exceeded: { label: "Execution complete", className: "bg-emerald-100 text-emerald-800" },
-  missed: { label: "Execution incomplete", className: "bg-amber-100 text-amber-900" },
-};
+function formatMonth(yearMonth: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${yearMonth}-01T00:00:00.000Z`));
+}
 
 export function MilestoneTable({
   milestones: initialMilestones,
@@ -28,36 +34,44 @@ export function MilestoneTable({
   locale,
   baseCurrency,
   currentYearMonth,
+  copy,
 }: MilestoneTableProps) {
   const [milestones, setMilestones] = useState(initialMilestones);
+  const [deleteError, setDeleteError] = useState<MilestoneDeleteErrorCode | null>(null);
   const router = useRouter();
   const currentMonth = currentYearMonth;
 
   async function handleDelete(yearMonth: string) {
-    if (!window.confirm(`Delete the legacy Monthly Milestone for ${yearMonth}?`)) return;
+    if (!window.confirm(copy.deleteConfirm.replace("{month}", formatMonth(yearMonth, locale)))) return;
+    setDeleteError(null);
     const result = await deleteMilestone(yearMonth);
     if (result.success) {
       setMilestones((previous) =>
         previous.filter((milestone) => milestone.year_month !== yearMonth)
       );
       router.refresh();
+    } else {
+      setDeleteError(result.error);
     }
   }
 
   if (milestones.length === 0) {
     return (
       <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-500">
-        No Progress data yet. Activate a Savings Plan to create a Plan Path.
+        {copy.empty}
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {deleteError ? (
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {copy.deleteErrors[deleteError]}
+        </p>
+      ) : null}
       <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-xs leading-5 text-blue-800">
-        Execution status only reflects Monthly Action confirmations. Net value
-        change comes from Balance Snapshots and can include transfers,
-        withdrawals, or market movement.
+        {copy.explanation}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
@@ -65,14 +79,14 @@ export function MilestoneTable({
           <table className="w-full min-w-180 text-sm">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50/70">
-                <Header align="left">Month</Header>
-                <Header>Planned transfer</Header>
-                <Header>Target balance</Header>
-                <Header>Net value change</Header>
-                <Header>Balance Snapshot total</Header>
-                <Header align="center">Execution status</Header>
-                <Header align="left">Bonus events</Header>
-                <Header align="center">Report</Header>
+                <Header align="left">{copy.month}</Header>
+                <Header>{copy.plannedTransfer}</Header>
+                <Header>{copy.targetBalance}</Header>
+                <Header>{copy.netValueChange}</Header>
+                <Header>{copy.balanceSnapshotTotal}</Header>
+                <Header align="center">{copy.executionStatus}</Header>
+                <Header align="left">{copy.bonusEvents}</Header>
+                <Header align="center">{copy.report}</Header>
               </tr>
             </thead>
             <tbody>
@@ -82,7 +96,12 @@ export function MilestoneTable({
                 const bonuses = bonusEvents.filter(
                   (event) => event.expected_date.slice(0, 7) === milestone.year_month
                 );
-                const badge = STATUS_BADGES[milestone.status] ?? STATUS_BADGES.pending;
+                const badge = {
+                  pending: { label: copy.statusPending, className: "bg-stone-100 text-stone-600" },
+                  on_track: { label: copy.statusComplete, className: "bg-emerald-100 text-emerald-800" },
+                  exceeded: { label: copy.statusComplete, className: "bg-emerald-100 text-emerald-800" },
+                  missed: { label: copy.statusIncomplete, className: "bg-amber-100 text-amber-900" },
+                }[milestone.status] ?? { label: copy.statusPending, className: "bg-stone-100 text-stone-600" };
 
                 return (
                   <tr
@@ -93,14 +112,14 @@ export function MilestoneTable({
                   >
                     <td className="px-4 py-3">
                       <span className={isCurrent ? "font-medium text-orange-800" : "font-medium text-stone-950"}>
-                        {milestone.year_month}
+                        {formatMonth(milestone.year_month, locale)}
                       </span>
                       {isCurrent ? (
-                        <span className="ml-1.5 text-xs text-orange-700">Current</span>
+                        <span className="ml-1.5 text-xs text-orange-700">{copy.current}</span>
                       ) : null}
                       {milestone.review_completed_at ? (
                         <span className="ml-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                          Reviewed
+                          {copy.reviewed}
                         </span>
                       ) : null}
                     </td>
@@ -128,10 +147,10 @@ export function MilestoneTable({
                       <div className="flex items-center justify-center gap-2">
                         <Link
                           href={`/milestones/${milestone.year_month}/report`}
-                          aria-label="Open monthly report"
+                          aria-label={copy.openReportAria}
                           className="text-xs font-medium text-orange-700 hover:text-orange-800 hover:underline"
                         >
-                          Open
+                          {copy.open}
                         </Link>
                         {!milestone.is_plan_path &&
                         milestone.year_month <= currentMonth &&
@@ -141,7 +160,7 @@ export function MilestoneTable({
                             onClick={() => handleDelete(milestone.year_month)}
                             className="cursor-pointer text-xs text-stone-400 transition-colors hover:text-red-600"
                           >
-                            Delete
+                            {copy.delete}
                           </button>
                         ) : null}
                       </div>

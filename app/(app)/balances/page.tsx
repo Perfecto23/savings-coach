@@ -5,6 +5,7 @@ import { AccountBalanceCard } from "@/components/balances/account-balance-card";
 import { BalanceForm } from "@/components/balances/balance-form";
 import type { Account } from "@/lib/types/database";
 import type { BalanceDisplaySnapshot } from "@/lib/balances/contracts";
+import { getBalancesCopy } from "@/lib/balances/presentation";
 
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -50,6 +51,7 @@ export default async function BalancesPage() {
   const snapshots = (snapshotsRes.data || []) as BalanceDisplaySnapshot[];
   const locale = setupRes.data?.locale || "en-US";
   const baseCurrency = setupRes.data?.base_currency || "USD";
+  const copy = getBalancesCopy(locale);
 
   // 每个账户的最新快照
   const latestByAccount = new Map<string, BalanceDisplaySnapshot>();
@@ -58,13 +60,13 @@ export default async function BalancesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div lang={locale} className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-3xl font-semibold tracking-[-0.035em] text-stone-950">
-          Balance Snapshots
+          {copy.page.title}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Record what you observe. Savings Coach does not verify a bank balance.
+          {copy.page.description}
         </p>
       </div>
 
@@ -78,6 +80,7 @@ export default async function BalancesPage() {
               latestSnapshot={latestByAccount.get(account.id) ?? null}
               locale={locale}
               baseCurrency={baseCurrency}
+              observedTemplate={copy.card.observed}
             />
           ))}
         </div>
@@ -88,6 +91,8 @@ export default async function BalancesPage() {
         accounts={accounts}
         baseCurrency={baseCurrency}
         defaultDate={localDate(setupRes.data?.time_zone || "UTC")}
+        copy={copy.form}
+        errorCopy={copy.errors}
       />
 
       {/* 趋势图 */}
@@ -96,6 +101,8 @@ export default async function BalancesPage() {
         snapshots={snapshots}
         locale={locale}
         baseCurrency={baseCurrency}
+        copy={copy.history}
+        errorCopy={copy.errors}
       />
     </div>
   );

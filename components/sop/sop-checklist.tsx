@@ -6,6 +6,7 @@ import { SopStepItem } from "./sop-step-item";
 import { initMonthSop, addAdHocSopStep } from "@/app/(app)/sop/actions";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Confetti } from "@/components/ui/confetti";
+import { getSopErrorMessage, type SopCopy } from "@/lib/sop/presentation";
 
 interface SopChecklistProps {
   initialRecords: SopDisplayRecord[];
@@ -13,6 +14,9 @@ interface SopChecklistProps {
   locale: string;
   baseCurrency: string;
   isClosed: boolean;
+  copy: SopCopy["checklist"];
+  stepCopy: SopCopy["step"];
+  errorCopy: SopCopy["errors"];
 }
 
 export function SopChecklist({
@@ -21,6 +25,9 @@ export function SopChecklist({
   locale,
   baseCurrency,
   isClosed,
+  copy,
+  stepCopy,
+  errorCopy,
 }: SopChecklistProps) {
   const [records, setRecords] = useState(initialRecords);
   const [loading, setLoading] = useState(false);
@@ -32,6 +39,7 @@ export function SopChecklist({
   const [adHocAmount, setAdHocAmount] = useState("");
   const [adHocNote, setAdHocNote] = useState("");
   const [adHocLoading, setAdHocLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initDone) return;
@@ -41,6 +49,9 @@ export function SopChecklist({
       const result = await initMonthSop(yearMonth);
       if (!cancelled && result.success) {
         setRecords(result.data);
+        setError(null);
+      } else if (!cancelled && !result.success) {
+        setError(getSopErrorMessage(result.error, errorCopy));
       }
       if (!cancelled) {
         setLoading(false);
@@ -49,7 +60,7 @@ export function SopChecklist({
     }
     doInit();
     return () => { cancelled = true; };
-  }, [initDone, yearMonth]);
+  }, [errorCopy, initDone, yearMonth]);
 
   function handleRecordUpdated(updated: SopDisplayRecord) {
     setRecords((prev) => {
@@ -82,7 +93,8 @@ export function SopChecklist({
       setAdHocAmount("");
       setAdHocNote("");
       setShowAdHocForm(false);
-    }
+      setError(null);
+    } else setError(getSopErrorMessage(result.error, errorCopy));
     setAdHocLoading(false);
   }
 
@@ -108,7 +120,11 @@ export function SopChecklist({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"
+          role="status"
+          aria-label={copy.loading}
+        />
       </div>
     );
   }
@@ -117,11 +133,11 @@ export function SopChecklist({
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
         <p className="text-gray-500">
-          还没有 SOP 模板，请先去
+          {copy.emptyBeforeLink}{" "}
           <a href="/settings" className="font-medium text-orange-500 hover:text-orange-600">
-            设置页
+            {copy.emptyLink}
           </a>
-          配置。
+          {copy.emptyAfterLink}
         </p>
       </div>
     );
@@ -131,10 +147,15 @@ export function SopChecklist({
     <div className="space-y-6">
       <Confetti active={showCelebration} duration={3000} />
 
+      {error ? (
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </p>
+      ) : null}
+
       {isClosed ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
-          This month is closed. Its execution record cannot be changed. Balance
-          Snapshots remain observations and can still be corrected.
+          {copy.closed}
         </div>
       ) : null}
 
@@ -149,7 +170,7 @@ export function SopChecklist({
             sublabel={`${completed}/${total}`}
           />
           <div className="flex-1">
-            <p className="font-medium text-gray-700">本月进度</p>
+            <p className="font-medium text-gray-700">{copy.progress}</p>
             <div className="mt-2 h-3 overflow-hidden rounded-full bg-gray-100">
               <div
                 className="h-full rounded-full bg-linear-to-r from-orange-400 to-orange-500 transition-all duration-500"
@@ -164,9 +185,11 @@ export function SopChecklist({
       {showCelebration && (
         <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
           <p className="text-2xl font-bold text-green-700">
-            本月 SOP 全部完成！
+            {copy.celebrationTitle}
           </p>
-          <p className="mt-1 text-sm text-green-600">太棒了，继续保持！</p>
+          <p className="mt-1 text-sm text-green-600">
+            {copy.celebrationDescription}
+          </p>
         </div>
       )}
 
@@ -174,7 +197,7 @@ export function SopChecklist({
       {sortedDays.map((day) => (
         <div key={day}>
           <h3 className="mb-3 text-sm font-semibold text-gray-500">
-            每月 {day} 号
+            {copy.dayPrefix} {day} {copy.daySuffix}
           </h3>
           <div className="space-y-2">
             {groups[day].map((record) => (
@@ -186,6 +209,8 @@ export function SopChecklist({
                 readOnly={isClosed}
                 onUpdated={handleRecordUpdated}
                 onDeleted={handleRecordDeleted}
+                copy={stepCopy}
+                errorCopy={errorCopy}
               />
             ))}
           </div>
@@ -197,14 +222,16 @@ export function SopChecklist({
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-4">
           {showAdHocForm ? (
             <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-700">添加临时操作</p>
+            <p className="text-sm font-medium text-gray-700">
+              {copy.addTemporaryTitle}
+            </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="text"
                 value={adHocLabel}
                 onChange={(e) => setAdHocLabel(e.target.value)}
-                placeholder="操作名称（如：储蓄→工资卡 匀钱）"
-                aria-label="临时操作名称"
+                placeholder={copy.temporaryNamePlaceholder}
+                aria-label={copy.temporaryNameAria}
                 className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               <div className="flex gap-2">
@@ -213,8 +240,8 @@ export function SopChecklist({
                   inputMode="numeric"
                   value={adHocDay}
                   onChange={(e) => setAdHocDay(e.target.value)}
-                  placeholder="执行日"
-                  aria-label="执行日"
+                  placeholder={copy.dueDay}
+                  aria-label={copy.dueDay}
                   min={1}
                   max={31}
                   className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
@@ -224,8 +251,8 @@ export function SopChecklist({
                   inputMode="decimal"
                   value={adHocAmount}
                   onChange={(e) => setAdHocAmount(e.target.value)}
-                  placeholder="金额（选填）"
-                  aria-label="金额"
+                  placeholder={copy.amountOptional}
+                  aria-label={copy.amount}
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
               </div>
@@ -234,8 +261,8 @@ export function SopChecklist({
               type="text"
               value={adHocNote}
               onChange={(e) => setAdHocNote(e.target.value)}
-              placeholder="备注（选填）"
-              aria-label="备注"
+              placeholder={copy.noteOptional}
+              aria-label={copy.note}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
             <div className="flex items-center justify-end gap-2">
@@ -244,7 +271,7 @@ export function SopChecklist({
                 onClick={() => setShowAdHocForm(false)}
                 className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100"
               >
-                取消
+                {copy.cancel}
               </button>
               <button
                 type="button"
@@ -252,7 +279,7 @@ export function SopChecklist({
                 disabled={adHocLoading || !adHocLabel.trim()}
                 className="cursor-pointer rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
               >
-                添加
+                {copy.add}
               </button>
             </div>
             </div>
@@ -263,7 +290,7 @@ export function SopChecklist({
               className="flex w-full cursor-pointer items-center justify-center gap-1 py-1 text-sm text-gray-500 transition-colors hover:text-orange-600"
             >
               <span className="text-lg leading-none">+</span>
-              添加临时操作（账户间匀钱等）
+              {copy.addTemporary}
             </button>
           )}
         </div>

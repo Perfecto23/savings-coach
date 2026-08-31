@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { toggleSopStep, updateSopStep, deleteAdHocSopStep } from "@/app/(app)/sop/actions";
 import { formatMoney } from "@/lib/format-money";
+import { getSopErrorMessage, type SopCopy } from "@/lib/sop/presentation";
 
 interface SopStepItemProps {
   record: SopDisplayRecord;
@@ -12,6 +13,8 @@ interface SopStepItemProps {
   readOnly?: boolean;
   onUpdated: (updated: SopDisplayRecord) => void;
   onDeleted?: (id: string) => void;
+  copy: SopCopy["step"];
+  errorCopy: SopCopy["errors"];
 }
 
 export function SopStepItem({
@@ -21,11 +24,14 @@ export function SopStepItem({
   readOnly = false,
   onUpdated,
   onDeleted,
+  copy,
+  errorCopy,
 }: SopStepItemProps) {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [amount, setAmount] = useState(String(record.amount ?? ""));
   const [note, setNote] = useState(record.note ?? "");
+  const [error, setError] = useState<string | null>(null);
   const isMonthlyAction = record.scheduled_for != null;
 
   async function handleToggle() {
@@ -37,19 +43,21 @@ export function SopStepItem({
         completed: !record.completed,
         completed_at: !record.completed ? new Date().toISOString() : null,
       });
-    }
+      setError(null);
+    } else setError(getSopErrorMessage(result.error, errorCopy));
     setLoading(false);
   }
 
   const isAdHoc = record.is_ad_hoc;
 
   async function handleDelete() {
-    if (!window.confirm("确定删除此临时步骤？")) return;
+    if (!window.confirm(copy.deleteConfirm)) return;
     setLoading(true);
     const result = await deleteAdHocSopStep(record.id);
     if (result.success) {
       onDeleted?.(record.id);
-    }
+      setError(null);
+    } else setError(getSopErrorMessage(result.error, errorCopy));
     setLoading(false);
   }
 
@@ -63,7 +71,8 @@ export function SopStepItem({
       const result = await updateSopStep(record.id, data);
       if (result.success) {
         onUpdated({ ...record, ...data });
-      }
+        setError(null);
+      } else setError(getSopErrorMessage(result.error, errorCopy));
     }
     setEditing(false);
     setLoading(false);
@@ -88,8 +97,8 @@ export function SopStepItem({
           <span
             aria-label={
               record.completed
-                ? "Completed in closed month"
-                : "Incomplete in closed month"
+                ? copy.completedClosed
+                : copy.incompleteClosed
             }
             className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
               record.completed
@@ -109,7 +118,7 @@ export function SopStepItem({
                 ? "border-green-500 bg-green-500 text-white"
                 : "border-gray-300 hover:border-orange-400"
             }`}
-            aria-label={record.completed ? "标记为未完成" : "标记为完成"}
+            aria-label={record.completed ? copy.markIncomplete : copy.markComplete}
           >
             {record.completed ? <Checkmark /> : null}
           </button>
@@ -120,7 +129,7 @@ export function SopStepItem({
             <div>
               {isAdHoc && (
                 <span className="mr-1.5 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600">
-                  临时
+                  {copy.temporary}
                 </span>
               )}
               <span
@@ -132,7 +141,7 @@ export function SopStepItem({
               </span>
               {record.amount != null && (
                 <p className="mt-1 font-mono text-sm text-gray-500">
-                  {isMonthlyAction ? "Monthly Action amount: " : ""}
+                  {isMonthlyAction ? `${copy.monthlyActionAmount}: ` : ""}
                   {formatMoney(record.amount, locale, baseCurrency)}
                 </p>
               )}
@@ -145,7 +154,7 @@ export function SopStepItem({
                   onClick={() => setEditing(!editing)}
                   className="cursor-pointer text-xs text-gray-400 transition-colors hover:text-orange-500"
                 >
-                  {editing ? "取消" : "编辑"}
+                  {editing ? copy.cancel : copy.edit}
                 </button>
                 {isAdHoc && (
                   <button
@@ -154,7 +163,7 @@ export function SopStepItem({
                     disabled={loading}
                     className="cursor-pointer text-xs text-gray-400 transition-colors hover:text-red-500"
                   >
-                    删除
+                    {copy.delete}
                   </button>
                 )}
               </div>
@@ -163,15 +172,17 @@ export function SopStepItem({
 
           {record.completed && record.completed_at && (
             <p className="mt-1 text-xs text-green-600">
-              完成于{" "}
-              {new Date(record.completed_at).toLocaleString("zh-CN", {
+              {copy.completedAt}{" "}
+              {new Date(record.completed_at).toLocaleString(locale, {
                 month: "2-digit",
                 day: "2-digit",
                 hour: "2-digit",
                 minute: "2-digit",
               })}
               {record.note && (
-                <span className="ml-2 text-gray-500">备注: {record.note}</span>
+                <span className="ml-2 text-gray-500">
+                  {copy.note}: {record.note}
+                </span>
               )}
             </p>
           )}
@@ -184,16 +195,16 @@ export function SopStepItem({
                   inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder={isMonthlyAction ? "Monthly Action amount" : "金额"}
-                  aria-label={isMonthlyAction ? "Monthly Action amount" : "金额"}
+                  placeholder={isMonthlyAction ? copy.monthlyActionAmount : copy.amount}
+                  aria-label={isMonthlyAction ? copy.monthlyActionAmount : copy.amount}
                   className="w-28 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <input
                   type="text"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="备注"
-                  aria-label="备注"
+                  placeholder={copy.note}
+                  aria-label={copy.note}
                   className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <button
@@ -202,18 +213,23 @@ export function SopStepItem({
                   disabled={loading}
                   className="cursor-pointer rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
                 >
-                  保存
+                  {copy.save}
                 </button>
               </div>
               {isMonthlyAction ? (
                 <p className="mt-2 text-xs leading-5 text-gray-500">
-                  This adjusts this month&apos;s plan. It does not record an actual bank transfer.
+                  {copy.monthlyActionHelp}
                 </p>
               ) : null}
             </div>
           )}
         </div>
       </div>
+      {error ? (
+        <p role="alert" className="mt-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

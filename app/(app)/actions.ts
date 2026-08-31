@@ -16,10 +16,9 @@ function errorState(
     | "ACTION_NOT_FOUND"
     | "INVALID_ACTION"
     | "MONTH_CLOSED"
-    | "ACTION_UPDATE_FAILED",
-  message: string
+    | "ACTION_UPDATE_FAILED"
 ): HomeActionState {
-  return { status: "error", error: { code, message } };
+  return { status: "error", error: { code } };
 }
 
 function readString(formData: FormData, key: string) {
@@ -44,17 +43,17 @@ export async function updateHomeAction(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return errorState("UNAUTHENTICATED", "Please sign in again.");
+    return errorState("UNAUTHENTICATED");
   }
 
   const actionId = readString(formData, "action_id");
   if (!UUID_PATTERN.test(actionId)) {
-    return errorState("INVALID_ACTION", "Reload Home and try again.");
+    return errorState("INVALID_ACTION");
   }
 
   const operation = readString(formData, "operation");
   if (operation !== "complete" && operation !== "undo") {
-    return errorState("INVALID_ACTION", "Reload Home and try again.");
+    return errorState("INVALID_ACTION");
   }
 
   const { data, error } = await supabase.rpc("update_monthly_action", {
@@ -62,22 +61,13 @@ export async function updateHomeAction(
     p_patch: { completed: operation === "complete" },
   });
   if (error?.code === "P0001" && error.message === "monthly_action_not_found") {
-    return errorState(
-      "ACTION_NOT_FOUND",
-      "This Monthly Action is no longer available. Reload Home."
-    );
+    return errorState("ACTION_NOT_FOUND");
   }
   if (error?.code === "P0001" && error.message === "month_review_closed") {
-    return errorState(
-      "MONTH_CLOSED",
-      "This month is closed. Its Monthly Actions cannot be changed."
-    );
+    return errorState("MONTH_CLOSED");
   }
   if (error) {
-    return errorState(
-      "ACTION_UPDATE_FAILED",
-      "The Monthly Action could not be updated. Try again."
-    );
+    return errorState("ACTION_UPDATE_FAILED");
   }
 
   revalidateHomePaths();

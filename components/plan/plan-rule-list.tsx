@@ -9,6 +9,7 @@ import type {
   PlanAccountDto,
   PlanRuleDto,
 } from "@/lib/plan/contracts";
+import type { PlanCopy } from "@/lib/plan/presentation";
 
 export function PlanRuleList({
   rules,
@@ -17,6 +18,7 @@ export function PlanRuleList({
   baseCurrency,
   sourceAccounts,
   targetAccount,
+  copy,
 }: {
   rules: PlanRuleDto[];
   createRuleId: string;
@@ -24,6 +26,7 @@ export function PlanRuleList({
   baseCurrency: string;
   sourceAccounts: PlanAccountDto[];
   targetAccount: PlanAccountDto;
+  copy: PlanCopy;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -36,19 +39,21 @@ export function PlanRuleList({
     setActionError(null);
     startTransition(async () => {
       const result = await setPlanRuleActive(rule.id, !rule.active);
-      if (result.status === "error") setActionError(result.error.message);
+      if (result.status === "error") {
+        setActionError(copy.errorMessages[result.error.code]);
+      }
     });
   }
 
   return (
-    <section aria-label="Plan Rules">
+    <section aria-label={copy.ruleList.regionLabel}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-[-0.035em] text-stone-950">
-            Plan Rules
+            {copy.ruleList.title}
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-stone-600">
-            Each active rule creates one Monthly Action per natural month.
+            {copy.ruleList.description}
           </p>
         </div>
         {!adding ? (
@@ -60,7 +65,7 @@ export function PlanRuleList({
             }}
             className="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-950"
           >
-            Add another rule
+            {copy.ruleList.addAnother}
           </button>
         ) : null}
       </div>
@@ -78,6 +83,7 @@ export function PlanRuleList({
             baseCurrency={baseCurrency}
             sourceAccounts={sourceAccounts}
             targetAccount={targetAccount}
+            copy={copy}
             onSaved={closeCreate}
           />
           <button
@@ -85,7 +91,7 @@ export function PlanRuleList({
             onClick={closeCreate}
             className="mt-4 min-h-11 cursor-pointer rounded-xl px-4 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950"
           >
-            Cancel
+            {copy.ruleList.cancel}
           </button>
         </div>
       ) : null}
@@ -101,11 +107,11 @@ export function PlanRuleList({
                   </h3>
                   {rule.active ? (
                     <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                      Active
+                      {copy.ruleList.active}
                     </span>
                   ) : (
                     <span className="rounded-full bg-stone-200 px-2.5 py-1 text-xs font-medium text-stone-700">
-                      Inactive
+                      {copy.ruleList.inactive}
                     </span>
                   )}
                 </div>
@@ -113,7 +119,7 @@ export function PlanRuleList({
                   <span className="font-semibold tabular-nums text-stone-950">
                     {formatMoney(Number(rule.amount), locale, baseCurrency)}
                   </span>{" "}
-                  on day {rule.dueDay} · {rule.sourceAccount?.name ?? "No Source Account"} → {rule.targetAccount.name}
+                  {copy.ruleList.onDayPrefix} {rule.dueDay}{copy.ruleList.dueDaySuffix} · {rule.sourceAccount?.name ?? copy.page.noSourceAccount} → {rule.targetAccount.name}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
@@ -125,7 +131,7 @@ export function PlanRuleList({
                   }}
                   className="min-h-11 cursor-pointer rounded-xl px-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950"
                 >
-                  Edit
+                  {copy.ruleList.edit}
                 </button>
                 <button
                   type="button"
@@ -133,7 +139,7 @@ export function PlanRuleList({
                   onClick={() => changeActive(rule)}
                   className="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-950 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {rule.active ? "Deactivate" : "Reactivate"}
+                  {rule.active ? copy.ruleList.deactivate : copy.ruleList.reactivate}
                 </button>
               </div>
             </div>
@@ -144,6 +150,7 @@ export function PlanRuleList({
                 baseCurrency={baseCurrency}
                 sourceAccounts={sourceAccounts}
                 targetAccount={targetAccount}
+                copy={copy}
                 onCancel={closeEditor}
                 onSaved={closeEditor}
               />

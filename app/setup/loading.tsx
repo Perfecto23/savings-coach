@@ -1,13 +1,9 @@
 export default function SetupLoading() {
   return (
     <main
-      lang="en"
       aria-busy="true"
       className="grid min-h-dvh bg-[#f6f1e8] lg:grid-cols-[minmax(320px,0.8fr)_minmax(560px,1.2fr)]"
     >
-      <span className="sr-only" role="status">
-        Loading your Setup…
-      </span>
       <div className="min-h-72 animate-pulse bg-stone-950 px-8 py-8 lg:min-h-dvh">
         <div className="h-10 w-40 rounded-full bg-stone-800" />
         <div className="mt-20 h-14 max-w-sm rounded-xl bg-stone-800" />

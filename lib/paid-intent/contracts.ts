@@ -1,11 +1,15 @@
+export type PaidIntentErrorCode =
+  | "UNAUTHENTICATED"
+  | "NOT_ELIGIBLE"
+  | "RECORD_FAILED";
+
 export type PaidIntentActionState =
   | { status: "idle"; error: null }
   | { status: "success"; error: null }
   | {
       status: "error";
       error: {
-        code: "UNAUTHENTICATED" | "NOT_ELIGIBLE" | "RECORD_FAILED";
-        message: string;
+        code: PaidIntentErrorCode;
       };
     };
 

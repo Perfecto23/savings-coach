@@ -3,19 +3,31 @@
 import { useState } from "react";
 import type { Account } from "@/lib/types/database";
 import { saveBalanceSnapshot } from "@/app/(app)/balances/actions";
+import type {
+  BalanceActionErrorCode,
+  BalancesCopy,
+} from "@/lib/balances/presentation";
 
 interface BalanceFormProps {
   accounts: Account[];
   baseCurrency: string;
   defaultDate: string;
+  copy: BalancesCopy["form"];
+  errorCopy: BalancesCopy["errors"];
 }
 
-export function BalanceForm({ accounts, baseCurrency, defaultDate }: BalanceFormProps) {
+export function BalanceForm({
+  accounts,
+  baseCurrency,
+  defaultDate,
+  copy,
+  errorCopy,
+}: BalanceFormProps) {
   const [date, setDate] = useState(defaultDate);
   const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<BalanceActionErrorCode | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,15 +54,15 @@ export function BalanceForm({ accounts, baseCurrency, defaultDate }: BalanceForm
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">Record Balance Snapshots</h3>
+      <h3 className="text-lg font-semibold text-gray-900">{copy.title}</h3>
       <p className="mt-1 text-sm leading-6 text-gray-500">
-        This saves your observation. It does not confirm a bank balance.
+        {copy.description}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
           <label htmlFor="balance-date" className="block text-sm font-medium text-gray-700">
-            Observation date
+            {copy.dateLabel}
           </label>
           <input
             id="balance-date"
@@ -85,8 +97,8 @@ export function BalanceForm({ accounts, baseCurrency, defaultDate }: BalanceForm
                       [account.id]: e.target.value,
                     }))
                   }
-                  placeholder="Observed balance"
-                  aria-label={`${account.name} Balance Snapshot`}
+                  placeholder={copy.balancePlaceholder}
+                  aria-label={copy.balanceAria.replace("{account}", account.name)}
                   className="w-full rounded-lg border border-gray-300 py-2 pl-3 pr-16 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
               </div>
@@ -96,13 +108,13 @@ export function BalanceForm({ accounts, baseCurrency, defaultDate }: BalanceForm
 
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            {error}
+            {errorCopy[error]}
           </div>
         )}
 
         {success && (
           <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
-            Balance Snapshot saved. Savings Coach does not verify a bank balance.
+            {copy.success}
           </div>
         )}
 
@@ -111,7 +123,7 @@ export function BalanceForm({ accounts, baseCurrency, defaultDate }: BalanceForm
           disabled={loading}
           className="cursor-pointer rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
         >
-          {loading ? "Saving…" : "Save Balance Snapshots"}
+          {loading ? copy.saving : copy.submit}
         </button>
       </form>
     </div>

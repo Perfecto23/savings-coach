@@ -47,8 +47,12 @@ function captureRscAndHtml(page: Page) {
     }
 
     pending.push(
-      response
-        .text()
+      Promise.race<string>([
+        response.text(),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error("Response body read timed out")), 3_000),
+        ),
+      ])
         .then((body) => {
           payloads.push(body);
         })
@@ -85,9 +89,9 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   const captured = captureRscAndHtml(page);
 
   await page.goto("/login");
-  await page.getByLabel("邮箱").fill(fixture.email);
-  await page.getByLabel("密码").fill(fixture.password);
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto("/plan");
@@ -108,17 +112,17 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(rules.getByRole("listitem").filter({ hasText: fixture.ruleName })).toHaveCount(1);
   await expect(rules).toContainText("S$500.00");
 
-  await page.goto("/settings");
-  await page.getByRole("tab", { name: "SOP 模板" }).click();
+  await page.goto("/settings", { waitUntil: "domcontentloaded" });
+  await page.getByRole("tab", { name: "SOP templates" }).click();
   await expect(page.getByText(fixture.ruleName, { exact: true })).toHaveCount(0);
 
   await page.goto("/plan");
   await expect(rules.getByRole("listitem").filter({ hasText: fixture.ruleName })).toHaveCount(1);
 
   await page.goto("/sop");
-  await expect(page.getByRole("heading", { level: 1, name: "月度 SOP" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Monthly SOP" })).toBeVisible();
   const initializedLegacyRule = page.getByText(fixture.ruleName, { exact: true });
-  const emptyLegacyMonth = page.getByText(/还没有 SOP 模板/);
+  const emptyLegacyMonth = page.getByText(/No SOP template/);
   await expect(initializedLegacyRule.or(emptyLegacyMonth)).toBeVisible();
 
   await page.goto("/plan");
@@ -184,10 +188,10 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(page.getByRole("heading", { name: "Your plan is now in motion." })).toBeVisible();
   const progress = page.getByRole("region", { name: "Monthly Action progress" });
   await expect(progress).toContainText("1 of 1");
-  await expect(page.getByRole("heading", { name: "This month’s Monthly Actions are complete." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This month's Monthly Actions are complete." })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "This month’s Monthly Actions are complete." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This month's Monthly Actions are complete." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your plan is now in motion." })).toHaveCount(0);
   await page
     .getByRole("button", { name: `Undo confirmation for ${fixture.ruleName}` })
@@ -222,7 +226,7 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(
     page.getByText("Monthly Action amount: S$500.00", { exact: true })
   ).toBeVisible();
-  await page.getByRole("button", { name: "编辑" }).first().click();
+  await page.getByRole("button", { name: "Edit" }).first().click();
   await expect(page.getByLabel("Monthly Action amount")).toBeVisible();
   await expect(page.getByText(/does not record an actual bank transfer/)).toBeVisible();
 
@@ -233,9 +237,9 @@ test("an invited owner activates and safely changes a Savings Plan without incom
   await expect(page.getByText(/¥/)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
-  await page.goto("/settings");
+  await page.goto("/settings", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("tab", { name: "Email reminders" })).toHaveCount(0);
-  await expect(page.getByText("管理账户和 SOP 模板", { exact: true })).toBeVisible();
+  await expect(page.getByText("Manage accounts and SOP templates.", { exact: true })).toBeVisible();
 
   const responsePayload = await captured.read();
   for (const forbiddenValue of [

@@ -3,13 +3,15 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { recordPaidIntent } from "@/app/(app)/milestones/[yearMonth]/report/paid-intent-actions";
 import { INITIAL_PAID_INTENT_ACTION_STATE } from "@/lib/paid-intent/contracts";
+import type { PaidIntentCopy } from "@/lib/paid-intent/presentation";
 
 interface ProBetaOfferProps {
   eligible: boolean;
   recorded: boolean;
+  copy: PaidIntentCopy;
 }
 
-export function ProBetaOffer({ eligible, recorded }: ProBetaOfferProps) {
+export function ProBetaOffer({ eligible, recorded, copy }: ProBetaOfferProps) {
   const [state, formAction, pending] = useActionState(
     recordPaidIntent,
     INITIAL_PAID_INTENT_ACTION_STATE
@@ -26,18 +28,17 @@ export function ProBetaOffer({ eligible, recorded }: ProBetaOfferProps) {
   if (recorded || state.status === "success") {
     return (
       <section
-        aria-label="Pro beta interest"
+        aria-label={copy.recorded.ariaLabel}
         className="rounded-xl border border-violet-200 bg-violet-50 p-5 text-violet-950 sm:p-6"
       >
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-violet-700">
-          Interest recorded
+          {copy.recorded.label}
         </p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
-          You were not charged, and no subscription was created.
+          {copy.recorded.title}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-violet-900/80">
-          This is a product-interest signal only. It does not unlock Pro or
-          reserve a future price.
+          {copy.recorded.description}
         </p>
       </section>
     );
@@ -45,27 +46,25 @@ export function ProBetaOffer({ eligible, recorded }: ProBetaOfferProps) {
 
   return (
     <section
-      aria-label="Savings Coach Pro beta offer"
+      aria-label={copy.offer.ariaLabel}
       className="rounded-xl border border-violet-200 bg-white p-5 sm:p-6"
     >
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-violet-700">
-        Pro beta interest
+        {copy.offer.label}
       </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-stone-950">
-        Help shape Savings Coach Pro
+        {copy.offer.title}
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">
-        We are exploring scheduled reminders and richer Monthly Review guidance.
-        Planned features are not available or guaranteed yet.
+        {copy.offer.description}
       </p>
 
-      <div className="mt-5 rounded-xl bg-violet-50 px-4 py-4">
-        <p className="text-2xl font-semibold tracking-[-0.025em] text-violet-950">
-          US$4.99/month after launch
+      <div className="mt-5 rounded-xl bg-stone-100 px-4 py-4">
+        <p className="text-2xl font-semibold tracking-[-0.025em] text-stone-950">
+          {copy.offer.price}
         </p>
-        <p className="mt-2 text-sm leading-6 text-violet-900">
-          Today: no charge. No card. No subscription. This records interest
-          only; it does not start a trial or reserve a price.
+        <p className="mt-2 text-sm leading-6 text-stone-700">
+          {copy.offer.disclaimer}
         </p>
       </div>
 
@@ -76,7 +75,7 @@ export function ProBetaOffer({ eligible, recorded }: ProBetaOfferProps) {
           role="alert"
           className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
         >
-          {state.error.message}
+          {copy.errors[state.error.code]}
         </div>
       ) : null}
 
@@ -87,7 +86,7 @@ export function ProBetaOffer({ eligible, recorded }: ProBetaOfferProps) {
             disabled={pending}
             className="min-h-12 cursor-pointer rounded-xl bg-violet-700 px-5 text-base font-semibold text-white transition-colors hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "Recording…" : "I'm interested in Pro beta"}
+            {pending ? copy.offer.recording : copy.offer.record}
           </button>
         </form>
         <button
@@ -95,7 +94,7 @@ export function ProBetaOffer({ eligible, recorded }: ProBetaOfferProps) {
           onClick={() => setDismissed(true)}
           className="min-h-11 cursor-pointer rounded-xl px-4 text-sm font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-950"
         >
-          Not now
+          {copy.offer.dismiss}
         </button>
       </div>
     </section>

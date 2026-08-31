@@ -11,6 +11,7 @@ export default defineConfig({
     "impulse-locale.spec.ts",
     "monthly-review.spec.ts",
     "review-email-reminder.spec.ts",
+    "locale-consistency.spec.ts",
   ],
   fullyParallel: false,
   use: {

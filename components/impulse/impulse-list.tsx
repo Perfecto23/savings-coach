@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ImpulseLog } from "@/lib/types/database";
 import { deleteImpulseLog } from "@/app/(app)/impulse/actions";
 import { formatMoney } from "@/lib/format-money";
@@ -20,12 +21,15 @@ export function ImpulseList({
   copy,
   onDeleted,
 }: ImpulseListProps) {
+  const [error, setError] = useState<string | null>(null);
+
   async function handleDelete(id: string) {
     if (!window.confirm(copy.deleteConfirm)) return;
     const result = await deleteImpulseLog(id);
     if (result.success) {
       onDeleted(id);
-    }
+      setError(null);
+    } else setError(copy.deleteError);
   }
 
   if (logs.length === 0) {
@@ -38,6 +42,11 @@ export function ImpulseList({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
+      {error ? (
+        <p role="alert" className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
       <div className="border-b border-gray-100 px-6 py-4">
         <h3 className="font-semibold text-gray-900">{copy.title}</h3>
       </div>

@@ -6,14 +6,9 @@ import { AccountManager } from "@/components/settings/account-manager";
 import { SopTemplateEditor } from "@/components/settings/sop-template-editor";
 import { ReviewEmailReminderSettings } from "@/components/settings/review-email-reminder-settings";
 import type { ReviewEmailReminderSettings as ReviewEmailReminderSettingsDto } from "@/lib/reminders/contracts";
+import type { SettingsCopy } from "@/lib/settings/presentation";
 
-const TABS = [
-  { id: "accounts", label: "账户管理" },
-  { id: "sop", label: "SOP 模板" },
-  { id: "review-email-reminders", label: "Email", ariaLabel: "Email reminders" },
-] as const;
-
-type TabId = (typeof TABS)[number]["id"];
+type TabId = "accounts" | "sop" | "review-email-reminders";
 
 interface SettingsTabsProps {
   accounts: Account[];
@@ -21,6 +16,7 @@ interface SettingsTabsProps {
   locale: string;
   baseCurrency: string;
   reviewEmailReminder: ReviewEmailReminderSettingsDto | null;
+  copy: SettingsCopy;
 }
 
 export function SettingsTabs({
@@ -29,10 +25,20 @@ export function SettingsTabs({
   locale,
   baseCurrency,
   reviewEmailReminder,
+  copy,
 }: SettingsTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("accounts");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const tabs = reviewEmailReminder ? TABS : TABS.slice(0, 2);
+  const allTabs = [
+    { id: "accounts" as const, label: copy.tabs.accounts },
+    { id: "sop" as const, label: copy.tabs.sop },
+    {
+      id: "review-email-reminders" as const,
+      label: copy.tabs.email,
+      ariaLabel: copy.tabs.emailAria,
+    },
+  ];
+  const tabs = reviewEmailReminder ? allTabs : allTabs.slice(0, 2);
 
   function selectTab(tabId: TabId) {
     setActiveTab(tabId);
@@ -63,7 +69,7 @@ export function SettingsTabs({
 
   return (
     <div>
-      <div className="flex gap-1 rounded-xl border border-stone-200 bg-stone-100 p-1" role="tablist" aria-label="Settings sections">
+      <div className="flex gap-1 rounded-xl border border-stone-200 bg-stone-100 p-1" role="tablist" aria-label={copy.tabs.sectionsAria}>
         {tabs.map((tab, index) => (
           <button
             type="button"
@@ -98,7 +104,7 @@ export function SettingsTabs({
         tabIndex={0}
       >
         {activeTab === "accounts" && (
-          <AccountManager initialAccounts={accounts} />
+          <AccountManager initialAccounts={accounts} copy={copy} />
         )}
         {activeTab === "sop" && (
           <SopTemplateEditor
@@ -106,10 +112,14 @@ export function SettingsTabs({
             accounts={accounts}
             locale={locale}
             baseCurrency={baseCurrency}
+            copy={copy}
           />
         )}
         {activeTab === "review-email-reminders" && reviewEmailReminder && (
-          <ReviewEmailReminderSettings reminder={reviewEmailReminder} />
+          <ReviewEmailReminderSettings
+            reminder={reviewEmailReminder}
+            copy={copy.reminder}
+          />
         )}
       </div>
     </div>

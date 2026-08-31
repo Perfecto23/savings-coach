@@ -1,10 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import { configureAuthenticatedRun } from "./tests/e2e/authenticated-run";
 
 const port = 43119;
 const baseURL = `http://127.0.0.1:${port}`;
+const runToken = configureAuthenticatedRun("plan", ".setup-e2e/plan");
 
 export default defineConfig({
-  globalTeardown: "./tests/e2e/setup-global-teardown.ts",
+  globalTeardown: "./tests/e2e/authenticated-global-teardown.ts",
   testDir: "./tests/e2e",
   testMatch: "plan-activation.spec.ts",
   fullyParallel: false,
@@ -17,7 +19,7 @@ export default defineConfig({
     video: "off",
   },
   webServer: {
-    command: `bash scripts/start-plan-e2e-server.sh ${port}`,
+    command: `SAVINGS_E2E_RUN_TOKEN=${runToken} bash scripts/start-plan-e2e-server.sh ${port}`,
     url: `${baseURL}/login`,
     reuseExistingServer: false,
     timeout: 180_000,

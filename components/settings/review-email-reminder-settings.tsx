@@ -6,17 +6,20 @@ import {
   INITIAL_REVIEW_EMAIL_REMINDER_ACTION_STATE,
   type ReviewEmailReminderSettings,
 } from "@/lib/reminders/contracts";
+import type { SettingsCopy } from "@/lib/settings/presentation";
 
 interface ReviewEmailReminderSettingsProps {
   reminder: ReviewEmailReminderSettings;
+  copy: SettingsCopy["reminder"];
 }
 
-function scheduleCopy(timeZone: string) {
-  return `On the 2nd of each month at 09:00 (${timeZone}).`;
+function scheduleCopy(timeZone: string, copy: SettingsCopy["reminder"]) {
+  return `${copy.schedulePrefix} (${timeZone})${copy.scheduleSuffix}`;
 }
 
 export function ReviewEmailReminderSettings({
   reminder,
+  copy,
 }: ReviewEmailReminderSettingsProps) {
   const [state, formAction, pending] = useActionState(
     configureReviewEmailReminder,
@@ -53,12 +56,10 @@ export function ReviewEmailReminderSettings({
               id="review-email-reminder-heading"
               className="text-xl font-semibold tracking-[-0.025em] text-stone-950"
             >
-              Monthly Review email reminder
+              {copy.title}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
-              Receive one email when it is time to complete the previous
-              month&apos;s Monthly Review. The email never includes financial
-              amounts, accounts, balances, or Monthly Actions.
+              {copy.description}
             </p>
           </div>
           <span
@@ -68,11 +69,11 @@ export function ReviewEmailReminderSettings({
                 : "bg-stone-100 text-stone-700"
             }`}
           >
-            {isEnabled ? "Enabled" : "Disabled"}
+            {isEnabled ? copy.enabled : copy.disabled}
           </span>
         </div>
         <p className="mt-4 border-t border-stone-200 pt-4 text-sm font-medium text-stone-700">
-          {scheduleCopy(currentReminder.timeZone)}
+          {scheduleCopy(currentReminder.timeZone, copy)}
         </p>
       </div>
 
@@ -83,13 +84,15 @@ export function ReviewEmailReminderSettings({
           role="alert"
           className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-900"
         >
-          {state.message}
+          {copy.errors[state.code] ?? copy.errors.UPDATE_FAILED}
         </div>
       ) : null}
 
       {state.status === "success" ? (
         <p role="status" className="mt-5 text-sm font-medium text-emerald-800">
-          {state.message}
+          {state.result === "enabled"
+            ? copy.successEnabled
+            : copy.successUnsubscribed}
         </p>
       ) : null}
 
@@ -101,12 +104,10 @@ export function ReviewEmailReminderSettings({
             disabled={pending}
             className="min-h-12 cursor-pointer rounded-xl border border-stone-400 bg-white px-5 text-base font-semibold text-stone-900 transition-colors hover:border-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "Unsubscribing…" : "Unsubscribe from emails"}
+            {pending ? copy.unsubscribing : copy.unsubscribe}
           </button>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">
-            Unsubscribing blocks reminders that have not started dispatch.
-            Once dispatch starts, that email may still arrive before provider
-            acceptance is recorded.
+            {copy.unsubscribeHelp}
           </p>
         </form>
       ) : (
@@ -125,20 +126,19 @@ export function ReviewEmailReminderSettings({
               className="mt-0.5 size-5 shrink-0 cursor-pointer accent-orange-700"
             />
             <span>
-              I agree to receive a Monthly Review reminder email when my
-              previous review is still open.
+              {copy.consent}
             </span>
           </label>
           <p className="mt-3 text-sm leading-6 text-stone-600">
-            {scheduleCopy(currentReminder.timeZone)} You can unsubscribe at any
-            time in Settings.
+            {scheduleCopy(currentReminder.timeZone, copy)}{" "}
+            {copy.scheduleSettingsSuffix}
           </p>
           <button
             type="submit"
             disabled={!hasConsent || pending}
             className="mt-5 min-h-12 cursor-pointer rounded-xl bg-orange-700 px-5 text-base font-semibold text-white transition-colors hover:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "Enabling…" : "Enable email reminders"}
+            {pending ? copy.enabling : copy.enable}
           </button>
         </form>
       )}

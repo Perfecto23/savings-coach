@@ -7,7 +7,6 @@ export type HomeActionErrorCode =
 
 export interface HomeActionError {
   code: HomeActionErrorCode;
-  message: string;
 }
 
 export type HomeActionState =

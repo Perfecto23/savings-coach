@@ -16,6 +16,7 @@ import {
   roundMoney,
   sumMilestoneTarget,
 } from "@/lib/milestones";
+import type { MilestoneDeleteResult } from "@/lib/milestones/presentation";
 
 function getYearMonthInTimeZone(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -34,7 +35,7 @@ function getYearMonthInTimeZone(timeZone: string) {
 export async function getSalaryConfig(): Promise<ActionResult<SalaryConfig | null>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("salary_configs")
     .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
@@ -43,7 +44,7 @@ export async function getSalaryConfig(): Promise<ActionResult<SalaryConfig | nul
     .limit(1)
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   return { success: true, data: data as SalaryConfig | null };
 }
 
@@ -52,7 +53,7 @@ export async function saveSalaryConfig(
 ): Promise<ActionResult<SalaryConfig>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const monthlyGross = Number(formData.get("monthly_gross"));
   const housingFundRate = Number(formData.get("housing_fund_rate"));
@@ -61,11 +62,11 @@ export async function saveSalaryConfig(
   const socialInsurance = Number(formData.get("social_insurance"));
   const specialDeductions = Number(formData.get("special_deductions"));
 
-  if (!Number.isFinite(monthlyGross) || monthlyGross < 0) return { success: false, error: "月薪无效" };
-  if (!Number.isFinite(housingFundRate) || housingFundRate < 0) return { success: false, error: "公积金比例无效" };
-  if (housingFundBase !== null && (!Number.isFinite(housingFundBase) || housingFundBase < 0)) return { success: false, error: "公积金基数无效" };
-  if (!Number.isFinite(socialInsurance) || socialInsurance < 0) return { success: false, error: "社保无效" };
-  if (!Number.isFinite(specialDeductions) || specialDeductions < 0) return { success: false, error: "专项扣除无效" };
+  if (!Number.isFinite(monthlyGross) || monthlyGross < 0) return { success: false, error: "INVALID_MONTHLY_GROSS" };
+  if (!Number.isFinite(housingFundRate) || housingFundRate < 0) return { success: false, error: "INVALID_HOUSING_RATE" };
+  if (housingFundBase !== null && (!Number.isFinite(housingFundBase) || housingFundBase < 0)) return { success: false, error: "INVALID_HOUSING_BASE" };
+  if (!Number.isFinite(socialInsurance) || socialInsurance < 0) return { success: false, error: "INVALID_SOCIAL_INSURANCE" };
+  if (!Number.isFinite(specialDeductions) || specialDeductions < 0) return { success: false, error: "INVALID_SPECIAL_DEDUCTIONS" };
 
   const payload = {
     owner_id: user.id,
@@ -97,8 +98,8 @@ export async function saveSalaryConfig(
       .single();
   }
 
-  if (result.error) return { success: false, error: result.error.message };
-  if (!result.data) return { success: false, error: "薪资配置不存在" };
+  if (result.error) return { success: false, error: "SAVE_FAILED" };
+  if (!result.data) return { success: false, error: "SALARY_NOT_FOUND" };
   revalidatePath("/income");
 
   // 薪资变更后自动重新生成里程碑
@@ -113,14 +114,14 @@ export async function saveSalaryConfig(
 export async function getBonusEvents(): Promise<ActionResult<BonusEvent[]>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("bonus_events")
     .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
     .eq("owner_id", user.id)
     .order("expected_date");
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   return { success: true, data: data as BonusEvent[] };
 }
 
@@ -132,15 +133,15 @@ export async function addBonusEvent(
 ): Promise<ActionResult<BonusEvent>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const type = formData.get("type") as string;
   const amount = Number(formData.get("amount"));
   const expectedDate = formData.get("expected_date") as string;
 
-  if (!BONUS_TYPES.includes(type as (typeof BONUS_TYPES)[number])) return { success: false, error: "奖金类型无效" };
-  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "金额无效" };
-  if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "预期日期格式无效" };
+  if (!BONUS_TYPES.includes(type as (typeof BONUS_TYPES)[number])) return { success: false, error: "INVALID_BONUS_TYPE" };
+  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "INVALID_AMOUNT" };
+  if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "INVALID_DATE" };
 
   const { data, error } = await supabase
     .from("bonus_events")
@@ -156,7 +157,7 @@ export async function addBonusEvent(
     .select("id, type, label, amount, expected_date, is_received, actual_amount, target_account_id, note, created_at")
     .single();
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -169,15 +170,15 @@ export async function updateBonusEvent(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const type = formData.get("type") as string;
   const amount = Number(formData.get("amount"));
   const expectedDate = formData.get("expected_date") as string;
 
-  if (!BONUS_TYPES.includes(type as (typeof BONUS_TYPES)[number])) return { success: false, error: "奖金类型无效" };
-  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "金额无效" };
-  if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "预期日期格式无效" };
+  if (!BONUS_TYPES.includes(type as (typeof BONUS_TYPES)[number])) return { success: false, error: "INVALID_BONUS_TYPE" };
+  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "INVALID_AMOUNT" };
+  if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "INVALID_DATE" };
 
   const { data, error } = await supabase
     .from("bonus_events")
@@ -194,8 +195,8 @@ export async function updateBonusEvent(
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "奖金事件不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "BONUS_NOT_FOUND" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -205,7 +206,7 @@ export async function updateBonusEvent(
 export async function deleteBonusEvent(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("bonus_events")
     .delete()
@@ -214,8 +215,8 @@ export async function deleteBonusEvent(id: string): Promise<ActionResult> {
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "奖金事件不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "BONUS_NOT_FOUND" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -228,7 +229,7 @@ export async function markBonusReceived(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const { data, error } = await supabase
     .from("bonus_events")
@@ -238,8 +239,8 @@ export async function markBonusReceived(
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "奖金事件不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "BONUS_NOT_FOUND" };
   revalidatePath("/income");
 
   await regenerateMilestones();
@@ -553,11 +554,11 @@ export async function regenerateMilestones(): Promise<ActionResult<MonthlyMilest
   return { success: true, data: result as MonthlyMilestone[] };
 }
 
-export async function deleteMilestone(yearMonth: string): Promise<ActionResult> {
+export async function deleteMilestone(yearMonth: string): Promise<MilestoneDeleteResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
-  if (!/^\d{4}-\d{2}$/.test(yearMonth)) return { success: false, error: "格式无效" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
+  if (!/^\d{4}-\d{2}$/.test(yearMonth)) return { success: false, error: "INVALID_MONTH" };
 
   const { data, error } = await supabase
     .from("monthly_milestones")
@@ -568,8 +569,8 @@ export async function deleteMilestone(yearMonth: string): Promise<ActionResult> 
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: "The legacy Monthly Milestone could not be deleted." };
-  if (!data) return { success: false, error: "Plan Path nodes cannot be deleted." };
+  if (error) return { success: false, error: "DELETE_FAILED" };
+  if (!data) return { success: false, error: "PLAN_PATH_PROTECTED" };
   revalidatePath("/milestones");
   revalidatePath("/");
   return { success: true, data: undefined };

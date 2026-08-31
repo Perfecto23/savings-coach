@@ -7,18 +7,21 @@ import {
   INITIAL_PLAN_FORM_STATE,
   type PlanAccountDto,
 } from "@/lib/plan/contracts";
+import type { PlanCopy } from "@/lib/plan/presentation";
 
 export function CreatePlanRuleForm({
   ruleId,
   baseCurrency,
   sourceAccounts,
   targetAccount,
+  copy,
   onSaved,
 }: {
   ruleId: string;
   baseCurrency: string;
   sourceAccounts: PlanAccountDto[];
   targetAccount: PlanAccountDto;
+  copy: PlanCopy;
   onSaved?: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -28,6 +31,7 @@ export function CreatePlanRuleForm({
   const formRef = useRef<HTMLFormElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const fieldError = state.status === "error" ? state.error : null;
+  const errorMessage = fieldError ? copy.errorMessages[fieldError.code] : null;
 
   useEffect(() => {
     if (state.status === "error") errorRef.current?.focus();
@@ -38,16 +42,15 @@ export function CreatePlanRuleForm({
   }, [onSaved, state]);
 
   return (
-    <section aria-labelledby="add-plan-rule-heading">
+    <section aria-label={copy.createForm.regionLabel} aria-labelledby="add-plan-rule-heading">
       <h2
         id="add-plan-rule-heading"
         className="text-2xl font-semibold tracking-[-0.035em] text-stone-950"
       >
-        Add a Plan Rule
+        {copy.createForm.title}
       </h2>
       <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
-        Choose one amount you intend to move each month. Savings Coach records
-        the action; it never transfers money.
+        {copy.createForm.description}
       </p>
 
       <form ref={formRef} action={formAction} className="mt-8 space-y-6">
@@ -60,13 +63,13 @@ export function CreatePlanRuleForm({
             role="alert"
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           >
-            {state.error.message}
+            {errorMessage}
           </div>
         ) : null}
 
         <div>
           <label htmlFor={`plan-rule-name-${ruleId}`} className="block text-sm font-medium text-stone-800">
-            Rule name
+            {copy.createForm.nameLabel}
           </label>
           <input
             id={`plan-rule-name-${ruleId}`}
@@ -74,22 +77,21 @@ export function CreatePlanRuleForm({
             type="text"
             required
             maxLength={100}
-            placeholder="Monthly savings transfer"
+            placeholder={copy.createForm.namePlaceholder}
             aria-invalid={fieldError?.field === "name"}
             aria-describedby={fieldError?.field === "name" ? `plan-rule-name-error-${ruleId}` : undefined}
             className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-base shadow-sm placeholder:text-stone-400 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200"
           />
           <PlanFormErrorMessage
             id={`plan-rule-name-error-${ruleId}`}
-            field="name"
-            error={fieldError}
+            message={fieldError?.field === "name" ? errorMessage : null}
           />
         </div>
 
         <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(128px,0.45fr)]">
           <div>
             <label htmlFor={`plan-rule-amount-${ruleId}`} className="block text-sm font-medium text-stone-800">
-              Rule amount
+              {copy.createForm.amountLabel}
             </label>
             <div className="relative mt-2">
               <input
@@ -108,18 +110,17 @@ export function CreatePlanRuleForm({
               </span>
             </div>
             <p id={`plan-rule-amount-help-${ruleId}`} className="mt-2 text-sm leading-6 text-stone-500">
-              A positive amount in your base currency.
+              {copy.createForm.amountHelp}
             </p>
             <PlanFormErrorMessage
               id={`plan-rule-amount-error-${ruleId}`}
-              field="amount"
-              error={fieldError}
+              message={fieldError?.field === "amount" ? errorMessage : null}
             />
           </div>
 
           <div>
             <label htmlFor={`plan-rule-due-${ruleId}`} className="block text-sm font-medium text-stone-800">
-              Due day
+              {copy.createForm.dueDayLabel}
             </label>
             <input
               id={`plan-rule-due-${ruleId}`}
@@ -135,12 +136,11 @@ export function CreatePlanRuleForm({
               className="mt-2 min-h-14 w-full rounded-xl border border-stone-300 bg-white px-4 text-2xl font-semibold tabular-nums shadow-sm focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200"
             />
             <p id={`plan-rule-due-help-${ruleId}`} className="mt-2 text-sm leading-6 text-stone-500">
-              Short months use their last day.
+              {copy.createForm.dueDayHelp}
             </p>
             <PlanFormErrorMessage
               id={`plan-rule-due-error-${ruleId}`}
-              field="due_day"
-              error={fieldError}
+              message={fieldError?.field === "due_day" ? errorMessage : null}
             />
           </div>
         </div>
@@ -148,7 +148,7 @@ export function CreatePlanRuleForm({
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
             <label htmlFor={`plan-rule-source-${ruleId}`} className="block text-sm font-medium text-stone-800">
-              Source account (optional)
+              {copy.createForm.sourceAccountLabel}
             </label>
             <select
               id={`plan-rule-source-${ruleId}`}
@@ -157,7 +157,7 @@ export function CreatePlanRuleForm({
               aria-invalid={fieldError?.field === "source_account_id"}
               className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 bg-white px-3 text-base shadow-sm focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200"
             >
-              <option value="">No Source Account</option>
+              <option value="">{copy.createForm.noSourceAccount}</option>
               {sourceAccounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name}
@@ -166,14 +166,13 @@ export function CreatePlanRuleForm({
             </select>
             <PlanFormErrorMessage
               id={`plan-rule-source-error-${ruleId}`}
-              field="source_account_id"
-              error={fieldError}
+              message={fieldError?.field === "source_account_id" ? errorMessage : null}
             />
           </div>
 
           <div>
             <label htmlFor={`plan-rule-target-${ruleId}`} className="block text-sm font-medium text-stone-800">
-              Target account
+              {copy.createForm.targetAccountLabel}
             </label>
             <select
               id={`plan-rule-target-${ruleId}`}
@@ -191,7 +190,7 @@ export function CreatePlanRuleForm({
           disabled={pending}
           className="min-h-12 w-full cursor-pointer rounded-xl bg-orange-700 px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(194,65,12,0.24)] transition-colors hover:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {pending ? "Adding…" : "Add rule"}
+          {pending ? copy.createForm.submitting : copy.createForm.submit}
         </button>
       </form>
     </section>

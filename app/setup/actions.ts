@@ -7,33 +7,33 @@ import {
   SUPPORTED_SETUP_LOCALES,
   type SetupBaseCurrency,
   type SetupFormError,
-  type SetupFormErrorCode,
   type SetupFormState,
   type SetupLocale,
 } from "@/lib/setup/contracts";
 import { createClient } from "@/lib/supabase/server";
+import { setRequestLocale } from "@/lib/i18n/request-locale";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MONEY_PATTERN = /^(0|[1-9]\d{0,9})(\.\d{1,2})?$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const RPC_ERRORS: Record<string, { code: SetupFormErrorCode; field?: string; message: string }> = {
-  unauthenticated: { code: "UNAUTHENTICATED", message: "Please sign in again." },
-  invalid_locale: { code: "INVALID_LOCALE", field: "locale", message: "Choose a supported language." },
-  invalid_time_zone: { code: "INVALID_TIME_ZONE", field: "time_zone", message: "Choose a valid time zone." },
-  unsupported_base_currency: { code: "INVALID_BASE_CURRENCY", field: "base_currency", message: "Choose a supported base currency." },
-  base_currency_locked: { code: "BASE_CURRENCY_LOCKED", field: "base_currency", message: "Base currency cannot change after a balance is recorded." },
-  preferences_required: { code: "PREFERENCES_REQUIRED", message: "Save your preferences first." },
-  invalid_account_mode: { code: "INVALID_ACCOUNT_MODE", field: "mode", message: "Choose whether to create or attach an account." },
-  invalid_account_name: { code: "INVALID_ACCOUNT_NAME", field: "name", message: "Enter an account name of 100 characters or fewer." },
-  invalid_institution: { code: "INVALID_INSTITUTION", field: "institution", message: "Institution must be 100 characters or fewer." },
-  account_not_found: { code: "ACCOUNT_NOT_FOUND", field: "savings_account_id", message: "Savings account was not found." },
-  account_not_savings: { code: "ACCOUNT_NOT_SAVINGS", field: "savings_account_id", message: "Choose a savings account." },
-  savings_account_required: { code: "SAVINGS_ACCOUNT_REQUIRED", message: "Save a savings account first." },
-  invalid_balance: { code: "INVALID_BALANCE", field: "balance", message: "Enter a non-negative balance with at most two decimal places." },
-  invalid_recorded_at: { code: "INVALID_RECORDED_AT", field: "recorded_at", message: "Choose a valid date that is not in the future." },
-  initial_balance_conflict: { code: "INITIAL_BALANCE_CONFLICT", field: "balance", message: "A different balance already exists for this date." },
-  initial_balance_locked: { code: "INITIAL_BALANCE_LOCKED", field: "balance", message: "Use Balance Snapshots to record later observations." },
+const RPC_ERRORS: Record<string, SetupFormError> = {
+  unauthenticated: { code: "UNAUTHENTICATED" },
+  invalid_locale: { code: "INVALID_LOCALE", field: "locale" },
+  invalid_time_zone: { code: "INVALID_TIME_ZONE", field: "time_zone" },
+  unsupported_base_currency: { code: "INVALID_BASE_CURRENCY", field: "base_currency" },
+  base_currency_locked: { code: "BASE_CURRENCY_LOCKED", field: "base_currency" },
+  preferences_required: { code: "PREFERENCES_REQUIRED" },
+  invalid_account_mode: { code: "INVALID_ACCOUNT_MODE", field: "mode" },
+  invalid_account_name: { code: "INVALID_ACCOUNT_NAME", field: "name" },
+  invalid_institution: { code: "INVALID_INSTITUTION", field: "institution" },
+  account_not_found: { code: "ACCOUNT_NOT_FOUND", field: "savings_account_id" },
+  account_not_savings: { code: "ACCOUNT_NOT_SAVINGS", field: "savings_account_id" },
+  savings_account_required: { code: "SAVINGS_ACCOUNT_REQUIRED" },
+  invalid_balance: { code: "INVALID_BALANCE", field: "balance" },
+  invalid_recorded_at: { code: "INVALID_RECORDED_AT", field: "recorded_at" },
+  initial_balance_conflict: { code: "INITIAL_BALANCE_CONFLICT", field: "balance" },
+  initial_balance_locked: { code: "INITIAL_BALANCE_LOCKED", field: "balance" },
 };
 
 function errorState(error: SetupFormError): SetupFormState {
@@ -41,7 +41,7 @@ function errorState(error: SetupFormError): SetupFormState {
 }
 
 function unauthenticatedState(): SetupFormState {
-  return errorState({ code: "UNAUTHENTICATED", message: "Please sign in again." });
+  return errorState({ code: "UNAUTHENTICATED" });
 }
 
 function readString(formData: FormData, key: string): string {
@@ -76,7 +76,7 @@ function mapRpcError(error: { code?: string; message?: string }): SetupFormState
     const stableError = RPC_ERRORS[error.message];
     if (stableError) return errorState(stableError);
   }
-  return errorState({ code: "SETUP_SAVE_FAILED", message: "Setup could not be saved. Try again." });
+  return errorState({ code: "SETUP_SAVE_FAILED" });
 }
 
 async function callSetupRpc(
@@ -107,20 +107,20 @@ export async function saveSetupPreferences(
   try {
     locale = new Intl.Locale(localeInput).toString();
   } catch {
-    return errorState({ code: "INVALID_LOCALE", field: "locale", message: "Choose a supported language." });
+    return errorState({ code: "INVALID_LOCALE", field: "locale" });
   }
   if (!isSupportedLocale(locale)) {
-    return errorState({ code: "INVALID_LOCALE", field: "locale", message: "Choose a supported language." });
+    return errorState({ code: "INVALID_LOCALE", field: "locale" });
   }
 
   const timeZone = normalizeTimeZone(readString(formData, "time_zone"));
   if (!timeZone) {
-    return errorState({ code: "INVALID_TIME_ZONE", field: "time_zone", message: "Choose a valid time zone." });
+    return errorState({ code: "INVALID_TIME_ZONE", field: "time_zone" });
   }
 
   const currency = readString(formData, "base_currency").toUpperCase();
   if (!isSupportedCurrency(currency)) {
-    return errorState({ code: "INVALID_BASE_CURRENCY", field: "base_currency", message: "Choose a supported base currency." });
+    return errorState({ code: "INVALID_BASE_CURRENCY", field: "base_currency" });
   }
 
   const failure = await callSetupRpc(supabase, "preferences", {
@@ -129,6 +129,8 @@ export async function saveSetupPreferences(
     base_currency: currency,
   });
   if (failure) return failure;
+
+  await setRequestLocale(locale);
 
   revalidatePath("/setup");
   redirect("/setup");
@@ -151,7 +153,7 @@ export async function saveSetupSavingsAccount(
   if (mode === "create") {
     const name = readString(formData, "name");
     if (!name || name.length > 100) {
-      return errorState({ code: "INVALID_ACCOUNT_NAME", field: "name", message: "Enter an account name of 100 characters or fewer." });
+      return errorState({ code: "INVALID_ACCOUNT_NAME", field: "name" });
     }
 
     const institutionValue = formData.get("institution");
@@ -160,18 +162,18 @@ export async function saveSetupSavingsAccount(
         ? institutionValue.trim() || null
         : null;
     if (institution && institution.length > 100) {
-      return errorState({ code: "INVALID_INSTITUTION", field: "institution", message: "Institution must be 100 characters or fewer." });
+      return errorState({ code: "INVALID_INSTITUTION", field: "institution" });
     }
 
     payload = { mode, name, institution };
   } else if (mode === "attach") {
     const accountId = readString(formData, "savings_account_id");
     if (!UUID_PATTERN.test(accountId)) {
-      return errorState({ code: "ACCOUNT_NOT_FOUND", field: "savings_account_id", message: "Savings account was not found." });
+      return errorState({ code: "ACCOUNT_NOT_FOUND", field: "savings_account_id" });
     }
     payload = { mode, savings_account_id: accountId };
   } else {
-    return errorState({ code: "INVALID_ACCOUNT_MODE", field: "mode", message: "Choose whether to create or attach an account." });
+    return errorState({ code: "INVALID_ACCOUNT_MODE", field: "mode" });
   }
 
   const failure = await callSetupRpc(supabase, "savings_account", payload);
@@ -195,12 +197,12 @@ export async function saveSetupInitialBalance(
 
   const balance = readString(formData, "balance");
   if (!MONEY_PATTERN.test(balance)) {
-    return errorState({ code: "INVALID_BALANCE", field: "balance", message: "Enter a non-negative balance with at most two decimal places." });
+    return errorState({ code: "INVALID_BALANCE", field: "balance" });
   }
 
   const recordedAt = readString(formData, "recorded_at");
   if (!isCalendarDate(recordedAt)) {
-    return errorState({ code: "INVALID_RECORDED_AT", field: "recorded_at", message: "Choose a valid date that is not in the future." });
+    return errorState({ code: "INVALID_RECORDED_AT", field: "recorded_at" });
   }
 
   const failure = await callSetupRpc(supabase, "initial_balance", {

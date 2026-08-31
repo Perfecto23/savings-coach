@@ -9,15 +9,21 @@ export type PlanFormErrorCode =
   | "PLAN_SAVE_FAILED"
   | "PLAN_ACTIVATION_FAILED";
 
+export type PlanFormSuccessCode =
+  | "PLAN_RULE_ADDED"
+  | "PLAN_RULE_UPDATED"
+  | "PLAN_RULE_REACTIVATED"
+  | "PLAN_RULE_DEACTIVATED"
+  | "SAVINGS_PLAN_ACTIVATED";
+
 export interface PlanFormError {
   code: PlanFormErrorCode;
   field?: "rule_id" | "name" | "amount" | "due_day" | "source_account_id";
-  message: string;
 }
 
 export type PlanFormState =
   | { status: "idle"; error: null }
-  | { status: "success"; error: null; message: string }
+  | { status: "success"; error: null; success: PlanFormSuccessCode }
   | { status: "error"; error: PlanFormError };
 
 export const INITIAL_PLAN_FORM_STATE: PlanFormState = {

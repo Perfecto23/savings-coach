@@ -20,7 +20,7 @@ async function readDisplayRecords(
     p_year_month: yearMonth,
   });
   if (error) {
-    return { success: false, error: "Monthly execution steps could not be loaded." };
+    return { success: false, error: "LOAD_FAILED" };
   }
   return { success: true, data: (data || []) as SopDisplayRecord[] };
 }
@@ -32,8 +32,8 @@ export async function initMonthSop(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
-  if (!YEAR_MONTH_REGEX.test(yearMonth)) return { success: false, error: "年月格式无效" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
+  if (!YEAR_MONTH_REGEX.test(yearMonth)) return { success: false, error: "INVALID_MONTH" };
 
   // 检查是否已有该月记录
   const { data: existing } = await supabase
@@ -58,8 +58,8 @@ export async function initMonthSop(
     supabase.from("accounts").select("id, purpose").eq("owner_id", user.id),
   ]);
 
-  if (templatesRes.error) return { success: false, error: templatesRes.error.message };
-  if (accountsRes.error) return { success: false, error: accountsRes.error.message };
+  if (templatesRes.error) return { success: false, error: "LOAD_FAILED" };
+  if (accountsRes.error) return { success: false, error: "LOAD_FAILED" };
 
   const templates = templatesRes.data || [];
   const accounts = accountsRes.data || [];
@@ -97,7 +97,7 @@ export async function initMonthSop(
     .insert(records)
     .select("id, year_month, template_id, step_key, step_label, due_day, completed, completed_at, amount, note, sort_order, counts_toward_milestone, milestone_amount, created_at");
 
-  if (insertError) return { success: false, error: insertError.message };
+  if (insertError) return { success: false, error: "SAVE_FAILED" };
 
   await regenerateMilestones();
   revalidatePath("/sop");
@@ -113,8 +113,8 @@ export async function toggleSopStep(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
-  if (!id || typeof id !== "string" || id.trim() === "") return { success: false, error: "ID无效" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
+  if (!id || typeof id !== "string" || id.trim() === "") return { success: false, error: "INVALID_ID" };
 
   const { data: existing, error: existingError } = await supabase
     .from("sop_records")
@@ -122,15 +122,15 @@ export async function toggleSopStep(
     .eq("id", id)
     .eq("owner_id", user.id)
     .maybeSingle();
-  if (existingError) return { success: false, error: existingError.message };
-  if (!existing) return { success: false, error: "记录不存在" };
+  if (existingError) return { success: false, error: "LOAD_FAILED" };
+  if (!existing) return { success: false, error: "NOT_FOUND" };
 
   if (existing.is_monthly_action) {
     const { error } = await supabase.rpc("update_monthly_action", {
       p_action_id: id,
       p_patch: { completed },
     });
-    if (error) return { success: false, error: "月度行动更新失败" };
+    if (error) return { success: false, error: "UPDATE_FAILED" };
 
     revalidatePath("/sop");
     revalidatePath("/plan");
@@ -150,8 +150,8 @@ export async function toggleSopStep(
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "记录不存在" };
+  if (error) return { success: false, error: "UPDATE_FAILED" };
+  if (!data) return { success: false, error: "NOT_FOUND" };
 
   await regenerateMilestones();
   revalidatePath("/sop");
@@ -166,11 +166,11 @@ export async function addAdHocSopStep(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
-  if (!YEAR_MONTH_REGEX.test(yearMonth)) return { success: false, error: "年月格式无效" };
-  if (!data.step_label || data.step_label.trim() === "") return { success: false, error: "步骤名称不能为空" };
-  if (data.due_day < 1 || data.due_day > 31) return { success: false, error: "执行日无效" };
-  if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount < 0)) return { success: false, error: "金额无效" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
+  if (!YEAR_MONTH_REGEX.test(yearMonth)) return { success: false, error: "INVALID_MONTH" };
+  if (!data.step_label || data.step_label.trim() === "") return { success: false, error: "INVALID_LABEL" };
+  if (data.due_day < 1 || data.due_day > 31) return { success: false, error: "INVALID_DAY" };
+  if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount < 0)) return { success: false, error: "INVALID_AMOUNT" };
 
   // 生成唯一 step_key（临时步骤用时间戳）
   const stepKey = `adhoc_${Date.now()}`;
@@ -205,7 +205,7 @@ export async function addAdHocSopStep(
     .select("id")
     .single();
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   revalidatePath("/sop");
   const displayResult = await readDisplayRecords(supabase, yearMonth);
   if (!displayResult.success) return displayResult;
@@ -213,7 +213,7 @@ export async function addAdHocSopStep(
     (record) => record.id === inserted.id
   );
   if (!displayRecord) {
-    return { success: false, error: "The monthly execution step could not be loaded." };
+    return { success: false, error: "LOAD_FAILED" };
   }
   return { success: true, data: displayRecord };
 }
@@ -223,8 +223,8 @@ export async function deleteAdHocSopStep(id: string): Promise<ActionResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
-  if (!id || id.trim() === "") return { success: false, error: "ID无效" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
+  if (!id || id.trim() === "") return { success: false, error: "INVALID_ID" };
 
   // 只允许删除临时步骤（template_id 为 null）
   const { data: record } = await supabase
@@ -234,8 +234,8 @@ export async function deleteAdHocSopStep(id: string): Promise<ActionResult> {
     .eq("owner_id", user.id)
     .maybeSingle();
 
-  if (!record) return { success: false, error: "记录不存在" };
-  if (record.template_id !== null) return { success: false, error: "模板步骤不能删除，请在设置中管理" };
+  if (!record) return { success: false, error: "NOT_FOUND" };
+  if (record.template_id !== null) return { success: false, error: "DELETE_FORBIDDEN" };
 
   const { data: deleted, error } = await supabase
     .from("sop_records")
@@ -244,8 +244,8 @@ export async function deleteAdHocSopStep(id: string): Promise<ActionResult> {
     .eq("owner_id", user.id)
     .select("id")
     .maybeSingle();
-  if (error) return { success: false, error: error.message };
-  if (!deleted) return { success: false, error: "记录不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!deleted) return { success: false, error: "NOT_FOUND" };
   revalidatePath("/sop");
   return { success: true, data: undefined };
 }
@@ -258,9 +258,9 @@ export async function updateSopStep(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
-  if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount < 0)) return { success: false, error: "金额无效" };
-  if (data.note !== undefined && data.note.length > 1000) return { success: false, error: "备注过长" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
+  if (data.amount !== undefined && (!Number.isFinite(data.amount) || data.amount < 0)) return { success: false, error: "INVALID_AMOUNT" };
+  if (data.note !== undefined && data.note.length > 1000) return { success: false, error: "INVALID_NOTE" };
 
   const { data: existing, error: existingError } = await supabase
     .from("sop_records")
@@ -269,8 +269,8 @@ export async function updateSopStep(
     .eq("owner_id", user.id)
     .maybeSingle();
 
-  if (existingError) return { success: false, error: existingError.message };
-  if (!existing) return { success: false, error: "记录不存在" };
+  if (existingError) return { success: false, error: "LOAD_FAILED" };
+  if (!existing) return { success: false, error: "NOT_FOUND" };
 
   if (existing.is_monthly_action) {
     const patch: { note?: string; amount?: string } = {};
@@ -281,7 +281,7 @@ export async function updateSopStep(
       p_action_id: id,
       p_patch: patch,
     });
-    if (error) return { success: false, error: "月度行动更新失败" };
+    if (error) return { success: false, error: "UPDATE_FAILED" };
 
     revalidatePath("/sop");
     revalidatePath("/plan");
@@ -312,8 +312,8 @@ export async function updateSopStep(
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!updated) return { success: false, error: "记录不存在" };
+  if (error) return { success: false, error: "UPDATE_FAILED" };
+  if (!updated) return { success: false, error: "NOT_FOUND" };
 
   if (data.amount !== undefined) {
     await regenerateMilestones();

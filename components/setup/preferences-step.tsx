@@ -8,12 +8,8 @@ import {
   SUPPORTED_BASE_CURRENCIES,
   SUPPORTED_SETUP_LOCALES,
 } from "@/lib/setup/contracts";
-
-const LOCALE_LABELS: Record<string, string> = {
-  "en-US": "English (United States)",
-  "en-SG": "English (Singapore)",
-  "zh-CN": "简体中文",
-};
+import type { SetupCopy } from "@/lib/setup/presentation";
+import type { SetupFormErrorCode, SetupLocale } from "@/lib/setup/contracts";
 
 const TIME_ZONES = [
   "UTC",
@@ -27,24 +23,19 @@ const TIME_ZONES = [
   "Australia/Sydney",
 ] as const;
 
-const CURRENCY_LABELS: Record<string, string> = {
-  AUD: "AUD — Australian dollar",
-  CAD: "CAD — Canadian dollar",
-  CHF: "CHF — Swiss franc",
-  CNY: "CNY — Chinese yuan",
-  EUR: "EUR — Euro",
-  GBP: "GBP — British pound",
-  HKD: "HKD — Hong Kong dollar",
-  NZD: "NZD — New Zealand dollar",
-  SGD: "SGD — Singapore dollar",
-  USD: "USD — US dollar",
-};
-
 interface PreferencesStepProps {
   legacyCurrencyLocked: boolean;
+  locale: SetupLocale;
+  copy: SetupCopy["preferences"];
+  errorCopy: Record<SetupFormErrorCode, string>;
 }
 
-export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) {
+export function PreferencesStep({
+  legacyCurrencyLocked,
+  locale,
+  copy,
+  errorCopy,
+}: PreferencesStepProps) {
   const [state, formAction, pending] = useActionState(
     saveSetupPreferences,
     INITIAL_SETUP_FORM_STATE
@@ -58,13 +49,12 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
 
   return (
     <div>
-      <p className="text-sm font-medium text-orange-700">Checkpoint 1 of 3</p>
+      <p className="text-sm font-medium text-orange-700">{copy.checkpoint}</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-stone-950">
-        Your region
+        {copy.title}
       </h2>
       <p className="mt-3 max-w-lg text-base leading-7 text-stone-600">
-        These settings keep dates and money readable. They do not connect a
-        bank or move funds.
+        {copy.description}
       </p>
 
       <form action={formAction} className="mt-8 space-y-6">
@@ -75,7 +65,7 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
             role="alert"
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           >
-            {state.error.message}
+            {errorCopy[state.error.code]}
           </div>
         ) : null}
 
@@ -84,12 +74,12 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
             htmlFor="setup-locale"
             className="block text-sm font-medium text-stone-800"
           >
-            Language and locale
+            {copy.language}
           </label>
           <select
             id="setup-locale"
             name="locale"
-            defaultValue="en-US"
+            defaultValue={locale}
             aria-invalid={fieldError?.field === "locale"}
             aria-describedby={
               fieldError?.field === "locale" ? "setup-locale-error" : undefined
@@ -98,7 +88,7 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
           >
             {SUPPORTED_SETUP_LOCALES.map((locale) => (
               <option key={locale} value={locale}>
-                {LOCALE_LABELS[locale]}
+                {copy.localeLabels[locale]}
               </option>
             ))}
           </select>
@@ -106,6 +96,7 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
             id="setup-locale-error"
             field="locale"
             error={fieldError}
+            message={fieldError ? errorCopy[fieldError.code] : ""}
           />
         </div>
 
@@ -114,7 +105,7 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
             htmlFor="setup-time-zone"
             className="block text-sm font-medium text-stone-800"
           >
-            Time zone
+            {copy.timeZone}
           </label>
           <select
             id="setup-time-zone"
@@ -135,12 +126,13 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
             ))}
           </select>
           <p id="setup-time-zone-help" className="mt-2 text-sm leading-6 text-stone-500">
-            Used to decide which calendar day a balance belongs to.
+            {copy.timeZoneHelp}
           </p>
           <FieldError
             id="setup-time-zone-error"
             field="time_zone"
             error={fieldError}
+            message={fieldError ? errorCopy[fieldError.code] : ""}
           />
         </div>
 
@@ -149,7 +141,7 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
             htmlFor="setup-base-currency"
             className="block text-sm font-medium text-stone-800"
           >
-            Base currency
+            {copy.baseCurrency}
           </label>
           {legacyCurrencyLocked ? (
             <input type="hidden" name="base_currency" value="CNY" />
@@ -169,19 +161,20 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
           >
             {SUPPORTED_BASE_CURRENCIES.map((currency) => (
               <option key={currency} value={currency}>
-                {CURRENCY_LABELS[currency]}
+                {copy.currencyLabels[currency]}
               </option>
             ))}
           </select>
           <p id="base-currency-help" className="mt-2 text-sm leading-6 text-stone-500">
             {legacyCurrencyLocked
-              ? "Your existing balance history uses CNY, so this value is locked."
-              : "All balances in this workspace use one currency. It locks after your first balance."}
+              ? copy.currencyLocked
+              : copy.currencyHelp}
           </p>
           <FieldError
             id="setup-base-currency-error"
             field="base_currency"
             error={fieldError}
+            message={fieldError ? errorCopy[fieldError.code] : ""}
           />
         </div>
 
@@ -190,7 +183,7 @@ export function PreferencesStep({ legacyCurrencyLocked }: PreferencesStepProps) 
           disabled={pending}
           className="min-h-12 w-full cursor-pointer rounded-xl bg-orange-700 px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(194,65,12,0.24)] transition-colors hover:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save and continue"}
+          {pending ? copy.saving : copy.save}
         </button>
       </form>
     </div>

@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import { addImpulseLog } from "@/app/(app)/impulse/actions";
-import type { ImpulseCopy } from "@/lib/impulse/presentation";
+import {
+  getImpulseErrorMessage,
+  type ImpulseCopy,
+} from "@/lib/impulse/presentation";
 import type { ImpulseLog } from "@/lib/types/database";
 
 interface ImpulseFormProps {
   baseCurrency: string;
   copy: ImpulseCopy["form"];
+  allCopy: ImpulseCopy;
   locale: string;
   onAdded: (log: ImpulseLog) => void;
 }
 
-export function ImpulseForm({ baseCurrency, copy, locale, onAdded }: ImpulseFormProps) {
+export function ImpulseForm({ baseCurrency, copy, allCopy, locale, onAdded }: ImpulseFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +30,7 @@ export function ImpulseForm({ baseCurrency, copy, locale, onAdded }: ImpulseForm
       const form = document.getElementById("impulse-form") as HTMLFormElement;
       form?.reset();
     } else {
-      setError(result.error);
+      setError(getImpulseErrorMessage(result.error, allCopy));
     }
     setLoading(false);
   }

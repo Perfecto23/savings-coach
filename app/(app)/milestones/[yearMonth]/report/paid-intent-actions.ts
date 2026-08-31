@@ -23,7 +23,7 @@ export async function recordPaidIntent(
   if (!user) {
     return {
       status: "error",
-      error: { code: "UNAUTHENTICATED", message: "Please sign in again." },
+      error: { code: "UNAUTHENTICATED" },
     };
   }
 
@@ -33,7 +33,6 @@ export async function recordPaidIntent(
       status: "error",
       error: {
         code: "NOT_ELIGIBLE",
-        message: "Complete a Monthly Review before recording Pro beta interest.",
       },
     };
   }
@@ -42,7 +41,6 @@ export async function recordPaidIntent(
       status: "error",
       error: {
         code: "RECORD_FAILED",
-        message: "Pro beta interest could not be recorded. Try again.",
       },
     };
   }
@@ -57,7 +55,6 @@ export async function recordPaidIntent(
       status: "error",
       error: {
         code: "RECORD_FAILED",
-        message: "Pro beta interest returned an invalid receipt.",
       },
     };
   }

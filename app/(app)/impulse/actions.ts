@@ -9,15 +9,15 @@ export async function addImpulseLog(
 ): Promise<ActionResult<ImpulseLog>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const itemName = (formData.get("item_name") as string) || "";
   const estimatedPrice = Number(formData.get("estimated_price"));
   const category = formData.get("category") as string | null;
 
-  if (!itemName.trim()) return { success: false, error: "物品名称不能为空" };
-  if (!Number.isFinite(estimatedPrice) || estimatedPrice <= 0) return { success: false, error: "预估价格无效" };
-  if (category != null && String(category).trim() === "") return { success: false, error: "分类不能为空" };
+  if (!itemName.trim()) return { success: false, error: "INVALID_ITEM_NAME" };
+  if (!Number.isFinite(estimatedPrice) || estimatedPrice <= 0) return { success: false, error: "INVALID_AMOUNT" };
+  if (category != null && String(category).trim() === "") return { success: false, error: "INVALID_CATEGORY" };
 
   const { data, error } = await supabase
     .from("impulse_logs")
@@ -31,7 +31,7 @@ export async function addImpulseLog(
     .select("id, item_name, estimated_price, reason, resisted, logged_at, created_at")
     .single();
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   revalidatePath("/impulse");
   return { success: true, data: data as ImpulseLog };
 }
@@ -39,7 +39,7 @@ export async function addImpulseLog(
 export async function deleteImpulseLog(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("impulse_logs")
     .delete()
@@ -48,8 +48,8 @@ export async function deleteImpulseLog(id: string): Promise<ActionResult> {
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "记录不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "NOT_FOUND" };
   revalidatePath("/impulse");
   return { success: true, data: undefined };
 }

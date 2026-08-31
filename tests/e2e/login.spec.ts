@@ -3,21 +3,21 @@ import { expect, test } from "@playwright/test";
 test("login page exposes the expected responsive sign-in interface", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(page).toHaveTitle("储蓄教练 — 你的个人理财伙伴");
-  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
-  await expect(page.getByRole("heading", { level: 1, name: "储蓄教练" })).toBeVisible();
+  await expect(page).toHaveTitle("Savings Coach — Your personal savings companion");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+  await expect(page.getByRole("heading", { level: 1, name: "Savings Coach" })).toBeVisible();
 
-  const email = page.getByLabel("邮箱");
+  const email = page.getByLabel("Email");
   await expect(email).toHaveAttribute("type", "email");
   await expect(email).toHaveAttribute("required", "");
   await expect(email).toHaveAttribute("autocomplete", "email");
 
-  const password = page.getByLabel("密码");
+  const password = page.getByLabel("Password");
   await expect(password).toHaveAttribute("type", "password");
   await expect(password).toHaveAttribute("required", "");
   await expect(password).toHaveAttribute("autocomplete", "current-password");
 
-  const loginButton = page.getByRole("button", { name: "登录" });
+  const loginButton = page.getByRole("button", { name: "Log in" });
   await expect(loginButton).toBeVisible();
   await loginButton.click();
   await expect(email).toBeFocused();

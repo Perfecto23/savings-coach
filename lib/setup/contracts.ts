@@ -96,7 +96,6 @@ export type SetupFormErrorCode =
 export interface SetupFormError {
   code: SetupFormErrorCode;
   field?: string;
-  message: string;
 }
 
 export type SetupFormState =

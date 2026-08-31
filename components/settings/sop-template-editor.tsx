@@ -9,12 +9,17 @@ import {
   deleteSopTemplate,
 } from "@/app/(app)/settings/actions";
 import { formatMoney } from "@/lib/format-money";
+import {
+  getSettingsErrorMessage,
+  type SettingsCopy,
+} from "@/lib/settings/presentation";
 
 interface SopTemplateEditorProps {
   initialTemplates: SopTemplate[];
   accounts: Account[];
   locale: string;
   baseCurrency: string;
+  copy: SettingsCopy;
 }
 
 export function SopTemplateEditor({
@@ -22,6 +27,7 @@ export function SopTemplateEditor({
   accounts,
   locale,
   baseCurrency,
+  copy,
 }: SopTemplateEditorProps) {
   const [templates, setTemplates] = useState(initialTemplates);
   const [showForm, setShowForm] = useState(false);
@@ -41,7 +47,7 @@ export function SopTemplateEditor({
       setTemplates((prev) => [...prev, result.data]);
       setShowForm(false);
     } else {
-      setError(result.error);
+      setError(getSettingsErrorMessage(result.error, copy));
     }
   }
 
@@ -70,17 +76,17 @@ export function SopTemplateEditor({
       );
       setEditingTemplate(null);
     } else {
-      setError(result.error);
+      setError(getSettingsErrorMessage(result.error, copy));
     }
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("确定要删除此 SOP 模板吗？")) return;
+    if (!window.confirm(copy.templates.deleteConfirm)) return;
     const result = await deleteSopTemplate(id);
     if (result.success) {
       setTemplates((prev) => prev.filter((t) => t.id !== id));
     } else {
-      setError(result.error);
+      setError(getSettingsErrorMessage(result.error, copy));
     }
   }
 
@@ -94,18 +100,18 @@ export function SopTemplateEditor({
         <div className="overflow-x-auto">
         {templates.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-400">
-            还没有 SOP 模板，点击下方按钮添加。
+            {copy.templates.empty}
           </div>
         ) : (
           <table className="w-full min-w-160 text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="px-4 py-3 text-left font-medium text-gray-500">步骤</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">执行日</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">源 → 目标</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">金额</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">状态</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">操作</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">{copy.templates.step}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">{copy.templates.dueDay}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">{copy.templates.route}</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">{copy.templates.amount}</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{copy.templates.status}</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-500">{copy.templates.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -115,7 +121,10 @@ export function SopTemplateEditor({
                     <div className="font-medium text-gray-900">{tpl.step_label}</div>
                     <div className="text-xs text-gray-400">{tpl.step_key}</div>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">每月 {tpl.due_day} 号</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {copy.templates.monthlyDayPrefix} {tpl.due_day}{" "}
+                    {copy.templates.monthlyDaySuffix}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">
                     {getAccountName(tpl.from_account_id)} → {getAccountName(tpl.to_account_id)}
                   </td>
@@ -132,7 +141,7 @@ export function SopTemplateEditor({
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
-                      {tpl.is_active ? "启用" : "禁用"}
+                      {tpl.is_active ? copy.templates.enabled : copy.templates.disabled}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -141,14 +150,14 @@ export function SopTemplateEditor({
                       onClick={() => setEditingTemplate(tpl)}
                       className="cursor-pointer text-gray-400 transition-colors hover:text-orange-500"
                     >
-                      编辑
+                      {copy.templates.edit}
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(tpl.id)}
                       className="ml-3 cursor-pointer text-gray-400 transition-colors hover:text-red-500"
                     >
-                      删除
+                      {copy.templates.delete}
                     </button>
                   </td>
                 </tr>
@@ -161,25 +170,31 @@ export function SopTemplateEditor({
 
       {editingTemplate && (
         <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
-          <h4 className="mb-3 text-sm font-medium text-gray-700">编辑 SOP 步骤</h4>
+          <h4 className="mb-3 text-sm font-medium text-gray-700">
+            {copy.templates.editTitle}
+          </h4>
           <SopTemplateForm
             template={editingTemplate}
             accounts={accounts}
             baseCurrency={baseCurrency}
             onSubmit={handleUpdate}
             onCancel={() => setEditingTemplate(null)}
+            copy={copy.sopForm}
           />
         </div>
       )}
 
       {showForm ? (
         <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
-          <h4 className="mb-3 text-sm font-medium text-gray-700">添加 SOP 步骤</h4>
+          <h4 className="mb-3 text-sm font-medium text-gray-700">
+            {copy.templates.addTitle}
+          </h4>
           <SopTemplateForm
             accounts={accounts}
             baseCurrency={baseCurrency}
             onSubmit={handleCreate}
             onCancel={() => setShowForm(false)}
+            copy={copy.sopForm}
           />
         </div>
       ) : (
@@ -188,7 +203,7 @@ export function SopTemplateEditor({
           onClick={() => setShowForm(true)}
           className="w-full cursor-pointer rounded-xl border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-400 transition-colors hover:border-orange-300 hover:text-orange-500"
         >
-          + 添加 SOP 步骤
+          {copy.templates.add}
         </button>
       )}
     </div>

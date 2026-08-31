@@ -4,6 +4,7 @@ import { PlanActivationCard } from "@/components/plan/plan-activation-card";
 import { PlanPath } from "@/components/plan/plan-path";
 import { PlanRuleList } from "@/components/plan/plan-rule-list";
 import { formatMoney } from "@/lib/format-money";
+import { getPlanCopy } from "@/lib/plan/presentation";
 import { getSavingsPlanPage } from "@/lib/plan/server";
 
 function formatActionDate(value: string, locale: string) {
@@ -16,17 +17,17 @@ function formatActionDate(value: string, locale: string) {
 
 export default async function SavingsPlanPage() {
   const plan = await getSavingsPlanPage();
+  const copy = getPlanCopy(plan.locale);
   const activeRuleCount = plan.rules.filter((rule) => rule.active).length;
 
   return (
-    <div lang="en" className="mx-auto w-full max-w-6xl pb-10 text-stone-950">
+    <div lang={copy.locale} className="mx-auto w-full max-w-6xl pb-10 text-stone-950">
       <header className="border-b border-stone-200 pb-8 pt-2 sm:pb-10 sm:pt-4">
         <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
-          Build your Savings Plan
+          {copy.page.title}
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-stone-600 sm:text-lg sm:leading-8">
-          Set a monthly intention, turn it into actions, and see the path ahead.
-          No income data or bank connection required.
+          {copy.page.description}
         </p>
       </header>
 
@@ -39,6 +40,7 @@ export default async function SavingsPlanPage() {
                 baseCurrency={plan.baseCurrency}
                 sourceAccounts={plan.sourceAccounts}
                 targetAccount={plan.targetAccount}
+                copy={copy}
               />
             </section>
           ) : (
@@ -49,6 +51,7 @@ export default async function SavingsPlanPage() {
               baseCurrency={plan.baseCurrency}
               sourceAccounts={plan.sourceAccounts}
               targetAccount={plan.targetAccount}
+              copy={copy}
             />
           )}
         </div>
@@ -62,22 +65,22 @@ export default async function SavingsPlanPage() {
             baseCurrency={plan.baseCurrency}
             targetAccount={plan.targetAccount}
             nextAction={plan.nextAction}
+            copy={copy}
           />
         </div>
       </div>
 
-      <section aria-label="Current month actions" className="mt-12 sm:mt-16">
+      <section aria-label={copy.page.currentActionsLabel} className="mt-12 sm:mt-16">
         <h2 className="text-2xl font-semibold tracking-[-0.035em] text-stone-950">
-          Current month actions
+          {copy.page.currentActionsTitle}
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
-          Each action keeps the Rule Amount and account names from the month it
-          was created.
+          {copy.page.currentActionsDescription}
         </p>
 
         {plan.currentActions.length === 0 ? (
           <div className="mt-6 border-y border-stone-200 py-8 text-sm leading-6 text-stone-500">
-            Activate your Savings Plan to create this month&apos;s actions.
+            {copy.page.currentActionsEmpty}
           </div>
         ) : (
           <ul className="mt-6 divide-y divide-stone-200 border-y border-stone-200">
@@ -88,17 +91,17 @@ export default async function SavingsPlanPage() {
                     <h3 className="font-semibold text-stone-950">{action.name}</h3>
                     {action.overdue ? (
                       <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">
-                        Overdue
+                        {copy.page.overdue}
                       </span>
                     ) : null}
                     {action.completed ? (
                       <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                        Completed
+                        {copy.page.completed}
                       </span>
                     ) : null}
                   </div>
                   <p className="mt-2 text-sm leading-6 text-stone-500">
-                    Due {formatActionDate(action.scheduledFor, plan.locale)} · {action.sourceAccountName ?? "No Source Account"} → {action.targetAccountName}
+                    {copy.page.duePrefix} {formatActionDate(action.scheduledFor, plan.locale)} · {action.sourceAccountName ?? copy.page.noSourceAccount} → {action.targetAccountName}
                   </p>
                 </div>
                 <p className="shrink-0 text-xl font-semibold tabular-nums tracking-[-0.02em] text-stone-950">
@@ -114,6 +117,7 @@ export default async function SavingsPlanPage() {
         points={plan.path}
         locale={plan.locale}
         baseCurrency={plan.baseCurrency}
+        copy={copy}
       />
     </div>
   );

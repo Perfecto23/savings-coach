@@ -16,6 +16,10 @@ import type { Account } from "@/lib/types/database";
 import type { BalanceDisplaySnapshot } from "@/lib/balances/contracts";
 import { deleteBalanceSnapshotsByDate } from "@/app/(app)/balances/actions";
 import { formatMoney } from "@/lib/format-money";
+import type {
+  BalanceActionErrorCode,
+  BalancesCopy,
+} from "@/lib/balances/presentation";
 
 const ACCOUNT_COLORS: Record<string, string> = {
   salary: "#3b82f6",
@@ -31,6 +35,17 @@ interface BalanceHistoryChartProps {
   snapshots: BalanceDisplaySnapshot[];
   locale: string;
   baseCurrency: string;
+  copy: BalancesCopy["history"];
+  errorCopy: BalancesCopy["errors"];
+}
+
+function formatObservationDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
 export function BalanceHistoryChart({
@@ -38,15 +53,25 @@ export function BalanceHistoryChart({
   snapshots,
   locale,
   baseCurrency,
+  copy,
+  errorCopy,
 }: BalanceHistoryChartProps) {
   const [range, setRange] = useState<"3" | "6" | "all">("all");
   const router = useRouter();
+  const [error, setError] = useState<BalanceActionErrorCode | null>(null);
 
   async function handleDeleteDate(date: string) {
-    if (!window.confirm(`Delete all Balance Snapshots observed on ${date}?`)) return;
+    if (
+      !window.confirm(
+        copy.deleteConfirm.replace("{date}", formatObservationDate(date, locale))
+      )
+    ) return;
+    setError(null);
     const result = await deleteBalanceSnapshotsByDate(date);
     if (result.success) {
       router.refresh();
+    } else {
+      setError(result.error);
     }
   }
 
@@ -62,7 +87,7 @@ export function BalanceHistoryChart({
   if (snapshots.length === 0) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-400">
-        No Balance Snapshots yet.
+        {copy.empty}
       </div>
     );
   }
@@ -88,7 +113,13 @@ export function BalanceHistoryChart({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">Balance Snapshot history</h3>
+      <h3 className="text-lg font-semibold text-gray-900">{copy.title}</h3>
+
+      {error ? (
+        <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {errorCopy[error]}
+        </p>
+      ) : null}
 
       <div className="mt-3 flex gap-2">
         {(["3", "6", "all"] as const).map((r) => (
@@ -102,7 +133,7 @@ export function BalanceHistoryChart({
                 : "text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {r === "3" ? "3 months" : r === "6" ? "6 months" : "All"}
+            {r === "3" ? copy.threeMonths : r === "6" ? copy.sixMonths : copy.all}
           </button>
         ))}
       </div>
@@ -114,12 +145,15 @@ export function BalanceHistoryChart({
             key={d.date}
             className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600"
           >
-            {d.date}
+            {formatObservationDate(d.date, locale)}
             <button
               type="button"
               onClick={() => handleDeleteDate(d.date)}
               className="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
-              aria-label={`Delete Balance Snapshots for ${d.date}`}
+              aria-label={copy.deleteAria.replace(
+                "{date}",
+                formatObservationDate(d.date, locale)
+              )}
             >
               ×
             </button>
@@ -138,6 +172,7 @@ export function BalanceHistoryChart({
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
               dataKey="date"
+              tickFormatter={(value: string) => formatObservationDate(value, locale)}
               tick={{ fontSize: 12 }}
               stroke="#9ca3af"
             />

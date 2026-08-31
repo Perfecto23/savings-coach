@@ -8,6 +8,14 @@ import {
   INITIAL_HOME_ACTION_STATE,
   type MonthlyExecutionHomeDto,
 } from "@/lib/home/contracts";
+import type { HomeCopy } from "@/lib/home/presentation";
+
+function fill(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+    template
+  );
+}
 
 function formatMonth(yearMonth: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -27,8 +35,10 @@ function formatActionDate(value: string, locale: string) {
 
 export function MonthlyExecutionHome({
   home,
+  copy,
 }: {
   home: MonthlyExecutionHomeDto;
+  copy: HomeCopy;
 }) {
   const [state, formAction, pending] = useActionState(
     updateHomeAction,
@@ -46,14 +56,15 @@ export function MonthlyExecutionHome({
       : 0;
 
   return (
-    <div lang="en" className="mx-auto w-full max-w-6xl pb-10 text-stone-950">
+    <div lang={home.locale} className="mx-auto w-full max-w-6xl pb-10 text-stone-950">
       <header className="border-b border-stone-200 pb-8 pt-2 sm:pb-10 sm:pt-4">
         <h1 className="text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
-          This month
+          {copy.page.title}
         </h1>
         <p className="mt-3 text-base text-stone-600 sm:text-lg">
-          {formatMonth(home.currentYearMonth, home.locale)} · One clear action at
-          a time.
+          {fill(copy.page.subtitle, {
+            month: formatMonth(home.currentYearMonth, home.locale),
+          })}
         </p>
       </header>
 
@@ -68,11 +79,10 @@ export function MonthlyExecutionHome({
             </span>
             <div>
               <h2 className="text-2xl font-semibold tracking-[-0.03em]">
-                Your plan is now in motion.
+                {copy.activation.title}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-300">
-                You confirmed your first Monthly Action. Your Plan Path remains
-                a target, and your Balance Snapshots remain separate.
+                {copy.activation.description}
               </p>
             </div>
           </div>
@@ -86,7 +96,7 @@ export function MonthlyExecutionHome({
           role="alert"
           className="mt-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
         >
-          {state.error.message}
+          {copy.errors[state.error.code]}
         </div>
       ) : null}
 
@@ -94,17 +104,17 @@ export function MonthlyExecutionHome({
         <section className="mt-8 grid gap-8 rounded-xl border border-stone-200 bg-white p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
             <h2 className="text-2xl font-semibold tracking-[-0.035em]">
-              Build your Savings Plan
+              {copy.needsPlan.title}
             </h2>
             <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
-              Add a Plan Rule and activate it to see this month&apos;s action here.
+              {copy.needsPlan.description}
             </p>
           </div>
           <Link
             href="/plan"
             className="inline-flex min-h-12 items-center justify-center rounded-xl bg-orange-700 px-5 text-base font-semibold text-white transition-colors hover:bg-orange-800"
           >
-            Open Savings Plan
+            {copy.needsPlan.action}
           </Link>
         </section>
       ) : null}
@@ -114,20 +124,22 @@ export function MonthlyExecutionHome({
           <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-orange-300">
-                Monthly Review
+                {copy.needsReview.label}
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em]">
-                Review {formatMonth(home.review.yearMonth, home.locale)} before
-                starting {formatMonth(home.currentYearMonth, home.locale)}.
+                {fill(copy.needsReview.title, {
+                  reviewMonth: formatMonth(home.review.yearMonth, home.locale),
+                  currentMonth: formatMonth(home.currentYearMonth, home.locale),
+                })}
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-7 text-stone-300">
-                Closing preserves the month&apos;s execution record. Balance
-                Snapshots remain observations and can be added or corrected
-                later.
+                {copy.needsReview.description}
               </p>
               <p className="mt-5 text-sm text-stone-400">
-                {home.review.completedCount} of {home.review.totalCount} Monthly
-                Actions confirmed
+                {fill(copy.needsReview.progress, {
+                  completed: home.review.completedCount,
+                  total: home.review.totalCount,
+                })}
               </p>
             </div>
             <Link
@@ -139,8 +151,12 @@ export function MonthlyExecutionHome({
               className="inline-flex min-h-12 items-center justify-center rounded-xl bg-orange-600 px-5 text-base font-semibold text-white transition-colors hover:bg-orange-700"
             >
               {home.review.readyToReview
-                ? `Review ${formatMonth(home.review.yearMonth, home.locale)}`
-                : `Finish ${formatMonth(home.review.yearMonth, home.locale)}`}
+                ? fill(copy.needsReview.reviewAction, {
+                    month: formatMonth(home.review.yearMonth, home.locale),
+                  })
+                : fill(copy.needsReview.finishAction, {
+                    month: formatMonth(home.review.yearMonth, home.locale),
+                  })}
             </Link>
           </div>
         </section>
@@ -149,17 +165,16 @@ export function MonthlyExecutionHome({
       {home.status === "needs_repair" ? (
         <section className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-0.035em] text-amber-950">
-            Your Monthly Actions need attention.
+            {copy.repair.title}
           </h2>
           <p className="mt-3 max-w-2xl text-base leading-7 text-amber-900">
-            The active Plan Path has no usable action for this month. Open your
-            Savings Plan and activate it again.
+            {copy.repair.description}
           </p>
           <Link
             href="/plan"
             className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-amber-950 px-4 text-sm font-semibold text-white"
           >
-            Open Savings Plan
+            {copy.repair.action}
           </Link>
         </section>
       ) : null}
@@ -167,7 +182,7 @@ export function MonthlyExecutionHome({
       {home.status === "ready" ? (
         <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)] lg:gap-10">
           <section
-            aria-label="Next Monthly Action"
+            aria-label={copy.ready.ariaLabel}
             className="relative overflow-hidden rounded-xl bg-stone-950 p-6 text-stone-50 sm:p-8"
           >
             <div
@@ -177,7 +192,7 @@ export function MonthlyExecutionHome({
             <div className="relative">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-semibold tracking-[-0.025em]">
-                  Your next Monthly Action
+                  {copy.ready.title}
                 </h2>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -187,10 +202,14 @@ export function MonthlyExecutionHome({
                   }`}
                 >
                   {home.nextAction.dueStatus === "overdue"
-                    ? `Overdue since ${formatActionDate(home.nextAction.scheduledFor, home.locale)}`
+                    ? fill(copy.ready.overdueSince, {
+                        date: formatActionDate(home.nextAction.scheduledFor, home.locale),
+                      })
                     : home.nextAction.dueStatus === "today"
-                      ? "Due today"
-                      : `Due ${formatActionDate(home.nextAction.scheduledFor, home.locale)}`}
+                      ? copy.ready.dueToday
+                      : fill(copy.ready.due, {
+                          date: formatActionDate(home.nextAction.scheduledFor, home.locale),
+                        })}
                 </span>
               </div>
               <p className="mt-8 text-5xl font-semibold tabular-nums tracking-[-0.04em] text-white">
@@ -205,12 +224,16 @@ export function MonthlyExecutionHome({
               </h3>
               <p className="mt-3 text-sm leading-6 text-stone-300">
                 {home.nextAction.sourceAccountName
-                  ? `From ${home.nextAction.sourceAccountName} to ${home.nextAction.targetAccountName}`
-                  : `To ${home.nextAction.targetAccountName}`}
+                  ? fill(copy.ready.transferFrom, {
+                      source: home.nextAction.sourceAccountName,
+                      target: home.nextAction.targetAccountName,
+                    })
+                  : fill(copy.ready.transferTo, {
+                      target: home.nextAction.targetAccountName,
+                    })}
               </p>
               <p className="mt-6 border-t border-stone-800 pt-5 text-sm leading-6 text-stone-400">
-                Complete it manually, then confirm it here. Savings Coach does
-                not move money or verify a bank transfer.
+                {copy.ready.description}
               </p>
               <form action={formAction} className="mt-7">
                 <input type="hidden" name="action_id" value={home.nextAction.id} />
@@ -218,10 +241,10 @@ export function MonthlyExecutionHome({
                 <button
                   type="submit"
                   disabled={pending}
-                  aria-label={`Confirm completion for ${home.nextAction.name}`}
+                  aria-label={fill(copy.ready.confirmAria, { name: home.nextAction.name })}
                   className="min-h-12 w-full cursor-pointer rounded-xl bg-orange-600 px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(234,88,12,0.24)] transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {pending ? "Confirming…" : "I completed this"}
+                  {pending ? copy.ready.confirming : copy.ready.confirm}
                 </button>
               </form>
             </div>
@@ -229,6 +252,7 @@ export function MonthlyExecutionHome({
 
           <HomeProgress
             home={home}
+            copy={copy}
             progress={progress}
             formAction={formAction}
             pending={pending}
@@ -243,18 +267,20 @@ export function MonthlyExecutionHome({
               <CheckIcon className="h-5 w-5" />
             </span>
             <h2 className="mt-6 text-3xl font-semibold tracking-[-0.035em]">
-              This month’s Monthly Actions are complete.
+              {copy.complete.title}
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-stone-300">
-              You confirmed {home.completedCount} of {home.totalCount} actions.
-              Your Monthly Review will open after this natural month ends.
+              {fill(copy.complete.description, {
+                completed: home.completedCount,
+                total: home.totalCount,
+              })}
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link
                 href="/plan"
                 className="inline-flex min-h-11 items-center rounded-xl bg-orange-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-700"
               >
-                Open Savings Plan
+                {copy.complete.openPlan}
               </Link>
               <form action={formAction}>
                 <input
@@ -266,10 +292,12 @@ export function MonthlyExecutionHome({
                 <button
                   type="submit"
                   disabled={pending}
-                  aria-label={`Undo confirmation for ${home.lastCompletedAction.name}`}
+                  aria-label={fill(copy.complete.undoAria, {
+                    name: home.lastCompletedAction.name,
+                  })}
                   className="min-h-11 cursor-pointer rounded-xl px-3 text-sm font-medium text-stone-400 transition-colors hover:bg-stone-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {pending ? "Undoing…" : "Undo confirmation"}
+                  {pending ? copy.complete.undoing : copy.complete.undo}
                 </button>
               </form>
             </div>
@@ -277,6 +305,7 @@ export function MonthlyExecutionHome({
 
           <HomeProgress
             home={home}
+            copy={copy}
             progress={progress}
             formAction={formAction}
             pending={pending}
@@ -289,11 +318,13 @@ export function MonthlyExecutionHome({
 
 function HomeProgress({
   home,
+  copy,
   progress,
   formAction,
   pending,
 }: {
   home: Extract<MonthlyExecutionHomeDto, { status: "ready" | "complete" }>;
+  copy: HomeCopy;
   progress: number;
   formAction: (payload: FormData) => void;
   pending: boolean;
@@ -301,16 +332,19 @@ function HomeProgress({
   return (
     <aside className="space-y-8">
       <section
-        aria-label="Monthly Action progress"
+        aria-label={copy.progress.ariaLabel}
         className="border-y border-stone-200 py-6"
       >
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-[-0.02em]">
-              Monthly Action progress
+              {copy.progress.title}
             </h2>
             <p className="mt-2 text-sm text-stone-500">
-              {home.completedCount} of {home.totalCount} Monthly Actions confirmed
+              {fill(copy.progress.count, {
+                completed: home.completedCount,
+                total: home.totalCount,
+              })}
             </p>
           </div>
           <p className="text-2xl font-semibold tabular-nums text-stone-950">
@@ -334,21 +368,23 @@ function HomeProgress({
             <button
               type="submit"
               disabled={pending}
-              aria-label={`Undo confirmation for ${home.lastCompletedAction.name}`}
+              aria-label={fill(copy.progress.undoAria, {
+                name: home.lastCompletedAction.name,
+              })}
               className="min-h-11 cursor-pointer rounded-xl px-3 text-sm font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Undo last confirmation
+              {copy.progress.undoLast}
             </button>
           </form>
         ) : null}
       </section>
 
       {home.planSummary ? (
-        <section aria-label="Plan Path summary" className="border-b border-stone-200 pb-6">
-          <h2 className="text-lg font-semibold tracking-[-0.02em]">Plan Path</h2>
+        <section aria-label={copy.planSummary.ariaLabel} className="border-b border-stone-200 pb-6">
+          <h2 className="text-lg font-semibold tracking-[-0.02em]">{copy.planSummary.title}</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-stone-500">Planned this month</dt>
+              <dt className="text-stone-500">{copy.planSummary.plannedThisMonth}</dt>
               <dd className="font-semibold tabular-nums text-stone-950">
                 {formatMoney(
                   Number(home.planSummary.plannedTransfer),
@@ -358,7 +394,7 @@ function HomeProgress({
               </dd>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-stone-500">Target balance</dt>
+              <dt className="text-stone-500">{copy.planSummary.targetBalance}</dt>
               <dd className="font-semibold tabular-nums text-stone-950">
                 {formatMoney(
                   Number(home.planSummary.targetBalance),
@@ -369,7 +405,7 @@ function HomeProgress({
             </div>
           </dl>
           <p className="mt-4 text-xs leading-5 text-stone-500">
-            Plan Path is a target. Balance Snapshots and net value remain separate.
+            {copy.planSummary.description}
           </p>
         </section>
       ) : null}

@@ -35,6 +35,7 @@ Savings Coach 是 manual-first 的储蓄执行工具。产品把计划转入、�
 - 每名登录用户对应一个 owner 和一个数据空间。
 - 每名 owner 只有一种 base currency。
 - 产品保存 locale 和 timezone 偏好。
+- Owner locale 控制已登录产品的界面语言、无障碍名称、确认框、错误提示、日期和金额格式。`zh-CN` 使用中文；`en-US` 与 `en-SG` 使用英文。
 - 产品不转移资金，不同步银行，不导入交易。
 - Public signup 保持关闭。首批用户由邀请或预创建方式获得访问。
 - Consumer AI Coach 和 BYOK 保持关闭。
@@ -66,3 +67,4 @@ Savings Coach 是 manual-first 的储蓄执行工具。产品把计划转入、�
 ## Accessibility & Inclusion
 
 公开入口和 Setup 必须支持键盘操作、明确 label、可见 focus、错误恢复和 desktop/mobile 响应式布局。
+已登录产品必须保持单一语言。用户输入、账户名、币种代码和 IANA 时区不翻译。

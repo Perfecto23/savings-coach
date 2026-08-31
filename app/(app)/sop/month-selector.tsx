@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 
 interface MonthSelectorProps {
   currentMonth: string;
+  ariaLabel: string;
 }
 
-export function MonthSelector({ currentMonth }: MonthSelectorProps) {
+export function MonthSelector({ currentMonth, ariaLabel }: MonthSelectorProps) {
   const router = useRouter();
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -18,7 +19,7 @@ export function MonthSelector({ currentMonth }: MonthSelectorProps) {
       type="month"
       value={currentMonth}
       onChange={handleChange}
-      aria-label="选择月份"
+      aria-label={ariaLabel}
       className="cursor-pointer rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
     />
   );

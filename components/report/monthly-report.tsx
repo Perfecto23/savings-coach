@@ -1,23 +1,25 @@
 import type { MonthlyReportData } from "@/lib/report-generator";
 import { formatMoney } from "@/lib/format-money";
+import type { MonthlyReportCopy } from "@/lib/monthly-review/presentation";
 
 interface MonthlyReportProps {
   data: MonthlyReportData;
   locale: string;
   baseCurrency: string;
+  copy: MonthlyReportCopy;
 }
 
-export function MonthlyReport({ data, locale, baseCurrency }: MonthlyReportProps) {
+export function MonthlyReport({ data, locale, baseCurrency, copy }: MonthlyReportProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
-          label="Execution completion"
+          label={copy.stats.executionCompletion}
           value={`${data.sopCompletionRate}%`}
           color={data.sopCompletionRate === 100 ? "green" : "orange"}
         />
         <StatCard
-          label="Planned transfer"
+          label={copy.stats.plannedTransfer}
           value={
             data.milestone
               ? formatMoney(data.milestone.planned_savings, locale, baseCurrency)
@@ -26,7 +28,7 @@ export function MonthlyReport({ data, locale, baseCurrency }: MonthlyReportProps
           color="blue"
         />
         <StatCard
-          label="Net value change"
+          label={copy.stats.netValueChange}
           value={
             data.milestone?.actual_savings != null
               ? formatMoney(data.milestone.actual_savings, locale, baseCurrency)
@@ -35,22 +37,22 @@ export function MonthlyReport({ data, locale, baseCurrency }: MonthlyReportProps
           color="blue"
         />
         <StatCard
-          label="Impulse amount"
+          label={copy.stats.impulseAmount}
           value={formatMoney(data.impulseTotal, locale, baseCurrency)}
-          subtitle={`${data.impulseCount} decisions`}
+          subtitle={copy.stats.decisions.replace("{count}", String(data.impulseCount))}
           color="purple"
         />
       </div>
 
       <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-blue-700">
-        Execution status only reflects confirmations. Net value change comes from Balance Snapshots and stays independent from planned transfer.
+        {copy.explanation}
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="font-semibold text-gray-900">Monthly Action confirmations</h3>
+        <h3 className="font-semibold text-gray-900">{copy.actions.title}</h3>
         <div className="mt-3 space-y-2">
           {data.sopRecords.length === 0 ? (
-            <p className="text-sm text-gray-400">No monthly actions for this month.</p>
+            <p className="text-sm text-gray-400">{copy.actions.empty}</p>
           ) : (
             data.sopRecords.map((record) => (
               <div
@@ -85,22 +87,22 @@ export function MonthlyReport({ data, locale, baseCurrency }: MonthlyReportProps
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="font-semibold text-gray-900">Balance Snapshot observations</h3>
+        <h3 className="font-semibold text-gray-900">{copy.balances.title}</h3>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="px-3 py-2 text-left font-medium text-gray-500">
-                  Account
+                  {copy.balances.account}
                 </th>
                 <th className="px-3 py-2 text-right font-medium text-gray-500">
-                  Earliest Balance Snapshot
+                  {copy.balances.earliest}
                 </th>
                 <th className="px-3 py-2 text-right font-medium text-gray-500">
-                  Latest Balance Snapshot
+                  {copy.balances.latest}
                 </th>
                 <th className="px-3 py-2 text-right font-medium text-gray-500">
-                  Observed change
+                  {copy.balances.observedChange}
                 </th>
               </tr>
             </thead>

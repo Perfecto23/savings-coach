@@ -1,3 +1,5 @@
+import { isChineseLocale } from "@/lib/i18n/locale";
+
 export interface ImpulseCopy {
   page: {
     title: string;
@@ -25,7 +27,9 @@ export interface ImpulseCopy {
     amountAriaLabel: string;
     delete: string;
     deleteConfirm: string;
+    deleteError: string;
   };
+  errors: Record<string, string>;
 }
 
 const ENGLISH_COPY: ImpulseCopy = {
@@ -59,6 +63,15 @@ const ENGLISH_COPY: ImpulseCopy = {
     amountAriaLabel: "Impulse amount",
     delete: "Delete",
     deleteConfirm: "Delete this impulse check?",
+    deleteError: "The impulse check could not be deleted. Try again.",
+  },
+  errors: {
+    UNAUTHENTICATED: "Please sign in again.",
+    INVALID_ITEM_NAME: "Enter what you decided not to buy.",
+    INVALID_AMOUNT: "Enter a valid positive impulse amount.",
+    INVALID_CATEGORY: "Enter a valid category.",
+    NOT_FOUND: "Impulse check was not found.",
+    SAVE_FAILED: "The impulse check could not be saved. Try again.",
   },
 };
 
@@ -89,11 +102,24 @@ const CHINESE_COPY: ImpulseCopy = {
     amountAriaLabel: "拦截金额",
     delete: "删除",
     deleteConfirm: "删除这条冲动拦截记录？",
+    deleteError: "无法删除冲动拦截记录，请重试。",
+  },
+  errors: {
+    UNAUTHENTICATED: "请重新登录。",
+    INVALID_ITEM_NAME: "请输入你决定不买的物品。",
+    INVALID_AMOUNT: "请输入有效的正数拦截金额。",
+    INVALID_CATEGORY: "请输入有效分类。",
+    NOT_FOUND: "找不到该冲动拦截记录。",
+    SAVE_FAILED: "无法保存冲动拦截记录，请重试。",
   },
 };
 
 export function getImpulseCopy(locale: string): ImpulseCopy {
-  return locale.toLowerCase().startsWith("zh") ? CHINESE_COPY : ENGLISH_COPY;
+  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+}
+
+export function getImpulseErrorMessage(error: string, copy: ImpulseCopy): string {
+  return copy.errors[error] ?? copy.errors.SAVE_FAILED;
 }
 
 export function formatImpulseDate(value: string, locale: string): string {

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { MilestoneTable } from "@/components/milestones/milestone-table";
 import type { MonthlyMilestone, BonusEvent } from "@/lib/types/database";
+import { getMilestonesCopy } from "@/lib/milestones/presentation";
 
 function localYearMonth(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -39,13 +40,14 @@ export default async function MilestonesPage() {
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
   const locale = setupRes.data?.locale || "en-US";
   const baseCurrency = setupRes.data?.base_currency || "USD";
+  const copy = getMilestonesCopy(locale);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div lang={locale} className="mx-auto max-w-5xl space-y-6">
       <div>
-          <h1 className="text-3xl font-semibold tracking-[-0.035em] text-stone-950">Progress</h1>
+          <h1 className="text-3xl font-semibold tracking-[-0.035em] text-stone-950">{copy.page.title}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Compare your Plan Path, Balance Snapshot observations, and execution status without treating them as the same result.
+            {copy.page.description}
           </p>
       </div>
 
@@ -55,6 +57,7 @@ export default async function MilestonesPage() {
         locale={locale}
         baseCurrency={baseCurrency}
         currentYearMonth={localYearMonth(setupRes.data?.time_zone || "UTC")}
+        copy={copy.table}
       />
     </div>
   );

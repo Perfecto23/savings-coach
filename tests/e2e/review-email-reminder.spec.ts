@@ -45,8 +45,12 @@ function captureRsc(page: Page) {
     }
 
     pending.push(
-      response
-        .text()
+      Promise.race<string>([
+        response.text(),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error("Response body read timed out")), 3_000),
+        ),
+      ])
         .then((body) => payloads.push(body))
         .then(() => undefined)
         .catch(() => undefined)
@@ -75,13 +79,13 @@ test("an owner controls Monthly Review email reminder consent", async ({ page },
   const fixture = loadFixture(testInfo.project.name);
 
   await page.goto("/login");
-  await page.getByLabel("邮箱").fill(fixture.email);
-  await page.getByLabel("密码").fill(fixture.password);
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto("/settings");
-  await expect(page.getByRole("heading", { name: "设置" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   const captured = captureRsc(page);
   await page.reload();
   let reminder = await selectReminderTab(page);

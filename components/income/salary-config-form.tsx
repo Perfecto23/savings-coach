@@ -4,13 +4,29 @@ import { useState } from "react";
 import type { SalaryConfig } from "@/lib/types/database";
 import { saveSalaryConfig } from "@/app/(app)/income/actions";
 import { calculateYearlyTax } from "@/lib/tax-calculator";
+import { formatMoney } from "@/lib/format-money";
+import {
+  getIncomeErrorMessage,
+  type IncomeCopy,
+} from "@/lib/income/presentation";
 
 interface SalaryConfigFormProps {
   config: SalaryConfig | null;
   onSaved?: (config: SalaryConfig) => void;
+  locale: string;
+  baseCurrency: string;
+  copy: IncomeCopy["salary"];
+  errorCopy: IncomeCopy;
 }
 
-export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
+export function SalaryConfigForm({
+  config,
+  onSaved,
+  locale,
+  baseCurrency,
+  copy,
+  errorCopy,
+}: SalaryConfigFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ min: number; max: number } | null>(
@@ -48,16 +64,16 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
       const nets = breakdown.map((b) => b.netIncome);
       setPreview({ min: Math.min(...nets), max: Math.max(...nets) });
     } else {
-      setError(result.error);
+      setError(getIncomeErrorMessage(result.error, errorCopy));
     }
     setLoading(false);
   }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">薪资配置</h3>
+      <h3 className="text-lg font-semibold text-gray-900">{copy.title}</h3>
       <p className="mt-1 text-sm text-gray-500">
-        配置税前月薪和扣除项，系统将自动计算每月到手工资
+        {copy.description}
       </p>
 
       {error && (
@@ -70,7 +86,7 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="monthly_gross" className="block text-sm font-medium text-gray-700">
-              税前月薪（¥）
+              {copy.monthlyGross} ({baseCurrency})
             </label>
             <input
               id="monthly_gross"
@@ -87,7 +103,7 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
 
           <div>
             <label htmlFor="social_insurance" className="block text-sm font-medium text-gray-700">
-              社保个人月缴（¥）
+              {copy.socialInsurance} ({baseCurrency})
             </label>
             <input
               id="social_insurance"
@@ -97,14 +113,14 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
               step="0.01"
               required
               defaultValue={config?.social_insurance ?? ""}
-              placeholder="养老+医疗+失业"
+              placeholder={copy.socialPlaceholder}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
 
           <div>
             <label htmlFor="housing_fund_rate" className="block text-sm font-medium text-gray-700">
-              公积金比例（%）
+              {copy.housingRate}
             </label>
             <input
               id="housing_fund_rate"
@@ -120,7 +136,7 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
 
           <div>
             <label htmlFor="housing_fund_base" className="block text-sm font-medium text-gray-700">
-              公积金基数（¥）
+              {copy.housingBase} ({baseCurrency})
             </label>
             <input
               id="housing_fund_base"
@@ -129,14 +145,14 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
               inputMode="decimal"
               step="0.01"
               defaultValue={config?.housing_fund_base ?? ""}
-              placeholder="默认=税前月薪"
+              placeholder={copy.housingBasePlaceholder}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
 
           <div>
             <label htmlFor="special_deductions" className="block text-sm font-medium text-gray-700">
-              专项附加扣除月额（¥）
+              {copy.specialDeductions} ({baseCurrency})
             </label>
             <input
               id="special_deductions"
@@ -146,14 +162,14 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
               step="0.01"
               required
               defaultValue={config?.special_deductions ?? ""}
-              placeholder="租房/教育等"
+              placeholder={copy.specialPlaceholder}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
 
           <div>
             <label htmlFor="effective_from" className="block text-sm font-medium text-gray-700">
-              生效起始月
+              {copy.effectiveFrom}
             </label>
             <input
               id="effective_from"
@@ -169,15 +185,15 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
         <div className="flex items-center justify-between pt-2">
           {preview && (
             <p className="text-sm text-gray-600">
-              预估每月到手：
+              {copy.estimatedNet}
               <span className="font-semibold text-orange-600">
-                ¥{preview.max.toLocaleString()}
+                {formatMoney(preview.max, locale, baseCurrency)}
               </span>
               {" ~ "}
               <span className="font-semibold text-orange-600">
-                ¥{preview.min.toLocaleString()}
+                {formatMoney(preview.min, locale, baseCurrency)}
               </span>
-              <span className="text-gray-400">（年初→年末）</span>
+              <span className="text-gray-400">{copy.rangeDirection}</span>
             </p>
           )}
 
@@ -186,7 +202,7 @@ export function SalaryConfigForm({ config, onSaved }: SalaryConfigFormProps) {
             disabled={loading}
             className="cursor-pointer rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
           >
-            {loading ? "保存中…" : "保存配置"}
+            {loading ? copy.saving : copy.save}
           </button>
         </div>
       </form>

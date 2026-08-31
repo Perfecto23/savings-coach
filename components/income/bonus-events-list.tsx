@@ -9,19 +9,36 @@ import {
   markBonusReceived,
   updateBonusEvent,
 } from "@/app/(app)/income/actions";
-
-const TYPE_LABELS: Record<string, string> = {
-  signing_bonus: "签字费",
-  year_end_bonus: "年终奖",
-  other: "其他",
-};
+import { formatMoney } from "@/lib/format-money";
+import {
+  getIncomeErrorMessage,
+  type IncomeCopy,
+} from "@/lib/income/presentation";
 
 interface BonusEventsListProps {
   initialEvents: BonusEvent[];
   accounts: Account[];
+  locale: string;
+  baseCurrency: string;
+  copy: IncomeCopy;
 }
 
-export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProps) {
+function formatCalendarDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+export function BonusEventsList({
+  initialEvents,
+  accounts,
+  locale,
+  baseCurrency,
+  copy,
+}: BonusEventsListProps) {
   const [events, setEvents] = useState(initialEvents);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<BonusEvent | null>(null);
@@ -46,16 +63,16 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
       setEvents((prev) => sortByDate([...prev, result.data]));
       setShowForm(false);
     } else {
-      setError(result.error);
+      setError(getIncomeErrorMessage(result.error, copy));
     }
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("确定要删除此奖金事件吗？")) return;
+    if (!window.confirm(copy.bonuses.deleteConfirm)) return;
     const result = await deleteBonusEvent(id);
     if (result.success) {
       setEvents((prev) => prev.filter((e) => e.id !== id));
-    }
+    } else setError(getIncomeErrorMessage(result.error, copy));
   }
 
   async function handleMarkReceived(id: string) {
@@ -71,7 +88,7 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
       );
       setReceivingId(null);
       setReceiveAmount("");
-    }
+    } else setError(getIncomeErrorMessage(result.error, copy));
   }
 
   async function handleUpdate(id: string, formData: FormData) {
@@ -95,7 +112,7 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
       );
       setEditingEvent(null);
     } else {
-      setError(result.error);
+      setError(getIncomeErrorMessage(result.error, copy));
     }
   }
 
@@ -103,15 +120,19 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
     <div className="rounded-xl border border-gray-200 bg-white p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">奖金事件</h3>
-          <p className="mt-1 text-sm text-gray-500">签字费、年终奖等一次性收入</p>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {copy.bonuses.title}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {copy.bonuses.description}
+          </p>
         </div>
         <button
           type="button"
           onClick={() => setShowForm(!showForm)}
           className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
         >
-          + 添加
+          {copy.bonuses.add}
         </button>
       </div>
 
@@ -125,6 +146,8 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
         <div className="mt-4 rounded-xl border border-orange-200 bg-orange-50/50 p-4">
           <BonusEventForm
             accounts={accounts}
+            baseCurrency={baseCurrency}
+            copy={copy.bonusForm}
             onSubmit={handleCreate}
             onCancel={() => setShowForm(false)}
           />
@@ -132,19 +155,21 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
       )}
 
       {events.length === 0 ? (
-        <div className="mt-4 text-center text-sm text-gray-400">暂无奖金事件</div>
+        <div className="mt-4 text-center text-sm text-gray-400">
+          {copy.bonuses.empty}
+        </div>
       ) : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="px-3 py-2 text-left font-medium text-gray-500">类型</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-500">名称</th>
-                <th className="px-3 py-2 text-right font-medium text-gray-500">金额</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-500">日期</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-500">存入账户</th>
-                <th className="px-3 py-2 text-center font-medium text-gray-500">状态</th>
-                <th className="px-3 py-2 text-right font-medium text-gray-500">操作</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-500">{copy.bonuses.type}</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-500">{copy.bonuses.name}</th>
+                <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.bonuses.amount}</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-500">{copy.bonuses.date}</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-500">{copy.bonuses.targetAccount}</th>
+                <th className="px-3 py-2 text-center font-medium text-gray-500">{copy.bonuses.status}</th>
+                <th className="px-3 py-2 text-right font-medium text-gray-500">{copy.bonuses.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -156,6 +181,8 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                         <BonusEventForm
                           event={event}
                           accounts={accounts}
+                          baseCurrency={baseCurrency}
+                          copy={copy.bonusForm}
                           onSubmit={(formData) => handleUpdate(event.id, formData)}
                           onCancel={() => setEditingEvent(null)}
                         />
@@ -166,26 +193,33 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                   <tr key={event.id} className="border-b border-gray-50 last:border-0">
                     <td className="px-3 py-2">
                       <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
-                        {TYPE_LABELS[event.type] || event.type}
+                        {event.type === "signing_bonus"
+                          ? copy.bonusForm.signingBonus
+                          : event.type === "year_end_bonus"
+                            ? copy.bonusForm.yearEndBonus
+                            : copy.bonusForm.other}
                       </span>
                     </td>
                     <td className="px-3 py-2 font-medium text-gray-900">{event.label}</td>
                     <td className="px-3 py-2 text-right font-mono text-gray-700">
-                      ¥{event.amount.toLocaleString()}
+                      {formatMoney(event.amount, locale, baseCurrency)}
                       {event.actual_amount != null && (
                         <div className="text-xs text-green-600">
-                          实际 ¥{event.actual_amount.toLocaleString()}
+                          {copy.bonuses.actual}{" "}
+                          {formatMoney(event.actual_amount, locale, baseCurrency)}
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-gray-600">{event.expected_date}</td>
+                    <td className="px-3 py-2 text-gray-600">
+                      {formatCalendarDate(event.expected_date, locale)}
+                    </td>
                     <td className="px-3 py-2 text-gray-600">
                       {getAccountName(event.target_account_id)}
                     </td>
                     <td className="px-3 py-2 text-center">
                       {event.is_received ? (
                         <span className="inline-block rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                          已到账
+                          {copy.bonuses.received}
                         </span>
                       ) : receivingId === event.id ? (
                         <div className="flex items-center gap-1">
@@ -194,8 +228,8 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                             inputMode="decimal"
                             value={receiveAmount}
                             onChange={(e) => setReceiveAmount(e.target.value)}
-                            placeholder="实际金额"
-                            aria-label="实际到账金额"
+                            placeholder={copy.bonuses.actualAmount}
+                            aria-label={copy.bonuses.actualAmount}
                             className="w-24 rounded border border-gray-300 px-2 py-1 text-xs"
                           />
                           <button
@@ -203,7 +237,7 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                             onClick={() => handleMarkReceived(event.id)}
                             className="cursor-pointer rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600"
                           >
-                            确认
+                            {copy.bonuses.confirm}
                           </button>
                         </div>
                       ) : (
@@ -215,7 +249,7 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                           }}
                           className="cursor-pointer text-xs text-orange-500 hover:text-orange-600"
                         >
-                          标记到账
+                          {copy.bonuses.markReceived}
                         </button>
                       )}
                     </td>
@@ -226,14 +260,14 @@ export function BonusEventsList({ initialEvents, accounts }: BonusEventsListProp
                           onClick={() => setEditingEvent(event)}
                           className="cursor-pointer text-gray-400 transition-colors hover:text-orange-600"
                         >
-                          编辑
+                          {copy.bonuses.edit}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(event.id)}
                           className="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
                         >
-                          删除
+                          {copy.bonuses.delete}
                         </button>
                       </div>
                     </td>

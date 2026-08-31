@@ -8,7 +8,6 @@ export type MonthlyReviewErrorCode =
 
 export interface MonthlyReviewError {
   code: MonthlyReviewErrorCode;
-  message: string;
 }
 
 export type MonthlyReviewActionState =

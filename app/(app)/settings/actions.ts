@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult, Account, SopTemplate, AiConfig } from "@/lib/types/database";
 import { regenerateMilestones } from "@/app/(app)/income/actions";
-import type { ReviewEmailReminderActionState } from "@/lib/reminders/contracts";
+import type {
+  ReviewEmailReminderActionState,
+  ReviewEmailReminderErrorCode,
+} from "@/lib/reminders/contracts";
 
 const ACCOUNT_PURPOSES = ["salary", "fixed_expense", "dating_fund", "savings", "flexible", "housing_fund"] as const;
 
@@ -20,14 +23,14 @@ function getInstitution(formData: FormData) {
 export async function getAccounts() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false as const, error: "未登录" };
+  if (!user) return { success: false as const, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("accounts")
     .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
     .eq("owner_id", user.id)
     .order("sort_order");
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: "SAVE_FAILED" };
   return { success: true as const, data: data as Account[] };
 }
 
@@ -36,12 +39,12 @@ export async function createAccount(
 ): Promise<ActionResult<Account>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const name = (formData.get("name") as string) || "";
   const purpose = formData.get("purpose") as string;
-  if (!name.trim()) return { success: false, error: "账户名称不能为空" };
-  if (!ACCOUNT_PURPOSES.includes(purpose as (typeof ACCOUNT_PURPOSES)[number])) return { success: false, error: "用途无效" };
+  if (!name.trim()) return { success: false, error: "INVALID_ACCOUNT_NAME" };
+  if (!ACCOUNT_PURPOSES.includes(purpose as (typeof ACCOUNT_PURPOSES)[number])) return { success: false, error: "INVALID_ACCOUNT_PURPOSE" };
 
   const { data, error } = await supabase
     .from("accounts")
@@ -56,7 +59,7 @@ export async function createAccount(
     .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
     .single();
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   revalidatePath("/settings");
   return { success: true, data: data as Account };
 }
@@ -67,12 +70,12 @@ export async function updateAccount(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const name = (formData.get("name") as string) || "";
   const purpose = formData.get("purpose") as string;
-  if (!name.trim()) return { success: false, error: "账户名称不能为空" };
-  if (!ACCOUNT_PURPOSES.includes(purpose as (typeof ACCOUNT_PURPOSES)[number])) return { success: false, error: "用途无效" };
+  if (!name.trim()) return { success: false, error: "INVALID_ACCOUNT_NAME" };
+  if (!ACCOUNT_PURPOSES.includes(purpose as (typeof ACCOUNT_PURPOSES)[number])) return { success: false, error: "INVALID_ACCOUNT_PURPOSE" };
 
   const { data, error } = await supabase
     .from("accounts")
@@ -87,8 +90,8 @@ export async function updateAccount(
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "账户不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "ACCOUNT_NOT_FOUND" };
   revalidatePath("/settings");
   return { success: true, data: undefined };
 }
@@ -96,7 +99,7 @@ export async function updateAccount(
 export async function deleteAccount(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("accounts")
     .delete()
@@ -111,17 +114,17 @@ export async function deleteAccount(id: string): Promise<ActionResult> {
   ) {
     return {
       success: false,
-      error: "Choose a different Setup Savings Account before deleting this account.",
+      error: "SETUP_ACCOUNT_PROTECTED",
     };
   }
   if (error?.code === "23503") {
     return {
       success: false,
-      error: "Delete this account’s Balance Snapshots before deleting the account.",
+      error: "BALANCE_HISTORY_PROTECTED",
     };
   }
-  if (error) return { success: false, error: "The account could not be deleted. Try again." };
-  if (!data) return { success: false, error: "账户不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "ACCOUNT_NOT_FOUND" };
   revalidatePath("/settings");
   return { success: true, data: undefined };
 }
@@ -131,11 +134,11 @@ export async function reorderAccounts(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const uniqueIds = new Set(orderedIds);
   if (uniqueIds.size !== orderedIds.length) {
-    return { success: false, error: "账户排序包含重复账户" };
+    return { success: false, error: "SAVE_FAILED" };
   }
 
   const { data: ownedAccounts, error: ownershipError } = await supabase
@@ -144,9 +147,9 @@ export async function reorderAccounts(
     .eq("owner_id", user.id)
     .in("id", orderedIds);
 
-  if (ownershipError) return { success: false, error: ownershipError.message };
+  if (ownershipError) return { success: false, error: "SAVE_FAILED" };
   if ((ownedAccounts || []).length !== orderedIds.length) {
-    return { success: false, error: "账户排序包含无效账户" };
+    return { success: false, error: "SAVE_FAILED" };
   }
 
   const updates = orderedIds.map((id, index) =>
@@ -161,9 +164,9 @@ export async function reorderAccounts(
 
   const results = await Promise.all(updates);
   const failed = results.find((r) => r.error);
-  if (failed?.error) return { success: false, error: failed.error.message };
+  if (failed?.error) return { success: false, error: "SAVE_FAILED" };
   if (results.some((result) => !result.data)) {
-    return { success: false, error: "账户排序包含无效账户" };
+    return { success: false, error: "SAVE_FAILED" };
   }
 
   revalidatePath("/settings");
@@ -177,7 +180,7 @@ export async function reorderAccounts(
 export async function getSopTemplates() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false as const, error: "未登录" };
+  if (!user) return { success: false as const, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("sop_templates")
     .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
@@ -185,7 +188,7 @@ export async function getSopTemplates() {
     .eq("is_plan_rule", false)
     .order("sort_order");
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: "SAVE_FAILED" };
   return { success: true as const, data: data as SopTemplate[] };
 }
 
@@ -194,12 +197,12 @@ export async function createSopTemplate(
 ): Promise<ActionResult<SopTemplate>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const stepLabel = (formData.get("step_label") as string) || "";
   const dueDay = Number(formData.get("due_day"));
-  if (!stepLabel.trim()) return { success: false, error: "步骤名称不能为空" };
-  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) return { success: false, error: "到期日必须在1-31之间" };
+  if (!stepLabel.trim()) return { success: false, error: "INVALID_STEP_NAME" };
+  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) return { success: false, error: "INVALID_DUE_DAY" };
 
   const { data, error } = await supabase
     .from("sop_templates")
@@ -220,7 +223,7 @@ export async function createSopTemplate(
     .select("id, step_key, step_label, due_day, from_account_id, to_account_id, default_amount, sort_order, is_active, created_at, updated_at")
     .single();
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: "SAVE_FAILED" };
   revalidatePath("/settings");
   await regenerateMilestones();
   return { success: true, data: data as SopTemplate };
@@ -232,12 +235,12 @@ export async function updateSopTemplate(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const stepLabel = (formData.get("step_label") as string) || "";
   const dueDay = Number(formData.get("due_day"));
-  if (!stepLabel.trim()) return { success: false, error: "步骤名称不能为空" };
-  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) return { success: false, error: "到期日必须在1-31之间" };
+  if (!stepLabel.trim()) return { success: false, error: "INVALID_STEP_NAME" };
+  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) return { success: false, error: "INVALID_DUE_DAY" };
 
   const { data, error } = await supabase
     .from("sop_templates")
@@ -258,8 +261,8 @@ export async function updateSopTemplate(
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "SOP 模板不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "TEMPLATE_NOT_FOUND" };
   revalidatePath("/settings");
   await regenerateMilestones();
   return { success: true, data: undefined };
@@ -268,7 +271,7 @@ export async function updateSopTemplate(
 export async function deleteSopTemplate(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
+  if (!user) return { success: false, error: "UNAUTHENTICATED" };
   const { data, error } = await supabase
     .from("sop_templates")
     .delete()
@@ -278,8 +281,8 @@ export async function deleteSopTemplate(id: string): Promise<ActionResult> {
     .select("id")
     .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: "SOP 模板不存在" };
+  if (error) return { success: false, error: "SAVE_FAILED" };
+  if (!data) return { success: false, error: "TEMPLATE_NOT_FOUND" };
   revalidatePath("/settings");
   await regenerateMilestones();
   return { success: true, data: undefined };
@@ -327,8 +330,8 @@ interface ReviewEmailReminderReceipt {
   schedule_local_time?: unknown;
 }
 
-function reminderError(message: string): ReviewEmailReminderActionState {
-  return { status: "error", message };
+function reminderError(code: ReviewEmailReminderErrorCode): ReviewEmailReminderActionState {
+  return { status: "error", code };
 }
 
 export async function configureReviewEmailReminder(
@@ -337,7 +340,7 @@ export async function configureReviewEmailReminder(
 ): Promise<ReviewEmailReminderActionState> {
   void _previousState;
   if (process.env.REVIEW_EMAIL_FEATURE_ENABLED !== "true") {
-    return reminderError("Email reminders are not available yet.");
+    return reminderError("FEATURE_DISABLED");
   }
   const intent = formData.get("intent");
   const hasConsent = formData.get("reminder_consent") === "on";
@@ -345,20 +348,20 @@ export async function configureReviewEmailReminder(
   let enabled: boolean;
   if (intent === "enable") {
     if (!hasConsent) {
-      return reminderError("Agree to receive the Monthly Review email before enabling reminders.");
+      return reminderError("CONSENT_REQUIRED");
     }
     enabled = true;
   } else if (intent === "unsubscribe") {
     enabled = false;
   } else {
-    return reminderError("The email reminder request was invalid. Reload Settings and try again.");
+    return reminderError("INVALID_REQUEST");
   }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return reminderError("Please sign in again.");
+  if (!user) return reminderError("UNAUTHENTICATED");
 
   const { data: setup, error: setupError } = await supabase
     .from("owner_setup")
@@ -366,20 +369,20 @@ export async function configureReviewEmailReminder(
     .eq("owner_id", user.id)
     .maybeSingle();
   if (setupError || !setup?.time_zone) {
-    return reminderError("Email reminder settings could not be loaded. Reload Settings and try again.");
+    return reminderError("LOAD_FAILED");
   }
 
   const { data, error } = await supabase.rpc("configure_review_email_reminder", {
     p_enabled: enabled,
   });
   if (error?.code === "P0001" && error.message === "confirmed_email_required") {
-    return reminderError("Confirm your email address before enabling email reminders.");
+    return reminderError("EMAIL_UNCONFIRMED");
   }
   if (error?.code === "P0001" && error.message === "setup_incomplete") {
-    return reminderError("Complete Setup before changing email reminders.");
+    return reminderError("SETUP_INCOMPLETE");
   }
   if (error) {
-    return reminderError("Email reminder settings could not be updated. Try again.");
+    return reminderError("UPDATE_FAILED");
   }
 
   const receipt = data as ReviewEmailReminderReceipt | null;
@@ -388,13 +391,13 @@ export async function configureReviewEmailReminder(
     receipt.schedule_day !== 2 ||
     receipt.schedule_local_time !== "09:00:00"
   ) {
-    return reminderError("Email reminder settings returned an invalid receipt. Reload Settings and try again.");
+    return reminderError("INVALID_RECEIPT");
   }
 
   revalidatePath("/settings");
   return {
     status: "success",
-    message: enabled ? "Email reminders are enabled." : "You are unsubscribed from email reminders.",
+    result: enabled ? "enabled" : "unsubscribed",
     reminder: {
       status: enabled ? "enabled" : "disabled",
       timeZone: setup.time_zone,

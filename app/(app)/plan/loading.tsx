@@ -1,6 +1,6 @@
 export default function SavingsPlanLoading() {
   return (
-    <div className="mx-auto w-full max-w-6xl animate-pulse pb-10" aria-label="Loading Savings Plan">
+    <div className="mx-auto w-full max-w-6xl animate-pulse pb-10" aria-busy="true">
       <div className="border-b border-stone-200 pb-10 pt-4">
         <div className="h-12 w-full max-w-2xl rounded-xl bg-stone-200" />
         <div className="mt-5 h-6 w-full max-w-xl rounded-lg bg-stone-100" />

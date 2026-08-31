@@ -2,18 +2,15 @@
 
 import { useState } from "react";
 import type { Account, BonusEvent } from "@/lib/types/database";
-
-const BONUS_TYPES = [
-  { value: "signing_bonus", label: "签字费" },
-  { value: "year_end_bonus", label: "年终奖" },
-  { value: "other", label: "其他" },
-];
+import type { IncomeCopy } from "@/lib/income/presentation";
 
 interface BonusEventFormProps {
   event?: BonusEvent;
   accounts: Account[];
   onSubmit: (formData: FormData) => Promise<void>;
   onCancel: () => void;
+  baseCurrency: string;
+  copy: IncomeCopy["bonusForm"];
 }
 
 export function BonusEventForm({
@@ -21,6 +18,8 @@ export function BonusEventForm({
   accounts,
   onSubmit,
   onCancel,
+  baseCurrency,
+  copy,
 }: BonusEventFormProps) {
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +34,7 @@ export function BonusEventForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-            类型
+            {copy.type}
           </label>
           <select
             id="type"
@@ -44,7 +43,11 @@ export function BonusEventForm({
             defaultValue={event?.type || "signing_bonus"}
             className="mt-1 block w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
-            {BONUS_TYPES.map((t) => (
+            {[
+              { value: "signing_bonus", label: copy.signingBonus },
+              { value: "year_end_bonus", label: copy.yearEndBonus },
+              { value: "other", label: copy.other },
+            ].map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
               </option>
@@ -54,7 +57,7 @@ export function BonusEventForm({
 
         <div>
           <label htmlFor="label" className="block text-sm font-medium text-gray-700">
-            名称
+            {copy.name}
           </label>
           <input
             id="label"
@@ -62,14 +65,14 @@ export function BonusEventForm({
             type="text"
             required
             defaultValue={event?.label}
-            placeholder="如：26年6月签字费"
+            placeholder={copy.namePlaceholder}
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           />
         </div>
 
         <div>
           <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-            税前金额（¥）
+            {copy.grossAmount} ({baseCurrency})
           </label>
           <input
             id="amount"
@@ -85,7 +88,7 @@ export function BonusEventForm({
 
         <div>
           <label htmlFor="expected_date" className="block text-sm font-medium text-gray-700">
-            预计日期
+            {copy.expectedDate}
           </label>
           <input
             id="expected_date"
@@ -99,7 +102,7 @@ export function BonusEventForm({
 
         <div>
           <label htmlFor="target_account_id" className="block text-sm font-medium text-gray-700">
-            计划存入账户
+            {copy.targetAccount}
           </label>
           <select
             id="target_account_id"
@@ -107,7 +110,7 @@ export function BonusEventForm({
             defaultValue={event?.target_account_id || ""}
             className="mt-1 block w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
-            <option value="">未指定</option>
+            <option value="">{copy.unspecified}</option>
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.icon} {a.name}
@@ -118,7 +121,7 @@ export function BonusEventForm({
 
         <div>
           <label htmlFor="note" className="block text-sm font-medium text-gray-700">
-            备注
+            {copy.note}
           </label>
           <input
             id="note"
@@ -136,14 +139,14 @@ export function BonusEventForm({
           onClick={onCancel}
           className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
-          取消
+          {copy.cancel}
         </button>
         <button
           type="submit"
           disabled={loading}
           className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
         >
-          {loading ? "保存中…" : event ? "更新" : "添加"}
+          {loading ? copy.saving : event ? copy.update : copy.add}
         </button>
       </div>
     </form>

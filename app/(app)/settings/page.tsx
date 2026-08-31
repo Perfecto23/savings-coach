@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SettingsTabs } from "./settings-tabs";
 import type { Account, SopTemplate } from "@/lib/types/database";
 import type { ReviewEmailReminderSettings } from "@/lib/reminders/contracts";
+import { getSettingsCopy } from "@/lib/settings/presentation";
 
 interface ReviewEmailReminderStateReceipt {
   enabled?: unknown;
@@ -42,6 +43,8 @@ export default async function SettingsPage() {
 
   const accounts = (accountsRes.data || []) as Account[];
   const templates = (templatesRes.data || []) as SopTemplate[];
+  const locale = setupRes.data.locale || "en-US";
+  const copy = getSettingsCopy(locale);
   let reviewEmailReminder: ReviewEmailReminderSettings | null = null;
   if (reminderFeatureEnabled) {
     const reminderRes = await supabase.rpc("get_review_email_reminder_state");
@@ -65,21 +68,22 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-bold text-gray-900">设置</h1>
+    <div lang={locale} className="mx-auto max-w-4xl">
+      <h1 className="text-2xl font-bold text-gray-900">{copy.page.title}</h1>
       <p className="mt-1 text-sm text-gray-500">
         {reviewEmailReminder
-          ? "管理账户、SOP 模板和邮件提醒"
-          : "管理账户和 SOP 模板"}
+          ? copy.page.descriptionWithEmail
+          : copy.page.description}
       </p>
 
       <div className="mt-6">
         <SettingsTabs
           accounts={accounts}
           templates={templates}
-          locale={setupRes.data?.locale || "en-US"}
+          locale={locale}
           baseCurrency={setupRes.data?.base_currency || "USD"}
           reviewEmailReminder={reviewEmailReminder}
+          copy={copy}
         />
       </div>
     </div>

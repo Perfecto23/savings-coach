@@ -16,10 +16,9 @@ interface MonthlyReviewReceipt {
 }
 
 function failure(
-  code: MonthlyReviewErrorCode,
-  message: string
+  code: MonthlyReviewErrorCode
 ): MonthlyReviewActionState {
-  return { status: "error", error: { code, message } };
+  return { status: "error", error: { code } };
 }
 
 export async function closeMonthlyReview(
@@ -31,7 +30,7 @@ export async function closeMonthlyReview(
   const yearMonth =
     typeof yearMonthValue === "string" ? yearMonthValue.trim() : "";
   if (!YEAR_MONTH_PATTERN.test(yearMonth)) {
-    return failure("INVALID_MONTH", "Reload the Monthly Review and try again.");
+    return failure("INVALID_MONTH");
   }
 
   const supabase = await createClient();
@@ -39,7 +38,7 @@ export async function closeMonthlyReview(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return failure("UNAUTHENTICATED", "Please sign in again.");
+    return failure("UNAUTHENTICATED");
   }
 
   const { data, error } = await supabase.rpc("close_monthly_review", {
@@ -47,16 +46,10 @@ export async function closeMonthlyReview(
   });
   if (error?.code === "P0001") {
     if (error.message === "monthly_actions_incomplete") {
-      return failure(
-        "ACTIONS_INCOMPLETE",
-        "Finish every Monthly Action before closing this month."
-      );
+      return failure("ACTIONS_INCOMPLETE");
     }
     if (error.message === "no_active_plan_rules") {
-      return failure(
-        "PLAN_NOT_READY",
-        "Add or reactivate a Plan Rule before closing this month."
-      );
+      return failure("PLAN_NOT_READY");
     }
     if (
       error.message === "review_month_not_found" ||
@@ -64,17 +57,11 @@ export async function closeMonthlyReview(
       error.message === "review_month_not_elapsed" ||
       error.message === "review_month_out_of_window"
     ) {
-      return failure(
-        "MONTH_NOT_AVAILABLE",
-        "This month is not available for Monthly Review."
-      );
+      return failure("MONTH_NOT_AVAILABLE");
     }
   }
   if (error) {
-    return failure(
-      "REVIEW_FAILED",
-      "The Monthly Review could not be completed. Try again."
-    );
+    return failure("REVIEW_FAILED");
   }
 
   const receipt = data as MonthlyReviewReceipt | null;
@@ -83,10 +70,7 @@ export async function closeMonthlyReview(
     !receipt.review_completed_at ||
     !receipt.next_year_month
   ) {
-    return failure(
-      "REVIEW_FAILED",
-      "The Monthly Review did not return a complete receipt."
-    );
+    return failure("REVIEW_FAILED");
   }
 
   revalidatePath("/");

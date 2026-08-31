@@ -25,6 +25,16 @@ interface AccountBalanceCardProps {
   latestSnapshot: BalanceDisplaySnapshot | null;
   locale: string;
   baseCurrency: string;
+  observedTemplate: string;
+}
+
+function formatObservationDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
 export function AccountBalanceCard({
@@ -32,6 +42,7 @@ export function AccountBalanceCard({
   latestSnapshot,
   locale,
   baseCurrency,
+  observedTemplate,
 }: AccountBalanceCardProps) {
   const colorClass = PURPOSE_COLORS[account.purpose] || "border-gray-200 bg-gray-50";
   const textColor = PURPOSE_TEXT_COLORS[account.purpose] || "text-gray-700";
@@ -49,7 +60,10 @@ export function AccountBalanceCard({
       </div>
       {latestSnapshot && (
         <p className="mt-1 text-xs text-gray-400">
-          Observed {latestSnapshot.recorded_at}
+          {observedTemplate.replace(
+            "{date}",
+            formatObservationDate(latestSnapshot.recorded_at, locale)
+          )}
         </p>
       )}
     </div>

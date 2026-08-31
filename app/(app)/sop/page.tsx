@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { MonthSelector } from "./month-selector";
+import { getSopCopy } from "@/lib/sop/presentation";
 
 interface SopPageProps {
   searchParams: Promise<{ month?: string }>;
@@ -52,23 +53,31 @@ export default async function SopPage({ searchParams }: SopPageProps) {
     throw new Error("Unable to load monthly execution steps");
   }
   const displayRecords = (recordsRes.data || []) as SopDisplayRecord[];
+  const locale = setupRes.data.locale ?? "en-US";
+  const copy = getSopCopy(locale);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div lang={locale} className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">月度 SOP</h1>
-          <p className="mt-1 text-sm text-gray-500">按步骤执行每月储蓄流程</p>
+          <h1 className="text-2xl font-bold text-gray-900">{copy.page.title}</h1>
+          <p className="mt-1 text-sm text-gray-500">{copy.page.description}</p>
         </div>
-        <MonthSelector currentMonth={yearMonth} />
+        <MonthSelector
+          currentMonth={yearMonth}
+          ariaLabel={copy.page.monthAriaLabel}
+        />
       </div>
 
       <SopChecklist
         initialRecords={displayRecords}
         yearMonth={yearMonth}
-        locale={setupRes.data?.locale ?? "en-US"}
+        locale={locale}
         baseCurrency={setupRes.data?.base_currency ?? "USD"}
         isClosed={reviewRes.data?.review_completed_at != null}
+        copy={copy.checklist}
+        stepCopy={copy.step}
+        errorCopy={copy.errors}
       />
     </div>
   );

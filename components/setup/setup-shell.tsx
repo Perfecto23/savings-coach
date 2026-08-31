@@ -1,34 +1,17 @@
 import type { ReactNode } from "react";
 import { logout } from "@/app/login/actions";
+import type { SetupCopy } from "@/lib/setup/presentation";
+import type { SetupLocale } from "@/lib/setup/contracts";
+import { DocumentLocale } from "@/components/document-locale";
 
 export type SetupStepId =
   | "preferences"
   | "savingsAccount"
   | "initialBalance";
 
-const STEPS: Array<{
-  id: SetupStepId;
-  label: string;
-  description: string;
-}> = [
-  {
-    id: "preferences",
-    label: "Your region",
-    description: "Language, time zone, and currency",
-  },
-  {
-    id: "savingsAccount",
-    label: "Your savings account",
-    description: "The account you want to grow",
-  },
-  {
-    id: "initialBalance",
-    label: "Your current balance",
-    description: "A starting point you can return to",
-  },
-];
-
 interface SetupShellProps {
+  locale: SetupLocale;
+  copy: SetupCopy["shell"];
   currentStep: SetupStepId;
   summary?: {
     region?: string;
@@ -38,14 +21,24 @@ interface SetupShellProps {
   children: ReactNode;
 }
 
-export function SetupShell({ currentStep, summary, children }: SetupShellProps) {
-  const currentIndex = STEPS.findIndex((step) => step.id === currentStep);
+export function SetupShell({
+  locale,
+  copy,
+  currentStep,
+  summary,
+  children,
+}: SetupShellProps) {
+  const steps = (["preferences", "savingsAccount", "initialBalance"] as const).map(
+    (id) => ({ id, ...copy.steps[id] })
+  );
+  const currentIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
     <main
-      lang="en"
+      lang={locale}
       className="min-h-dvh bg-[#f6f1e8] text-stone-950 selection:bg-orange-200 selection:text-orange-950"
     >
+      <DocumentLocale locale={locale} />
       <div className="mx-auto grid min-h-dvh max-w-[1440px] lg:grid-cols-[minmax(320px,0.8fr)_minmax(560px,1.2fr)]">
         <aside className="relative overflow-hidden bg-stone-950 px-6 py-5 text-stone-50 sm:px-10 sm:py-7 lg:flex lg:min-h-dvh lg:flex-col lg:px-12 lg:py-10">
           <div
@@ -63,7 +56,7 @@ export function SetupShell({ currentStep, summary, children }: SetupShellProps) 
                 <SavingsMark className="h-5 w-5" />
               </span>
               <span className="text-sm font-semibold tracking-[-0.01em]">
-                Savings Coach
+                {copy.brand}
               </span>
             </div>
             <form action={logout}>
@@ -71,23 +64,22 @@ export function SetupShell({ currentStep, summary, children }: SetupShellProps) 
                 type="submit"
                 className="min-h-11 cursor-pointer rounded-full px-3 text-sm text-stone-300 transition-colors hover:text-white"
               >
-                Sign out
+                {copy.signOut}
               </button>
             </form>
           </div>
 
           <div className="relative mt-5 max-w-md sm:mt-10 lg:mt-24">
             <h1 className="max-w-sm text-2xl font-semibold tracking-[-0.04em] text-balance sm:text-4xl lg:text-5xl">
-              Set your savings starting point
+              {copy.title}
             </h1>
             <p className="mt-3 max-w-sm text-sm leading-6 text-stone-300 sm:mt-4 sm:text-base sm:leading-7">
-              Three short checkpoints. About two minutes. No bank connection
-              required.
+              {copy.description}
             </p>
           </div>
 
           <ol className="relative mt-5 grid gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3 lg:mt-14 lg:grid-cols-1 lg:gap-6">
-            {STEPS.map((step, index) => {
+            {steps.map((step, index) => {
               const isCurrent = step.id === currentStep;
               const isComplete = index < currentIndex;
 
@@ -135,7 +127,7 @@ export function SetupShell({ currentStep, summary, children }: SetupShellProps) 
             <dl className="relative mt-10 hidden max-w-sm grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t border-stone-800 pt-5 text-sm lg:grid">
               {summary.region ? (
                 <>
-                  <dt className="text-stone-500">Region</dt>
+                  <dt className="text-stone-500">{copy.region}</dt>
                   <dd className="truncate text-right text-stone-300">
                     {summary.region}
                   </dd>
@@ -143,7 +135,7 @@ export function SetupShell({ currentStep, summary, children }: SetupShellProps) 
               ) : null}
               {summary.account ? (
                 <>
-                  <dt className="text-stone-500">Savings account</dt>
+                  <dt className="text-stone-500">{copy.savingsAccount}</dt>
                   <dd className="truncate text-right text-stone-300">
                     {summary.account}
                   </dd>
@@ -151,7 +143,7 @@ export function SetupShell({ currentStep, summary, children }: SetupShellProps) 
               ) : null}
               {summary.balance ? (
                 <>
-                  <dt className="text-stone-500">Starting balance</dt>
+                  <dt className="text-stone-500">{copy.startingBalance}</dt>
                   <dd className="truncate text-right font-medium text-stone-100">
                     {summary.balance}
                   </dd>
@@ -161,8 +153,7 @@ export function SetupShell({ currentStep, summary, children }: SetupShellProps) 
           ) : null}
 
           <p className="relative mt-10 hidden text-xs leading-5 text-stone-500 lg:mt-auto lg:block lg:max-w-xs">
-            Your entries stay private to your account. Savings Coach records
-            what you enter; it never moves money.
+            {copy.privacy}
           </p>
         </aside>
 

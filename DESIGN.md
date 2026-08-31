@@ -111,6 +111,14 @@ Use `tabular-nums` for values that users compare, confirm, or scan in a list. Ke
 
 **The Value First Rule.** When an amount is the action's subject, give the amount a larger numeric treatment than its supporting label.
 
+## Language
+
+Owner locale 是已登录产品的界面语言真源。`zh-CN` 使用中文；`en-US` 与 `en-SG` 使用英文。同一 Surface 的标题、说明、label、placeholder、按钮、状态、ARIA 名称、确认框和错误提示必须使用同一种语言。
+
+日期和金额使用完整 owner locale。币种继续使用 owner base currency。用户输入、账户名、币种代码和 IANA 时区保持原值。Server Component 选择 feature-local typed copy；Client Component 只接收当前交互所需的 copy slice。
+
+**The One Language Rule.** 已知另一语言的内建产品文案不能出现在当前 Surface。用户输入和标准标识符不属于语言泄漏。
+
 ## Layout
 
 The ordinary application uses a constrained content column (`max-width: 1024px`) inside an app shell. Desktop navigation is a fixed 240px rail; mobile navigation moves to a fixed bottom bar. Cards use 24px internal padding and 16px to 24px gaps.

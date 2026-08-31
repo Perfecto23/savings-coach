@@ -51,8 +51,12 @@ function captureRscAndHtml(page: Page) {
       return;
     }
     pending.push(
-      response
-        .text()
+      Promise.race<string>([
+        response.text(),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error("Response body read timed out")), 3_000),
+        ),
+      ])
         .then((body) => payloads.push(body))
         .then(() => undefined)
         .catch(() => undefined)
@@ -82,9 +86,9 @@ test("an owner closes the previous Monthly Review and starts the current month",
   });
 
   await page.goto("/login");
-  await page.getByLabel("邮箱").fill(fixture.email);
-  await page.getByLabel("密码").fill(fixture.password);
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: `Review ${reviewMonth} before starting ${currentMonth}.` })).toBeVisible();
@@ -93,7 +97,7 @@ test("an owner closes the previous Monthly Review and starts the current month",
 
   await page.getByRole("link", { name: `Review ${reviewMonth}` }).click();
   await expect(page).toHaveURL(new RegExp(`/milestones/${fixture.reviewYearMonth}/report$`));
-  await expect(page.getByRole("heading", { level: 1, name: `${fixture.reviewYearMonth} Monthly report` })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: `${reviewMonth} Monthly report` })).toBeVisible();
   await expect(page.getByText("S$500.00", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/does not confirm a bank balance or transfer/)).toBeVisible();
 
@@ -118,11 +122,11 @@ test("an owner closes the previous Monthly Review and starts the current month",
   expect(paymentRequests).toEqual([]);
 
   if (testInfo.project.name === "desktop-chromium") {
-    await page.getByRole("button", { name: "退出登录" }).click();
+    await page.getByRole("button", { name: "Log out" }).click();
     await expect(page).toHaveURL(/\/login$/);
-    await page.getByLabel("邮箱").fill(fixture.email);
-    await page.getByLabel("密码").fill(fixture.password);
-    await page.getByRole("button", { name: "登录" }).click();
+    await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+    await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+    await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
     await expect(page).toHaveURL(/\/$/);
     await page.goto(`/milestones/${fixture.reviewYearMonth}/report`);
     await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
@@ -137,12 +141,12 @@ test("an owner closes the previous Monthly Review and starts the current month",
 
   await page.goto(`/sop?month=${fixture.reviewYearMonth}`);
   await expect(page.getByText(/This month is closed/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "标记为未完成" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "编辑" })).toHaveCount(0);
-  await expect(page.getByText(/添加临时操作/)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Mark as incomplete" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(0);
+  await expect(page.getByText(/Add a temporary step/)).toHaveCount(0);
 
   await page.goto("/milestones");
-  const reviewedRow = page.getByRole("row").filter({ hasText: fixture.reviewYearMonth });
+  const reviewedRow = page.getByRole("row").filter({ hasText: reviewMonth });
   await expect(reviewedRow).toContainText("Reviewed");
   await expectNoHorizontalOverflow(page);
 

@@ -5,23 +5,38 @@ set -euo pipefail
 setup_port="${1:-43118}"
 setup_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 setup_runtime_dir="${setup_root}/.setup-e2e"
+setup_lock_dir="/tmp/savings-coach-plan-e2e.lock"
+run_token="${SAVINGS_E2E_RUN_TOKEN:-manual-$$}"
 setup_status_file="${setup_runtime_dir}/supabase.env"
 setup_curl_config="${setup_runtime_dir}/curl.conf"
 setup_public_curl_config="${setup_runtime_dir}/public-curl.conf"
 setup_log_file="${setup_runtime_dir}/supabase.log"
 next_log_file="${setup_runtime_dir}/next.log"
 next_pid=""
+lock_acquired="0"
 
 umask 077
-rm -rf "${setup_runtime_dir}"
-mkdir -p "${setup_runtime_dir}"
 
 cleanup() {
   if [[ -n "${next_pid}" ]] && kill -0 "${next_pid}" 2>/dev/null; then
     kill "${next_pid}" 2>/dev/null || true
     wait "${next_pid}" 2>/dev/null || true
   fi
-  rm -rf "${setup_runtime_dir}"
+  runtime_token=""
+  if [[ -f "${setup_runtime_dir}/.run-token" ]]; then
+    read -r runtime_token <"${setup_runtime_dir}/.run-token" || true
+  fi
+  if [[ "${runtime_token}" == "${run_token}" ]]; then
+    rm -rf "${setup_runtime_dir}"
+  fi
+
+  lock_token=""
+  if [[ -f "${setup_lock_dir}/token" ]]; then
+    read -r lock_token <"${setup_lock_dir}/token" || true
+  fi
+  if [[ "${lock_acquired}" == "1" && "${lock_token}" == "${run_token}" ]]; then
+    rm -rf "${setup_lock_dir}"
+  fi
 }
 
 terminate() {
@@ -30,6 +45,37 @@ terminate() {
 
 trap cleanup EXIT
 trap terminate INT TERM
+
+if ! mkdir "${setup_lock_dir}" 2>/dev/null; then
+  lock_pid=""
+  if [[ -f "${setup_lock_dir}/pid" ]]; then
+    read -r lock_pid <"${setup_lock_dir}/pid" || true
+  fi
+  if [[ -n "${lock_pid}" ]] && ! kill -0 "${lock_pid}" 2>/dev/null; then
+    stale_runtime=""
+    if [[ -f "${setup_lock_dir}/runtime" ]]; then
+      read -r stale_runtime <"${setup_lock_dir}/runtime" || true
+    fi
+    case "${stale_runtime}" in
+      "/tmp/savings-coach-locale-e2e"|"${setup_root}/.setup-e2e"|"${setup_root}/.setup-e2e/plan")
+        rm -rf "${stale_runtime}"
+        ;;
+    esac
+    rm -rf "${setup_lock_dir}"
+    mkdir "${setup_lock_dir}"
+  else
+    echo "Another authenticated E2E run is using the local Supabase project." >&2
+    exit 1
+  fi
+fi
+lock_acquired="1"
+printf '%s\n' "$$" >"${setup_lock_dir}/pid"
+printf '%s\n' "${run_token}" >"${setup_lock_dir}/token"
+printf '%s\n' "${setup_runtime_dir}" >"${setup_lock_dir}/runtime"
+
+rm -rf "${setup_runtime_dir}"
+mkdir -p "${setup_runtime_dir}"
+printf '%s\n' "${run_token}" >"${setup_runtime_dir}/.run-token"
 
 cd "${setup_root}"
 

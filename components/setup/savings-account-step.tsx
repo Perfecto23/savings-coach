@@ -7,14 +7,22 @@ import {
   INITIAL_SETUP_FORM_STATE,
   type SetupSavingsCandidateDto,
 } from "@/lib/setup/contracts";
+import type { SetupFormErrorCode } from "@/lib/setup/contracts";
+import type { SetupCopy } from "@/lib/setup/presentation";
 
 type AccountMode = "attach" | "create";
 
 interface SavingsAccountStepProps {
   candidates: SetupSavingsCandidateDto[];
+  copy: SetupCopy["account"];
+  errorCopy: Record<SetupFormErrorCode, string>;
 }
 
-export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
+export function SavingsAccountStep({
+  candidates,
+  copy,
+  errorCopy,
+}: SavingsAccountStepProps) {
   const [mode, setMode] = useState<AccountMode>(
     candidates.length > 0 ? "attach" : "create"
   );
@@ -31,13 +39,12 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
 
   return (
     <div>
-      <p className="text-sm font-medium text-orange-700">Checkpoint 2 of 3</p>
+      <p className="text-sm font-medium text-orange-700">{copy.checkpoint}</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-stone-950">
-        Your savings account
+        {copy.title}
       </h2>
       <p className="mt-3 max-w-lg text-base leading-7 text-stone-600">
-        Choose the account whose balance will mark your starting point. Never
-        enter an account number or credential.
+        {copy.description}
       </p>
 
       <form action={formAction} className="mt-8 space-y-6">
@@ -48,7 +55,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
             role="alert"
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           >
-            {state.error.message}
+            {errorCopy[state.error.code]}
           </div>
         ) : null}
 
@@ -60,7 +67,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
             }
           >
             <legend className="text-sm font-medium text-stone-800">
-              Account choice
+              {copy.choice}
             </legend>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-stone-300 bg-white px-4 transition-colors has-checked:border-orange-500 has-checked:bg-orange-50">
@@ -73,7 +80,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                   className="h-4 w-4 accent-orange-600"
                 />
                 <span className="text-sm font-medium text-stone-800">
-                  Use an existing account
+                  {copy.useExisting}
                 </span>
               </label>
               <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-stone-300 bg-white px-4 transition-colors has-checked:border-orange-500 has-checked:bg-orange-50">
@@ -86,7 +93,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                   className="h-4 w-4 accent-orange-600"
                 />
                 <span className="text-sm font-medium text-stone-800">
-                  Create a new account
+                  {copy.createNew}
                 </span>
               </label>
             </div>
@@ -94,6 +101,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
               id="setup-account-mode-error"
               field="mode"
               error={fieldError}
+              message={fieldError ? errorCopy[fieldError.code] : ""}
             />
           </fieldset>
         ) : (
@@ -106,7 +114,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
               htmlFor="setup-savings-account"
               className="block text-sm font-medium text-stone-800"
             >
-              Savings account
+              {copy.savingsAccount}
             </label>
             <select
               id="setup-savings-account"
@@ -129,12 +137,13 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
               ))}
             </select>
             <p id="setup-account-existing-help" className="mt-2 text-sm leading-6 text-stone-500">
-              Existing balance history stays unchanged.
+              {copy.existingHelp}
             </p>
             <FieldError
               id="setup-account-existing-error"
               field="savings_account_id"
               error={fieldError}
+              message={fieldError ? errorCopy[fieldError.code] : ""}
             />
           </div>
         ) : (
@@ -144,7 +153,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                 htmlFor="setup-account-name"
                 className="block text-sm font-medium text-stone-800"
               >
-                Account name
+                {copy.accountName}
               </label>
               <input
                 id="setup-account-name"
@@ -153,7 +162,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                 required
                 maxLength={100}
                 autoComplete="off"
-                placeholder="Rainy Day Fund"
+                placeholder={copy.accountPlaceholder}
                 aria-invalid={fieldError?.field === "name"}
                 aria-describedby={
                   fieldError?.field === "name" ? "setup-account-name-error" : undefined
@@ -164,6 +173,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                 id="setup-account-name-error"
                 field="name"
                 error={fieldError}
+                message={fieldError ? errorCopy[fieldError.code] : ""}
               />
             </div>
             <div>
@@ -171,7 +181,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                 htmlFor="setup-institution"
                 className="block text-sm font-medium text-stone-800"
               >
-                Institution (optional)
+                {copy.institution}
               </label>
               <input
                 id="setup-institution"
@@ -179,7 +189,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                 type="text"
                 maxLength={100}
                 autoComplete="organization"
-                placeholder="Bank or provider"
+                placeholder={copy.institutionPlaceholder}
                 aria-invalid={fieldError?.field === "institution"}
                 aria-describedby={
                   fieldError?.field === "institution"
@@ -192,6 +202,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
                 id="setup-institution-error"
                 field="institution"
                 error={fieldError}
+                message={fieldError ? errorCopy[fieldError.code] : ""}
               />
             </div>
           </div>
@@ -202,7 +213,7 @@ export function SavingsAccountStep({ candidates }: SavingsAccountStepProps) {
           disabled={pending}
           className="min-h-12 w-full cursor-pointer rounded-xl bg-orange-700 px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(194,65,12,0.24)] transition-colors hover:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save and continue"}
+          {pending ? copy.saving : copy.save}
         </button>
       </form>
     </div>

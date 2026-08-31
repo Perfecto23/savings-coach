@@ -5,13 +5,14 @@ import { SalaryConfigForm } from "@/components/income/salary-config-form";
 import { BonusEventsList } from "@/components/income/bonus-events-list";
 import { MonthlyForecastTable } from "@/components/income/monthly-forecast-table";
 import type { SalaryConfig, BonusEvent, Account } from "@/lib/types/database";
+import { getIncomeCopy } from "@/lib/income/presentation";
 
 export default async function IncomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [salaryRes, bonusRes, accountsRes] = await Promise.all([
+  const [salaryRes, bonusRes, accountsRes, setupRes] = await Promise.all([
     supabase
       .from("salary_configs")
       .select("id, monthly_gross, housing_fund_rate, housing_fund_base, social_insurance, special_deductions, effective_from, note, created_at, updated_at")
@@ -29,11 +30,23 @@ export default async function IncomePage() {
       .select("id, name, bank, purpose, icon, sort_order, created_at, updated_at")
       .eq("owner_id", user.id)
       .order("sort_order"),
+    supabase
+      .from("owner_setup")
+      .select("locale, base_currency")
+      .eq("owner_id", user.id)
+      .maybeSingle(),
   ]);
+
+  if (salaryRes.error || bonusRes.error || accountsRes.error || setupRes.error) {
+    throw new Error("Unable to load Income");
+  }
 
   const salaryConfig = salaryRes.data as SalaryConfig | null;
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
   const accounts = (accountsRes.data || []) as Account[];
+  const locale = setupRes.data?.locale ?? "en-US";
+  const baseCurrency = setupRes.data?.base_currency ?? "USD";
+  const copy = getIncomeCopy(locale);
 
   const breakdown = salaryConfig
     ? calculateYearlyTax({
@@ -50,25 +63,40 @@ export default async function IncomePage() {
     : new Date().getFullYear();
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div lang={locale} className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">收入管理</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{copy.page.title}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          配置薪资、查看月度预测、管理奖金事件
+          {copy.page.description}
         </p>
       </div>
 
-      <SalaryConfigForm config={salaryConfig} />
+      <SalaryConfigForm
+        config={salaryConfig}
+        locale={locale}
+        baseCurrency={baseCurrency}
+        copy={copy.salary}
+        errorCopy={copy}
+      />
 
       {breakdown.length > 0 && (
         <MonthlyForecastTable
           breakdown={breakdown}
           bonusEvents={bonusEvents}
           startYear={startYear}
+          locale={locale}
+          baseCurrency={baseCurrency}
+          copy={copy.forecast}
         />
       )}
 
-      <BonusEventsList initialEvents={bonusEvents} accounts={accounts} />
+      <BonusEventsList
+        initialEvents={bonusEvents}
+        accounts={accounts}
+        locale={locale}
+        baseCurrency={baseCurrency}
+        copy={copy}
+      />
     </div>
   );
 }

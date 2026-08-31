@@ -1,18 +1,16 @@
 import { Suspense } from "react";
 import { MonthlyExecutionHome } from "@/components/home/monthly-execution-home";
+import { getHomeCopy } from "@/lib/home/presentation";
 import { getMonthlyExecutionHome } from "@/lib/home/server";
 
 async function HomeContent() {
   const home = await getMonthlyExecutionHome();
-  return <MonthlyExecutionHome home={home} />;
+  return <MonthlyExecutionHome home={home} copy={getHomeCopy(home.locale)} />;
 }
 
 function HomeSkeleton() {
   return (
-    <div
-      className="mx-auto w-full max-w-6xl animate-pulse pb-10"
-      aria-label="Loading Home"
-    >
+    <div className="mx-auto w-full max-w-6xl animate-pulse pb-10" aria-busy="true">
       <div className="border-b border-stone-200 pb-10 pt-4">
         <div className="h-12 w-64 rounded-xl bg-stone-200" />
         <div className="mt-4 h-6 w-80 max-w-full rounded-lg bg-stone-100" />

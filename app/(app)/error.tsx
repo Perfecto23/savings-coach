@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import type { AppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
+import { getAppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
 
-export default function Error({
+function ErrorPanel({
+  copy,
   error,
   reset,
+  className,
+  locale,
 }: {
+  copy: AppFeedbackCopy["error"];
   error: Error & { digest?: string };
   reset: () => void;
+  className: string;
+  locale: "en-US" | "zh-CN";
 }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center py-20 text-center">
+    <div
+      lang={locale}
+      className={`${className} mx-auto max-w-md flex-col items-center py-20 text-center`}
+    >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -21,7 +32,7 @@ export default function Error({
           className="h-7 w-7 text-red-600"
           aria-hidden="true"
         >
-          <title>错误</title>
+          <title>{copy.iconTitle}</title>
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -29,11 +40,9 @@ export default function Error({
           />
         </svg>
       </div>
-      <h2 className="mt-4 text-xl font-bold text-gray-900">出了点问题</h2>
+      <h2 className="mt-4 text-xl font-bold text-gray-900">{copy.title}</h2>
       <p className="mt-2 text-sm text-gray-500">
-        {error.digest
-          ? `错误 ID: ${error.digest}`
-          : "加载页面时发生错误，请重试"}
+        {error.digest ? `${copy.errorId}: ${error.digest}` : copy.description}
       </p>
       <div className="mt-6 flex gap-3">
         <button
@@ -41,15 +50,43 @@ export default function Error({
           onClick={() => reset()}
           className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
         >
-          重试
+          {copy.retry}
         </button>
         <Link
           href="/"
           className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
-          返回首页
+          {copy.home}
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <>
+      <style>{`.app-error-zh { display: none; } html[lang="zh-CN"] .app-error-en { display: none; } html[lang="zh-CN"] .app-error-zh { display: flex; }`}</style>
+      <ErrorPanel
+        className="app-error-en flex"
+        locale="en-US"
+        copy={getAppFeedbackCopy("en-US").error}
+        error={error}
+        reset={reset}
+      />
+      <ErrorPanel
+        className="app-error-zh"
+        locale="zh-CN"
+        copy={getAppFeedbackCopy("zh-CN").error}
+        error={error}
+        reset={reset}
+      />
+    </>
   );
 }

@@ -8,14 +8,25 @@ export interface ReviewEmailReminderSettings {
   timeZone: string;
 }
 
+export type ReviewEmailReminderErrorCode =
+  | "FEATURE_DISABLED"
+  | "CONSENT_REQUIRED"
+  | "INVALID_REQUEST"
+  | "UNAUTHENTICATED"
+  | "LOAD_FAILED"
+  | "EMAIL_UNCONFIRMED"
+  | "SETUP_INCOMPLETE"
+  | "UPDATE_FAILED"
+  | "INVALID_RECEIPT";
+
 export type ReviewEmailReminderActionState =
   | { status: "idle" }
   | {
       status: "success";
-      message: string;
+      result: "enabled" | "unsubscribed";
       reminder: ReviewEmailReminderSettings;
     }
-  | { status: "error"; message: string };
+  | { status: "error"; code: ReviewEmailReminderErrorCode };
 
 export const INITIAL_REVIEW_EMAIL_REMINDER_ACTION_STATE: ReviewEmailReminderActionState = {
   status: "idle",

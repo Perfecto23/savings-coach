@@ -4,23 +4,43 @@ set -euo pipefail
 
 plan_port="${1:-43119}"
 plan_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-plan_runtime_dir="${plan_root}/.setup-e2e/plan"
+locale_e2e="${LOCALE_E2E:-0}"
+if [[ "${locale_e2e}" == "1" ]]; then
+  plan_runtime_dir="/tmp/savings-coach-locale-e2e"
+else
+  plan_runtime_dir="${plan_root}/.setup-e2e/plan"
+fi
+plan_lock_dir="/tmp/savings-coach-plan-e2e.lock"
+run_token="${SAVINGS_E2E_RUN_TOKEN:-manual-$$}"
 plan_status_file="${plan_runtime_dir}/supabase.env"
 plan_curl_config="${plan_runtime_dir}/curl.conf"
 plan_log_file="${plan_runtime_dir}/supabase.log"
 next_log_file="${plan_runtime_dir}/next.log"
 next_pid=""
+lock_acquired="0"
 
 umask 077
-rm -rf "${plan_runtime_dir}"
-mkdir -p "${plan_runtime_dir}"
 
 cleanup() {
   if [[ -n "${next_pid}" ]] && kill -0 "${next_pid}" 2>/dev/null; then
     kill "${next_pid}" 2>/dev/null || true
     wait "${next_pid}" 2>/dev/null || true
   fi
-  rm -rf "${plan_runtime_dir}"
+  runtime_token=""
+  if [[ -f "${plan_runtime_dir}/.run-token" ]]; then
+    read -r runtime_token <"${plan_runtime_dir}/.run-token" || true
+  fi
+  if [[ "${runtime_token}" == "${run_token}" ]]; then
+    rm -rf "${plan_runtime_dir}"
+  fi
+
+  lock_token=""
+  if [[ -f "${plan_lock_dir}/token" ]]; then
+    read -r lock_token <"${plan_lock_dir}/token" || true
+  fi
+  if [[ "${lock_acquired}" == "1" && "${lock_token}" == "${run_token}" ]]; then
+    rm -rf "${plan_lock_dir}"
+  fi
 }
 
 terminate() {
@@ -29,6 +49,37 @@ terminate() {
 
 trap cleanup EXIT
 trap terminate INT TERM
+
+if ! mkdir "${plan_lock_dir}" 2>/dev/null; then
+  lock_pid=""
+  if [[ -f "${plan_lock_dir}/pid" ]]; then
+    read -r lock_pid <"${plan_lock_dir}/pid" || true
+  fi
+  if [[ -n "${lock_pid}" ]] && ! kill -0 "${lock_pid}" 2>/dev/null; then
+    stale_runtime=""
+    if [[ -f "${plan_lock_dir}/runtime" ]]; then
+      read -r stale_runtime <"${plan_lock_dir}/runtime" || true
+    fi
+    case "${stale_runtime}" in
+      "/tmp/savings-coach-locale-e2e"|"${plan_root}/.setup-e2e"|"${plan_root}/.setup-e2e/plan")
+        rm -rf "${stale_runtime}"
+        ;;
+    esac
+    rm -rf "${plan_lock_dir}"
+    mkdir "${plan_lock_dir}"
+  else
+    echo "Another authenticated E2E run is using the local Supabase project." >&2
+    exit 1
+  fi
+fi
+lock_acquired="1"
+printf '%s\n' "$$" >"${plan_lock_dir}/pid"
+printf '%s\n' "${run_token}" >"${plan_lock_dir}/token"
+printf '%s\n' "${plan_runtime_dir}" >"${plan_lock_dir}/runtime"
+
+rm -rf "${plan_runtime_dir}"
+mkdir -p "${plan_runtime_dir}"
+printf '%s\n' "${run_token}" >"${plan_runtime_dir}/.run-token"
 
 cd "${plan_root}"
 
@@ -77,9 +128,11 @@ run_id="$(date -u +%Y%m%d%H%M%S)-$$"
 owner_a_email="plan-a-${run_id}@example.invalid"
 owner_b_email="plan-b-${run_id}@example.invalid"
 owner_c_email="plan-canary-${run_id}@example.invalid"
+owner_d_email="plan-d-${run_id}@example.invalid"
 owner_a_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
 owner_b_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
 owner_c_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
+owner_d_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')"
 other_owner_canary="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("hex"))')"
 secret_canary="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("base64url"))')"
 
@@ -158,10 +211,18 @@ NODE
 owner_a_id="$(create_local_user owner-a "${owner_a_email}" "${owner_a_password}")"
 owner_b_id="$(create_local_user owner-b "${owner_b_email}" "${owner_b_password}")"
 owner_c_id="$(create_local_user owner-canary "${owner_c_email}" "${owner_c_password}")"
+owner_d_id=""
+if [[ "${locale_e2e}" == "1" ]]; then
+  owner_d_id="$(create_local_user owner-d "${owner_d_email}" "${owner_d_password}")"
+fi
 
 owner_a_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
 owner_b_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
 owner_c_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
+owner_d_account_id=""
+if [[ "${locale_e2e}" == "1" ]]; then
+  owner_d_account_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
+fi
 balance_as_of="$(node <<'NODE'
 const parts = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Singapore",
@@ -182,45 +243,56 @@ canary_ai_request="${plan_runtime_dir}/canary-ai.json"
 OUTPUT_FILE="${accounts_request}" \
 OWNER_A_ID="${owner_a_id}" OWNER_B_ID="${owner_b_id}" OWNER_C_ID="${owner_c_id}" \
 OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
-OWNER_C_ACCOUNT_ID="${owner_c_account_id}" OTHER_OWNER_CANARY="${other_owner_canary}" \
+OWNER_C_ACCOUNT_ID="${owner_c_account_id}" OWNER_D_ID="${owner_d_id}" \
+OWNER_D_ACCOUNT_ID="${owner_d_account_id}" OTHER_OWNER_CANARY="${other_owner_canary}" \
+LOCALE_E2E="${locale_e2e}" \
   node <<'NODE'
 const fs = require("node:fs");
 
-fs.writeFileSync(
-  process.env.OUTPUT_FILE,
-  JSON.stringify([
-    {
-      id: process.env.OWNER_A_ACCOUNT_ID,
-      owner_id: process.env.OWNER_A_ID,
-      name: "Desktop Starting Point",
-      bank: null,
-      purpose: "savings",
-    },
-    {
-      id: process.env.OWNER_B_ACCOUNT_ID,
-      owner_id: process.env.OWNER_B_ID,
-      name: "Mobile Starting Point",
-      bank: null,
-      purpose: "savings",
-    },
-    {
-      id: process.env.OWNER_C_ACCOUNT_ID,
-      owner_id: process.env.OWNER_C_ID,
-      name: process.env.OTHER_OWNER_CANARY,
-      bank: null,
-      purpose: "savings",
-    },
-  ]),
-  { mode: 0o600 },
-);
+const accounts = [
+  {
+    id: process.env.OWNER_A_ACCOUNT_ID,
+    owner_id: process.env.OWNER_A_ID,
+    name: process.env.LOCALE_E2E === "1" ? "桌面储蓄账户" : "Desktop Starting Point",
+    bank: null,
+    purpose: "savings",
+  },
+  {
+    id: process.env.OWNER_B_ACCOUNT_ID,
+    owner_id: process.env.OWNER_B_ID,
+    name: "Mobile Starting Point",
+    bank: null,
+    purpose: "savings",
+  },
+  {
+    id: process.env.OWNER_C_ACCOUNT_ID,
+    owner_id: process.env.OWNER_C_ID,
+    name: process.env.LOCALE_E2E === "1" ? "移动储蓄账户" : process.env.OTHER_OWNER_CANARY,
+    bank: null,
+    purpose: "savings",
+  },
+];
+
+if (process.env.LOCALE_E2E === "1") {
+  accounts.push({
+    id: process.env.OWNER_D_ACCOUNT_ID,
+    owner_id: process.env.OWNER_D_ID,
+    name: "Locale Mobile Starting Point",
+    bank: null,
+    purpose: "savings",
+  });
+}
+
+fs.writeFileSync(process.env.OUTPUT_FILE, JSON.stringify(accounts), { mode: 0o600 });
 NODE
 post_rows accounts "${accounts_request}"
 
 OUTPUT_FILE="${setup_request}" \
 OWNER_A_ID="${owner_a_id}" OWNER_B_ID="${owner_b_id}" OWNER_C_ID="${owner_c_id}" \
 OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
-OWNER_C_ACCOUNT_ID="${owner_c_account_id}" REVIEW_E2E="${REVIEW_E2E:-0}" \
-IMPULSE_E2E="${IMPULSE_E2E:-0}" \
+OWNER_C_ACCOUNT_ID="${owner_c_account_id}" OWNER_D_ID="${owner_d_id}" \
+OWNER_D_ACCOUNT_ID="${owner_d_account_id}" REVIEW_E2E="${REVIEW_E2E:-0}" \
+IMPULSE_E2E="${IMPULSE_E2E:-0}" LOCALE_E2E="${locale_e2e}" \
   node <<'NODE'
 const fs = require("node:fs");
 
@@ -231,54 +303,70 @@ const activation =
 const ownerALocale = process.env.IMPULSE_E2E === "1" ? "zh-CN" : "en-SG";
 const ownerABaseCurrency = process.env.IMPULSE_E2E === "1" ? "CNY" : "SGD";
 
-fs.writeFileSync(
-  process.env.OUTPUT_FILE,
-  JSON.stringify([
-    {
-      owner_id: process.env.OWNER_A_ID,
-      locale: ownerALocale,
-      time_zone: "Asia/Singapore",
-      base_currency: ownerABaseCurrency,
-      savings_account_id: process.env.OWNER_A_ACCOUNT_ID,
-      plan_activated_at: activation.plan_activated_at ?? null,
-    },
-    {
-      owner_id: process.env.OWNER_B_ID,
-      locale: "en-SG",
-      time_zone: "Asia/Singapore",
-      base_currency: "SGD",
-      savings_account_id: process.env.OWNER_B_ACCOUNT_ID,
-      plan_activated_at: activation.plan_activated_at ?? null,
-    },
-    {
-      owner_id: process.env.OWNER_C_ID,
-      locale: "en-SG",
-      time_zone: "Asia/Singapore",
-      base_currency: "SGD",
-      savings_account_id: process.env.OWNER_C_ACCOUNT_ID,
-      plan_activated_at: null,
-    },
-  ]),
-  { mode: 0o600 },
-);
+const setupRows = [
+  {
+    owner_id: process.env.OWNER_A_ID,
+    locale: process.env.LOCALE_E2E === "1" ? "zh-CN" : ownerALocale,
+    time_zone: "Asia/Singapore",
+    base_currency: process.env.LOCALE_E2E === "1" ? "CNY" : ownerABaseCurrency,
+    savings_account_id: process.env.OWNER_A_ACCOUNT_ID,
+    plan_activated_at: activation.plan_activated_at ?? null,
+  },
+  {
+    owner_id: process.env.OWNER_B_ID,
+    locale: "en-SG",
+    time_zone: "Asia/Singapore",
+    base_currency: "SGD",
+    savings_account_id: process.env.OWNER_B_ACCOUNT_ID,
+    plan_activated_at: activation.plan_activated_at ?? null,
+  },
+  {
+    owner_id: process.env.OWNER_C_ID,
+    locale: process.env.LOCALE_E2E === "1" ? "zh-CN" : "en-SG",
+    time_zone: "Asia/Singapore",
+    base_currency: process.env.LOCALE_E2E === "1" ? "CNY" : "SGD",
+    savings_account_id: process.env.OWNER_C_ACCOUNT_ID,
+    plan_activated_at: activation.plan_activated_at ?? null,
+  },
+];
+
+if (process.env.LOCALE_E2E === "1") {
+  setupRows.push({
+    owner_id: process.env.OWNER_D_ID,
+    locale: "en-SG",
+    time_zone: "Asia/Singapore",
+    base_currency: "SGD",
+    savings_account_id: process.env.OWNER_D_ACCOUNT_ID,
+    plan_activated_at: activation.plan_activated_at ?? null,
+  });
+}
+
+fs.writeFileSync(process.env.OUTPUT_FILE, JSON.stringify(setupRows), { mode: 0o600 });
 NODE
 post_rows owner_setup "${setup_request}"
 
 OUTPUT_FILE="${snapshots_request}" BALANCE_AS_OF="${balance_as_of}" \
 OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
-OWNER_C_ACCOUNT_ID="${owner_c_account_id}" \
+OWNER_C_ACCOUNT_ID="${owner_c_account_id}" OWNER_D_ACCOUNT_ID="${owner_d_account_id}" \
+LOCALE_E2E="${locale_e2e}" \
   node <<'NODE'
 const fs = require("node:fs");
 
-fs.writeFileSync(
-  process.env.OUTPUT_FILE,
-  JSON.stringify([
-    { account_id: process.env.OWNER_A_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
-    { account_id: process.env.OWNER_B_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
-    { account_id: process.env.OWNER_C_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
-  ]),
-  { mode: 0o600 },
-);
+const snapshots = [
+  { account_id: process.env.OWNER_A_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
+  { account_id: process.env.OWNER_B_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
+  { account_id: process.env.OWNER_C_ACCOUNT_ID, recorded_at: process.env.BALANCE_AS_OF, balance: 1000 },
+];
+
+if (process.env.LOCALE_E2E === "1") {
+  snapshots.push({
+    account_id: process.env.OWNER_D_ACCOUNT_ID,
+    recorded_at: process.env.BALANCE_AS_OF,
+    balance: 1000,
+  });
+}
+
+fs.writeFileSync(process.env.OUTPUT_FILE, JSON.stringify(snapshots), { mode: 0o600 });
 NODE
 post_rows balance_snapshots "${snapshots_request}"
 
@@ -303,6 +391,18 @@ post_rows ai_configs "${canary_ai_request}"
 
 review_year_month=""
 current_year_month=""
+if [[ "${locale_e2e}" == "1" ]]; then
+  current_year_month="$(node <<'NODE'
+const parts = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Singapore",
+  year: "numeric",
+  month: "2-digit",
+}).formatToParts(new Date());
+const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+process.stdout.write(`${values.year}-${values.month}`);
+NODE
+)"
+fi
 if [[ "${REVIEW_E2E:-0}" == "1" ]]; then
   review_year_month="$(node <<'NODE'
 const parts = new Intl.DateTimeFormat("en-CA", {
@@ -459,16 +559,58 @@ NODE
 fi
 
 FIXTURE_FILE="${plan_runtime_dir}/fixtures.json" IMPULSE_E2E="${IMPULSE_E2E:-0}" \
+LOCALE_E2E="${locale_e2e}" \
 OWNER_A_EMAIL="${owner_a_email}" OWNER_A_PASSWORD="${owner_a_password}" \
 OWNER_B_EMAIL="${owner_b_email}" OWNER_B_PASSWORD="${owner_b_password}" \
+OWNER_C_EMAIL="${owner_c_email}" OWNER_C_PASSWORD="${owner_c_password}" \
+OWNER_D_EMAIL="${owner_d_email}" OWNER_D_PASSWORD="${owner_d_password}" \
 OTHER_OWNER_CANARY="${other_owner_canary}" SECRET_CANARY="${secret_canary}" \
 REVIEW_YEAR_MONTH="${review_year_month}" CURRENT_YEAR_MONTH="${current_year_month}" \
   node <<'NODE'
 const fs = require("node:fs");
 
+const localeFixtures = {
+  "desktop-zh-chromium": {
+    email: process.env.OWNER_A_EMAIL,
+    password: process.env.OWNER_A_PASSWORD,
+    currentYearMonth: process.env.CURRENT_YEAR_MONTH,
+    expectedLocale: "zh-CN",
+    expectedCurrency: "CNY",
+    otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+    secretCanary: process.env.SECRET_CANARY,
+  },
+  "mobile-zh-chromium": {
+    email: process.env.OWNER_C_EMAIL,
+    password: process.env.OWNER_C_PASSWORD,
+    currentYearMonth: process.env.CURRENT_YEAR_MONTH,
+    expectedLocale: "zh-CN",
+    expectedCurrency: "CNY",
+    otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+    secretCanary: process.env.SECRET_CANARY,
+  },
+  "desktop-en-chromium": {
+    email: process.env.OWNER_B_EMAIL,
+    password: process.env.OWNER_B_PASSWORD,
+    currentYearMonth: process.env.CURRENT_YEAR_MONTH,
+    expectedLocale: "en-SG",
+    expectedCurrency: "SGD",
+    otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+    secretCanary: process.env.SECRET_CANARY,
+  },
+  "mobile-en-chromium": {
+    email: process.env.OWNER_D_EMAIL,
+    password: process.env.OWNER_D_PASSWORD,
+    currentYearMonth: process.env.CURRENT_YEAR_MONTH,
+    expectedLocale: "en-SG",
+    expectedCurrency: "SGD",
+    otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+    secretCanary: process.env.SECRET_CANARY,
+  },
+};
+
 fs.writeFileSync(
   process.env.FIXTURE_FILE,
-  JSON.stringify(process.env.IMPULSE_E2E === "1" ? {
+  JSON.stringify(process.env.LOCALE_E2E === "1" ? localeFixtures : process.env.IMPULSE_E2E === "1" ? {
     "desktop-zh-chromium": {
       email: process.env.OWNER_A_EMAIL,
       password: process.env.OWNER_A_PASSWORD,

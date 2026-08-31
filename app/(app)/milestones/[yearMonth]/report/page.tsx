@@ -12,6 +12,11 @@ import {
 import { MonthlyReport } from "@/components/report/monthly-report";
 import { MonthlyReviewPanel } from "@/components/report/monthly-review-panel";
 import { ProBetaOffer } from "@/components/report/pro-beta-offer";
+import {
+  getMonthlyReportCopy,
+  getMonthlyReviewCopy,
+} from "@/lib/monthly-review/presentation";
+import { getPaidIntentCopy } from "@/lib/paid-intent/presentation";
 
 interface ReportPageProps {
   params: Promise<{ yearMonth: string }>;
@@ -39,6 +44,14 @@ function previousYearMonth(currentYearMonth: string) {
   const currentMonth = new Date(`${currentYearMonth}-01T00:00:00.000Z`);
   currentMonth.setUTCMonth(currentMonth.getUTCMonth() - 1);
   return currentMonth.toISOString().slice(0, 7);
+}
+
+function formatMonth(yearMonth: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${yearMonth}-01T00:00:00.000Z`));
 }
 
 export default async function ReportPage({ params }: ReportPageProps) {
@@ -119,6 +132,9 @@ export default async function ReportPage({ params }: ReportPageProps) {
     setupRes.data?.time_zone || "UTC"
   );
   const previousReviewYearMonth = previousYearMonth(currentYearMonth);
+  const reportCopy = getMonthlyReportCopy(locale);
+  const reviewCopy = getMonthlyReviewCopy(locale);
+  const paidIntentCopy = getPaidIntentCopy(locale);
   const paidIntentState = paidIntentRes.data as PaidIntentOfferState | null;
   if (
     !paidIntentState ||
@@ -129,23 +145,23 @@ export default async function ReportPage({ params }: ReportPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div lang={locale} className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-3">
         <Link
           href="/milestones"
           className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-          aria-label="返回里程碑"
+          aria-label={reportCopy.page.backAria}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5" aria-hidden="true">
-            <title>返回</title>
+            <title>{reportCopy.page.backTitle}</title>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
           </svg>
         </Link>
         <div>
           <h1 className="text-3xl font-semibold tracking-[-0.035em] text-stone-950">
-            {yearMonth} Monthly report
+            {reportCopy.page.title.replace("{month}", formatMonth(yearMonth, locale))}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">Plan, confirmations, and Balance Snapshot observations.</p>
+          <p className="mt-1 text-sm text-gray-500">{reportCopy.page.description}</p>
         </div>
       </div>
 
@@ -160,6 +176,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
         }
         completedCount={completedMonthlyActions}
         totalCount={monthlyActions.length}
+        copy={reviewCopy}
       />
 
       <ProBetaOffer
@@ -168,12 +185,14 @@ export default async function ReportPage({ params }: ReportPageProps) {
           reportData.milestone?.review_completed_at != null
         }
         recorded={paidIntentState.recorded_at != null}
+        copy={paidIntentCopy}
       />
 
       <MonthlyReport
         data={reportData}
         locale={locale}
         baseCurrency={setupRes.data?.base_currency || "USD"}
+        copy={reportCopy}
       />
     </div>
   );

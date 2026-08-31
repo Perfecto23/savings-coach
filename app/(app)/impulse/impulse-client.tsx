@@ -59,6 +59,7 @@ export function ImpulsePageClient({
       <ImpulseForm
         baseCurrency={baseCurrency}
         copy={copy.form}
+        allCopy={copy}
         locale={locale}
         onAdded={handleAdded}
       />

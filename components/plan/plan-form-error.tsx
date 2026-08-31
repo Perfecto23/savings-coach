@@ -1,19 +1,15 @@
-import type { PlanFormError } from "@/lib/plan/contracts";
-
 export function PlanFormErrorMessage({
   id,
-  field,
-  error,
+  message,
 }: {
   id: string;
-  field: PlanFormError["field"];
-  error: PlanFormError | null;
+  message: string | null;
 }) {
-  if (!error || error.field !== field) return null;
+  if (!message) return null;
 
   return (
     <p id={id} className="mt-2 text-sm leading-5 text-red-700">
-      {error.message}
+      {message}
     </p>
   );
 }

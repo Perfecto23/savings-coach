@@ -13,69 +13,54 @@ const MONEY_PATTERN = /^(?:0\.(?:0[1-9]|[1-9]\d?)|[1-9]\d{0,9}(?:\.\d{1,2})?)$/;
 const RPC_ERRORS: Record<string, PlanFormError> = {
   unauthenticated: {
     code: "UNAUTHENTICATED",
-    message: "Please sign in again.",
   },
   setup_incomplete: {
     code: "SETUP_INCOMPLETE",
-    message: "Finish Setup before building a Savings Plan.",
   },
   invalid_rule_id: {
     code: "INVALID_RULE",
     field: "rule_id",
-    message: "Reload the page and try again.",
   },
   invalid_rule_name: {
     code: "INVALID_RULE",
     field: "name",
-    message: "Enter a rule name of 100 characters or fewer.",
   },
   invalid_rule_amount: {
     code: "INVALID_RULE",
     field: "amount",
-    message: "Enter an amount greater than zero with at most two decimal places.",
   },
   invalid_rule: {
     code: "INVALID_RULE",
-    message: "Check the Plan Rule fields and try again.",
   },
   invalid_due_day: {
     code: "INVALID_RULE",
     field: "due_day",
-    message: "Choose a due day from 1 to 31.",
   },
   account_not_found: {
     code: "ACCOUNT_NOT_FOUND",
     field: "source_account_id",
-    message: "The selected Source Account was not found.",
   },
   source_account_not_found: {
     code: "ACCOUNT_NOT_FOUND",
     field: "source_account_id",
-    message: "The selected Source Account was not found.",
   },
   target_account_mismatch: {
     code: "TARGET_ACCOUNT_MISMATCH",
-    message: "The Target Account must match the Savings Account from Setup.",
   },
   rule_not_found: {
     code: "RULE_NOT_FOUND",
-    message: "This Plan Rule no longer exists. Reload the page.",
   },
   plan_has_no_rules: {
     code: "PLAN_HAS_NO_RULES",
-    message: "Add at least one active Plan Rule before activation.",
   },
   no_active_plan_rules: {
     code: "PLAN_HAS_NO_RULES",
-    message: "Add at least one active Plan Rule before activation.",
   },
   legacy_action_conflict: {
     code: "PLAN_ACTIVATION_FAILED",
-    message: "A legacy monthly step conflicts with this Plan Rule. Review the month and try again.",
   },
   plan_path_incomplete: {
     code: "PLAN_ACTIVATION_FAILED",
-    message: "The 12-month Plan Path could not be completed. Try again.",
   },
 };
 
@@ -98,10 +83,6 @@ function mapRpcError(
 
   return errorState({
     code: fallback,
-    message:
-      fallback === "PLAN_SAVE_FAILED"
-        ? "The Plan Rule could not be saved. Try again."
-        : "The Savings Plan could not be activated. Try again.",
   });
 }
 
@@ -147,7 +128,10 @@ function validateRule(formData: FormData) {
   };
 }
 
-async function saveRule(formData: FormData, successMessage: string) {
+async function saveRule(
+  formData: FormData,
+  success: "PLAN_RULE_ADDED" | "PLAN_RULE_UPDATED"
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -170,7 +154,7 @@ async function saveRule(formData: FormData, successMessage: string) {
 
   if (error) return mapRpcError(error, "PLAN_SAVE_FAILED");
   revalidatePlanPaths();
-  return { status: "success", error: null, message: successMessage } as const;
+  return { status: "success", error: null, success } as const;
 }
 
 function revalidatePlanPaths() {
@@ -185,7 +169,7 @@ export async function createPlanRule(
   formData: FormData
 ): Promise<PlanFormState> {
   void _previousState;
-  return saveRule(formData, "Plan Rule added.");
+  return saveRule(formData, "PLAN_RULE_ADDED");
 }
 
 export async function updatePlanRule(
@@ -193,7 +177,7 @@ export async function updatePlanRule(
   formData: FormData
 ): Promise<PlanFormState> {
   void _previousState;
-  return saveRule(formData, "Plan Rule updated.");
+  return saveRule(formData, "PLAN_RULE_UPDATED");
 }
 
 export async function setPlanRuleActive(
@@ -217,7 +201,7 @@ export async function setPlanRuleActive(
   return {
     status: "success",
     error: null,
-    message: active ? "Plan Rule reactivated." : "Plan Rule deactivated.",
+    success: active ? "PLAN_RULE_REACTIVATED" : "PLAN_RULE_DEACTIVATED",
   };
 }
 
@@ -240,6 +224,6 @@ export async function activateSavingsPlan(
   return {
     status: "success",
     error: null,
-    message: "Savings Plan activated.",
+    success: "SAVINGS_PLAN_ACTIVATED",
   };
 }

@@ -71,9 +71,9 @@ test("Impulse follows the owner locale", async ({ page }, testInfo) => {
       };
 
   await page.goto("/login");
-  await page.getByLabel("邮箱").fill(fixture.email);
-  await page.getByLabel("密码").fill(fixture.password);
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto("/impulse");

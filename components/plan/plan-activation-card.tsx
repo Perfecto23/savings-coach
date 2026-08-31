@@ -8,6 +8,7 @@ import {
   type MonthlyActionDto,
   type PlanAccountDto,
 } from "@/lib/plan/contracts";
+import type { PlanCopy } from "@/lib/plan/presentation";
 
 function formatDueDate(value: string, locale: string) {
   const date = new Date(`${value}T00:00:00.000Z`);
@@ -27,6 +28,7 @@ export function PlanActivationCard({
   baseCurrency,
   targetAccount,
   nextAction,
+  copy,
 }: {
   isActivated: boolean;
   activeRuleCount: number;
@@ -35,6 +37,7 @@ export function PlanActivationCard({
   baseCurrency: string;
   targetAccount: PlanAccountDto;
   nextAction: MonthlyActionDto | null;
+  copy: PlanCopy;
 }) {
   const [state, formAction, pending] = useActionState(
     activateSavingsPlan,
@@ -57,20 +60,21 @@ export function PlanActivationCard({
               <CheckIcon className="h-4 w-4" />
             </span>
             <p className="text-lg font-semibold tracking-[-0.02em]">
-              Your Savings Plan is active.
+              {copy.activation.activeTitle}
             </p>
           </div>
           <p className="mt-6 text-xl font-medium leading-8 tracking-[-0.025em] text-white sm:text-2xl">
-            You plan to move {formatMoney(Number(monthlyPlannedAmount), locale, baseCurrency)} into {targetAccount.name} each month.
+            {copy.activation.activeSummary
+              .replace("{amount}", formatMoney(Number(monthlyPlannedAmount), locale, baseCurrency))
+              .replace("{account}", targetAccount.name)}
           </p>
           <p className="mt-4 text-sm leading-6 text-stone-300">
             {nextAction
-              ? `Your next action is due ${formatDueDate(nextAction.scheduledFor, locale)}.`
-              : "Your current Monthly Actions are complete."}
+              ? copy.activation.nextAction.replace("{date}", formatDueDate(nextAction.scheduledFor, locale))
+              : copy.activation.currentActionsComplete}
           </p>
           <p className="mt-6 border-t border-stone-800 pt-5 text-xs leading-5 text-stone-500">
-            This is a plan based on your entries. Savings Coach does not move
-            money or guarantee a future balance.
+            {copy.activation.safetyNote}
           </p>
         </div>
       </section>
@@ -80,11 +84,10 @@ export function PlanActivationCard({
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8">
       <h2 className="text-xl font-semibold tracking-[-0.03em] text-stone-950">
-        Turn rules into this month&apos;s actions
+        {copy.activation.title}
       </h2>
       <p className="mt-3 text-sm leading-6 text-stone-600">
-        Activation creates the current Monthly Actions and a 12-month Plan
-        Path. You can safely repeat it without creating duplicates.
+        {copy.activation.description}
       </p>
 
       {state.status === "error" ? (
@@ -94,7 +97,7 @@ export function PlanActivationCard({
           role="alert"
           className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
         >
-          {state.error.message}
+          {copy.errorMessages[state.error.code]}
         </div>
       ) : null}
 
@@ -104,13 +107,13 @@ export function PlanActivationCard({
           disabled={pending || activeRuleCount === 0}
           className="min-h-12 w-full cursor-pointer rounded-xl bg-orange-700 px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(194,65,12,0.24)] transition-colors hover:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {pending ? "Activating…" : "Activate Savings Plan"}
+          {pending ? copy.activation.submitting : copy.activation.submit}
         </button>
       </form>
 
       {activeRuleCount === 0 ? (
         <p className="mt-3 text-sm leading-6 text-stone-500">
-          Add one active Plan Rule to continue.
+          {copy.activation.disabledHelp}
         </p>
       ) : null}
     </section>

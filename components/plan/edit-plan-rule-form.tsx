@@ -8,12 +8,14 @@ import {
   type PlanAccountDto,
   type PlanRuleDto,
 } from "@/lib/plan/contracts";
+import type { PlanCopy } from "@/lib/plan/presentation";
 
 export function EditPlanRuleForm({
   rule,
   baseCurrency,
   sourceAccounts,
   targetAccount,
+  copy,
   onCancel,
   onSaved,
 }: {
@@ -21,6 +23,7 @@ export function EditPlanRuleForm({
   baseCurrency: string;
   sourceAccounts: PlanAccountDto[];
   targetAccount: PlanAccountDto;
+  copy: PlanCopy;
   onCancel: () => void;
   onSaved: () => void;
 }) {
@@ -30,6 +33,7 @@ export function EditPlanRuleForm({
   );
   const errorRef = useRef<HTMLDivElement>(null);
   const fieldError = state.status === "error" ? state.error : null;
+  const errorMessage = fieldError ? copy.errorMessages[fieldError.code] : null;
 
   useEffect(() => {
     if (state.status === "error") errorRef.current?.focus();
@@ -39,11 +43,10 @@ export function EditPlanRuleForm({
   return (
     <section aria-labelledby={`edit-plan-rule-${rule.id}`} className="mt-5 border-t border-stone-200 pt-5">
       <h3 id={`edit-plan-rule-${rule.id}`} className="text-lg font-semibold tracking-[-0.02em] text-stone-950">
-        Edit a Plan Rule
+        {copy.editForm.title}
       </h3>
       <p className="mt-2 text-sm leading-6 text-stone-600">
-        Changes affect future months. This month&apos;s Monthly Action keeps its
-        original Rule Amount.
+        {copy.editForm.description}
       </p>
 
       <form action={formAction} className="mt-5 space-y-5">
@@ -56,13 +59,13 @@ export function EditPlanRuleForm({
             role="alert"
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           >
-            {state.error.message}
+            {errorMessage}
           </div>
         ) : null}
 
         <div>
           <label htmlFor={`edit-rule-name-${rule.id}`} className="block text-sm font-medium text-stone-800">
-            Rule name
+            {copy.editForm.nameLabel}
           </label>
           <input
             id={`edit-rule-name-${rule.id}`}
@@ -74,13 +77,13 @@ export function EditPlanRuleForm({
             aria-invalid={fieldError?.field === "name"}
             className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-base shadow-sm focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200"
           />
-          <PlanFormErrorMessage id={`edit-rule-name-error-${rule.id}`} field="name" error={fieldError} />
+          <PlanFormErrorMessage id={`edit-rule-name-error-${rule.id}`} message={fieldError?.field === "name" ? errorMessage : null} />
         </div>
 
         <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_128px]">
           <div>
             <label htmlFor={`edit-rule-amount-${rule.id}`} className="block text-sm font-medium text-stone-800">
-              Rule amount
+              {copy.editForm.amountLabel}
             </label>
             <div className="relative mt-2">
               <input
@@ -97,12 +100,12 @@ export function EditPlanRuleForm({
                 {baseCurrency}
               </span>
             </div>
-            <PlanFormErrorMessage id={`edit-rule-amount-error-${rule.id}`} field="amount" error={fieldError} />
+            <PlanFormErrorMessage id={`edit-rule-amount-error-${rule.id}`} message={fieldError?.field === "amount" ? errorMessage : null} />
           </div>
 
           <div>
             <label htmlFor={`edit-rule-due-${rule.id}`} className="block text-sm font-medium text-stone-800">
-              Due day
+              {copy.editForm.dueDayLabel}
             </label>
             <input
               id={`edit-rule-due-${rule.id}`}
@@ -116,14 +119,14 @@ export function EditPlanRuleForm({
               aria-invalid={fieldError?.field === "due_day"}
               className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-lg font-semibold tabular-nums shadow-sm focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200"
             />
-            <PlanFormErrorMessage id={`edit-rule-due-error-${rule.id}`} field="due_day" error={fieldError} />
+            <PlanFormErrorMessage id={`edit-rule-due-error-${rule.id}`} message={fieldError?.field === "due_day" ? errorMessage : null} />
           </div>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor={`edit-rule-source-${rule.id}`} className="block text-sm font-medium text-stone-800">
-              Source account (optional)
+              {copy.editForm.sourceAccountLabel}
             </label>
             <select
               id={`edit-rule-source-${rule.id}`}
@@ -131,7 +134,7 @@ export function EditPlanRuleForm({
               defaultValue={rule.sourceAccount?.id ?? ""}
               className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 bg-white px-3 text-base shadow-sm focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200"
             >
-              <option value="">No Source Account</option>
+              <option value="">{copy.editForm.noSourceAccount}</option>
               {sourceAccounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name}
@@ -142,7 +145,7 @@ export function EditPlanRuleForm({
 
           <div>
             <label htmlFor={`edit-rule-target-${rule.id}`} className="block text-sm font-medium text-stone-800">
-              Target account
+              {copy.editForm.targetAccountLabel}
             </label>
             <select
               id={`edit-rule-target-${rule.id}`}
@@ -161,14 +164,14 @@ export function EditPlanRuleForm({
             onClick={onCancel}
             className="min-h-11 cursor-pointer rounded-xl px-4 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950"
           >
-            Cancel
+            {copy.editForm.cancel}
           </button>
           <button
             type="submit"
             disabled={pending}
             className="min-h-11 cursor-pointer rounded-xl bg-stone-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "Saving…" : "Save changes"}
+            {pending ? copy.editForm.submitting : copy.editForm.submit}
           </button>
         </div>
       </form>

@@ -25,7 +25,7 @@ Savings Coach 是 manual-first 的个人储蓄执行与复盘工具。用户建�
 - Public signup、密码找回 UI 和用户自助删除账号未开放。
 - Monthly Review Email Reminder 是 gated capability，不属于默认开放范围。操作前重新回读 live gate；启用顺序见 [Reminder runbook](docs/runbooks/monthly-review-email-reminder.md)。
 - Billing、checkout、subscription、银行同步、Household、角色和共享空间未实现。
-- Locale 目前驱动金额、日期和月界。完整 UI 多语言切换未实现，当前界面仍有中英混合文案。
+- 已登录产品支持 `zh-CN`、`en-US` 和 `en-SG`。Owner locale 控制界面文案、ARIA 名称、确认框、错误提示、日期和金额格式。
 
 ## 用户流程
 
@@ -220,6 +220,7 @@ pnpm test:review-reminder-functions
 ```bash
 pnpm test:e2e
 pnpm test:e2e:impulse
+pnpm test:e2e:locale
 pnpm test:e2e:setup
 pnpm test:e2e:plan
 pnpm test:e2e:review
@@ -227,8 +228,10 @@ pnpm test:e2e:reminder
 ```
 
 - 默认 E2E 只覆盖公开 Login 和 release boundaries。
-- 五个 authenticated suite 要求项目本地 Supabase 已启动，并覆盖 Desktop Chromium 和 Pixel 5 viewport。
+- 六个 authenticated suite 要求项目本地 Supabase 已启动，并覆盖 Desktop Chromium 和 Pixel 5 viewport。
+- Locale suite 使用独立 owner 覆盖 `zh-CN` 与 `en-SG` 的 desktop/mobile 矩阵。
 - Authenticated suite 会重建本地数据库并写入测试 fixture。
+- Authenticated suite 共用一个本地 Supabase 锁，必须串行运行。第二个并发运行会快速失败，不会删除当前 fixture。
 - E2E 不自动停止 Supabase。验证完成后运行 `pnpm exec supabase stop`。
 
 ## 发布

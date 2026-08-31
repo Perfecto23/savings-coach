@@ -47,8 +47,12 @@ function captureRscAndHtml(page: Page) {
     }
 
     pending.push(
-      response
-        .text()
+      Promise.race<string>([
+        response.text(),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error("Response body read timed out")), 3_000),
+        ),
+      ])
         .then((body) => {
           payloads.push(body);
         })
@@ -77,9 +81,9 @@ test("an invited owner can save and recover the three Setup checkpoints", async 
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
 
-  await page.getByLabel("邮箱").fill(fixture.email);
-  await page.getByLabel("密码").fill(fixture.password);
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
 
   await expect(page).toHaveURL(/\/setup$/);
   await expect(
@@ -144,9 +148,9 @@ test("an invited owner can save and recover the three Setup checkpoints", async 
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
 
-  await page.getByLabel("邮箱").fill(fixture.email);
-  await page.getByLabel("密码").fill(fixture.password);
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
+  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
+  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { level: 1, name: "This month" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Build your Savings Plan" })).toBeVisible();

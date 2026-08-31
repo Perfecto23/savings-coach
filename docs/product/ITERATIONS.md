@@ -24,7 +24,7 @@
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
-| 9 | One-channel reminder experiment | `released` | [PR #18](https://github.com/Perfecto23/savings-coach/pull/18)、[PR #19](https://github.com/Perfecto23/savings-coach/pull/19)；hosted 011、Vercel production and dark Edge Function readback |
+| 9 | One-channel reminder experiment | `released` | [PR #18](https://github.com/Perfecto23/savings-coach/pull/18)、[PR #19](https://github.com/Perfecto23/savings-coach/pull/19)、[PR #21](https://github.com/Perfecto23/savings-coach/pull/21)；hosted 011 and live synthetic delivery readback |
 | 10 | Paid-intent beta and release candidate | `released` | [PR #16](https://github.com/Perfecto23/savings-coach/pull/16)；hosted 010 and Vercel production |
 
 ## Iteration 1 Readback
@@ -432,8 +432,8 @@
 - in-app Home prompt 不满足 Iteration 9。用户不访问 Home 时不会发生调度或交付。
 - Iteration 8 已经在 Home 显示 Monthly Review gate。新增同页 prompt 没有独立产品价值。
 - Home GET / RSC 不得通过隐式 claim 产生 render-write。重复显示也不能表示“只发送一次”。
-- 当前项目没有可用的 outbound email provider credential、verified sender 或 vendor spend authorization。
-- 代码和本地测试可以继续。Production sending 在 provider credential、verified sender 和费用授权存在前保持关闭。
+- 初始决策时没有 outbound provider credential、verified sender 或 vendor spend authorization。实现先以三层 gate 保持关闭。
+- 当前已配置 Resend credential、signed webhook 和 testing sender。真实用户 sending 在 verified sender domain、Cron 和 production UI 获批前保持关闭。
 
 ### Frozen Seam
 
@@ -473,36 +473,43 @@
 - Next.js 16.3.3、Supabase JS 2.112.4 和 eslint-config-next 16.3.3 完成安全升级。Production dependency audit 为 0 个已知漏洞。
 - Codex 侧边栏浏览器 preflight：Supabase production 初始为 0 自定义 Edge Function、0 自定义 Function Secret。
 - Product review：`ship`。邮件只包含 Review month、固定 CTA、同意来源和 unsubscribe。
-- Final code review：`ship`。Final security review：`ship`。Production activation 仍需 live gates。
+- Final code review：`ship`。Final security review：`ship`。Production pipeline 使用 Resend 官方 synthetic delivered address 完成 live readback。
 
-### Required Production Activation Inputs
+### Remaining Production Launch Inputs
 
-- 一个 outbound email provider 的 production credential。
-- 一个 verified sender domain 或 sender address。
-- 对该 provider 费用和 production delivery 的明确授权。
+- 一个用于真实用户的 verified sender domain 或 sender address。
+- 启动 Cron、开放 production UI 和触达真实用户的明确授权。
 
 ### Not Claimed
 
-- 没有 Provider Acceptance、signed delivery receipt 或 unsubscribe production evidence。
-- 没有创建 Sender Cron、retention Cron、Vault 或 Provider credential Secret。仅 `APP_BASE_URL` 和 `REVIEW_EMAIL_SENDING_ENABLED=false` 已配置。Vercel 和数据库 availability gate 均保持关闭。
+- 没有真实用户、真实 inbox、生产 cohort 或留存提升证据。
+- 没有创建 Sender Cron 或 retention Cron。Sending、Vercel 和数据库 availability gate 均保持关闭。
+- 当前 sender 是 `onboarding@resend.dev`。该 sender 只用于受控测试，不用于真实用户。
 - 没有实现 push、SMS、WhatsApp 或 browser notification。
-- Production state changed: Yes。只发布 dark schema、Functions 和隐藏 UI code。
+- Production state changed: Yes。发布 dark schema、Functions、Provider credential、signed webhook 和隐藏 UI code。
 
 ### Release Readback
 
 - PR #18 merge commit：`cd3b702`。Vercel production deployment：pass。
 - PR #19 修复 Supabase Runtime entrypoint。TDD contract、code review 和 security review：`ship`。
+- PR #21 将 Supabase named secret 统一为平台支持的 `reminder_cron`。
 - Hosted preflight：1 Auth user、81 行业务数据、0 Setup、0 Reminder table、0 Reminder column、0 Reminder function。
 - Hosted migration：011 在单事务内成功。81 行业务数据保持不变；无 Reminder Consent backfill。
 - Hosted catalog：1 Reminder Delivery table、3 Reminder Consent columns、9 Reminder functions。
 - Hosted ACL：authenticated availability gate grants 0；service internal grants 7；direct delivery table grants 0。
 - Hosted state：0 Setup、0 Reminder Consent、0 Reminder Delivery。
 - Supabase Edge Functions：3/3。三个 legacy JWT gate 均为关闭。
-- Supabase custom Secret key names：`APP_BASE_URL`、`REVIEW_EMAIL_SENDING_ENABLED`。Provider credential Secret 为 0。
-- Scheduler extensions：0。Sender Cron 和 retention Cron 均不存在。
+- Supabase custom Secret key names：`APP_BASE_URL`、`REVIEW_EMAIL_SENDING_ENABLED`、`REVIEW_EMAIL_FROM`、`RESEND_API_KEY`、`RESEND_WEBHOOK_SECRET`。
+- Vault key names：`review_reminder_project_url`、`review_reminder_cron_apikey`。Secret values 未进入日志、代码或文档。
+- Resend：Sending-access API key、7-event signed webhook 和 testing sender 已配置。Onboarding key 已撤销。一次暴露的 `reminder_cron` key 与 Vault copy 已删除并轮换。
+- Scheduler extensions：`pg_net` 已安装。`pg_cron`、Sender Cron 和 retention Cron 均不存在。
 - Dark smoke：Sender GET 405；Sender POST 无 named secret 401；Webhook 无 signing secret 503；Unsubscribe GET 200；Unsubscribe POST 200 空响应。
+- Live synthetic activation：Settings 显式 consent；consenting / eligible owner 为 1；Sender HTTP 200，claimed 1、accepted 1；signed webhook 写入 `delivered`；Resend Dashboard 显示 `email.sent` 和 `email.delivered`。
+- Unsubscribe readback：owner unsubscribed 1；第二次 Sender HTTP 200，claimed / accepted / failed / retry / unknown 全部 0。
+- Retention readback：dry-run candidate 0、deleted 0；actual deleted 0。Recent delivered row 在 cleanup 前保留。
+- Cleanup readback：synthetic rows 0；authenticated availability gate grants 0；Sending 恢复为 `false`；post-cleanup Sender 返回 503 `sending_disabled`。
 - Vercel production：`/` → `/login`；标题和登录表单正常；browser error / warning 为 0。
-- Status boundary：dark code、schema 和 Functions 已发布。Outbound Email 未 activation，因此状态为 `released`，不是 `verified_live`。
+- Status boundary：production pipeline 已通过 Resend synthetic recipient。真实用户 sender domain、Cron 和 production UI 未开放，因此状态为 `released`，不是 `verified_live`。
 
 ## Iteration 10 Current State
 
@@ -567,5 +574,5 @@
 - Hosted state：0 Review Completion、0 Paid Intent、0 billing/payment/subscription/entitlement tables。
 - Vercel production：merge commit `8d1214e` 部署完成；公开 `/` → `/login`；标题与登录表单正常。
 - Status boundary：代码和 schema 已发布。authenticated production Paid Intent journey 尚未执行，因此状态为 `released`，不是 `verified_live`。
-- Program boundary：Iteration 9 和 Iteration 10 均已发布。Iteration 9 Production activation 仍需要 outbound provider credential、verified sender 和费用授权。
+- Program boundary：Iteration 9 和 Iteration 10 均已发布。Iteration 9 真实用户 launch 仍需要 verified sender domain、Cron 和 production UI 授权。
 - Production state changed: Yes；010 applied、PR #16 merged and Vercel production deployed。

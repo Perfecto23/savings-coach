@@ -220,6 +220,7 @@ OUTPUT_FILE="${setup_request}" \
 OWNER_A_ID="${owner_a_id}" OWNER_B_ID="${owner_b_id}" OWNER_C_ID="${owner_c_id}" \
 OWNER_A_ACCOUNT_ID="${owner_a_account_id}" OWNER_B_ACCOUNT_ID="${owner_b_account_id}" \
 OWNER_C_ACCOUNT_ID="${owner_c_account_id}" REVIEW_E2E="${REVIEW_E2E:-0}" \
+IMPULSE_E2E="${IMPULSE_E2E:-0}" \
   node <<'NODE'
 const fs = require("node:fs");
 
@@ -227,15 +228,17 @@ const activation =
   process.env.REVIEW_E2E === "1"
     ? { plan_activated_at: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString() }
     : {};
+const ownerALocale = process.env.IMPULSE_E2E === "1" ? "zh-CN" : "en-SG";
+const ownerABaseCurrency = process.env.IMPULSE_E2E === "1" ? "CNY" : "SGD";
 
 fs.writeFileSync(
   process.env.OUTPUT_FILE,
   JSON.stringify([
     {
       owner_id: process.env.OWNER_A_ID,
-      locale: "en-SG",
+      locale: ownerALocale,
       time_zone: "Asia/Singapore",
-      base_currency: "SGD",
+      base_currency: ownerABaseCurrency,
       savings_account_id: process.env.OWNER_A_ACCOUNT_ID,
       plan_activated_at: activation.plan_activated_at ?? null,
     },
@@ -455,7 +458,7 @@ NODE
   post_rows monthly_milestones "${review_path_request}"
 fi
 
-FIXTURE_FILE="${plan_runtime_dir}/fixtures.json" \
+FIXTURE_FILE="${plan_runtime_dir}/fixtures.json" IMPULSE_E2E="${IMPULSE_E2E:-0}" \
 OWNER_A_EMAIL="${owner_a_email}" OWNER_A_PASSWORD="${owner_a_password}" \
 OWNER_B_EMAIL="${owner_b_email}" OWNER_B_PASSWORD="${owner_b_password}" \
 OTHER_OWNER_CANARY="${other_owner_canary}" SECRET_CANARY="${secret_canary}" \
@@ -465,7 +468,36 @@ const fs = require("node:fs");
 
 fs.writeFileSync(
   process.env.FIXTURE_FILE,
-  JSON.stringify({
+  JSON.stringify(process.env.IMPULSE_E2E === "1" ? {
+    "desktop-zh-chromium": {
+      email: process.env.OWNER_A_EMAIL,
+      password: process.env.OWNER_A_PASSWORD,
+      ruleName: "Desktop Monthly Transfer",
+      otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+      secretCanary: process.env.SECRET_CANARY,
+    },
+    "mobile-zh-chromium": {
+      email: process.env.OWNER_A_EMAIL,
+      password: process.env.OWNER_A_PASSWORD,
+      ruleName: "Mobile Monthly Transfer",
+      otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+      secretCanary: process.env.SECRET_CANARY,
+    },
+    "desktop-en-chromium": {
+      email: process.env.OWNER_B_EMAIL,
+      password: process.env.OWNER_B_PASSWORD,
+      ruleName: "Desktop Monthly Transfer",
+      otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+      secretCanary: process.env.SECRET_CANARY,
+    },
+    "mobile-en-chromium": {
+      email: process.env.OWNER_B_EMAIL,
+      password: process.env.OWNER_B_PASSWORD,
+      ruleName: "Mobile Monthly Transfer",
+      otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
+      secretCanary: process.env.SECRET_CANARY,
+    },
+  } : {
     "desktop-chromium": {
       email: process.env.OWNER_A_EMAIL,
       password: process.env.OWNER_A_PASSWORD,

@@ -1,6 +1,8 @@
-# Monthly Review Email Reminder Activation
+# Monthly Review Email Reminder Runbook
 
-本 runbook 只负责 Iteration 9 production activation。Schema 和 Edge Function 可以先发布。App UI 不得在 delivery pipeline 可用前发布。`REVIEW_EMAIL_SENDING_ENABLED` 在全部门禁通过前必须保持 `false`。
+本 runbook 是 Monthly Review Email Reminder 的 production activation、Cron 和 rollback 唯一操作入口。本文不记录 live 状态。每次操作前必须重新回读 Vercel、Supabase、Resend 和 DNS。
+
+Schema 和 Edge Function 可以先 dark release。App UI 不得在 delivery pipeline 可用前发布。`REVIEW_EMAIL_SENDING_ENABLED` 在全部门禁通过前必须保持 `false`。
 
 Vercel availability gate `REVIEW_EMAIL_FEATURE_ENABLED` 默认保持 `false`。Gate 关闭时，Settings 不读取 reminder RPC、不显示 Email tab，并拒绝 reminder Server Action。数据库 RPC ACL 是权威 availability gate。
 

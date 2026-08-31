@@ -32,10 +32,10 @@
 # IDE
 .idea/
 
-# personal planning docs
+# durable runbooks; other docs are local planning material
 docs/*
-!docs/product/
-!docs/product/**
+!docs/runbooks/
+!docs/runbooks/**
 
 # debug
 npm-debug.log*

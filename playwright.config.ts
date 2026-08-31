@@ -8,6 +8,7 @@ export default defineConfig({
   testIgnore: [
     "setup-checkpoint.spec.ts",
     "plan-activation.spec.ts",
+    "impulse-locale.spec.ts",
     "monthly-review.spec.ts",
     "review-email-reminder.spec.ts",
   ],

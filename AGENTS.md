@@ -5,11 +5,11 @@
 开始仓库任务时先读取 [README.md](README.md)。README 是开发、验证和发布入口，不是 live 状态证明。
 
 - 修改产品文案、领域行为、持久化类型、金额计算、报告或 Prompt 前，完整读取 [CONTEXT.md](CONTEXT.md)。该文件是领域术语、状态词和禁止描述的唯一真源。
-- 修改产品目的、用户、能力边界或约束前，读取 [PRODUCT.md](PRODUCT.md)。修改范围、优先级或投资判断时，再读取 [docs/product/PRODUCT-CHARTER.md](docs/product/PRODUCT-CHARTER.md)。
-- 修改页面、组件、样式、响应式或无障碍行为前，读取 [DESIGN.md](DESIGN.md)。修改 Setup 时，再完整读取 [docs/product/SETUP-SURFACE.md](docs/product/SETUP-SURFACE.md)。
-- 开始或结束迭代，或修改发布、生产配置、migration、Function、rollback 和 live claim 前，完整读取 [docs/product/ITERATIONS.md](docs/product/ITERATIONS.md)。历史 readback 不证明当前 live 状态；便宜且易漂移的状态必须重新验证。
-- 修改 `supabase/functions/**`、Reminder schema/RPC、Settings Email tab、Resend、Cron、Vault 或 Reminder gate 前，完整读取 [docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md](docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md)。
-- 执行 EdgeOne POC、hosting 取舍或 recovery 验证前，完整读取 [docs/product/EDGEONE-POC.md](docs/product/EDGEONE-POC.md)。EdgeOne 历史 POC 不代表当前 host。
+- 修改产品目的、用户、能力边界、范围、优先级或投资判断前，读取 [PRODUCT.md](PRODUCT.md)。
+- 修改页面、组件、样式、响应式、Setup 或无障碍行为前，读取 [DESIGN.md](DESIGN.md)。
+- 修改发布、生产配置、migration、Function、rollback 或 live claim 前，读取 README 的发布边界，并从 GitHub、Vercel、Supabase 和 Resend 重新验证当前状态。
+- 修改 `supabase/functions/**`、Reminder schema/RPC、Settings Email tab、Resend、Cron、Vault 或 Reminder gate 前，完整读取 [docs/runbooks/monthly-review-email-reminder.md](docs/runbooks/monthly-review-email-reminder.md)。
+- 重新评估 EdgeOne 属于新的 hosting 决策。开始前必须重新定义验证范围，不沿用历史 POC 状态。
 
 当前代码、`supabase/migrations/` 和 `lib/types/database.ts` 是实现真源。当前命令、依赖和工具设置以 `package.json`、lockfile 和仓库配置为准。完成读取后，先确定本轮权威源、领域术语和验证矩阵，再修改文件。
 
@@ -84,10 +84,10 @@
 ## 发布与状态记录
 
 - Database、Edge Functions、Vercel Web、Resend 和 Cron 是独立发布层。任一层成功都不能证明其他层成功。
-- 发布前读取 Iteration ledger 和相关 runbook，固定目标环境，审查 diff、migration 和外部影响，并在危险操作点取得明确确认。
+- 发布前读取 README 和相关 runbook，固定目标环境，审查 diff、migration 和外部影响，并在危险操作点取得明确确认。
 - 发布后必须独立回读受影响层和用户流程。没有 live readback 时只能写 `released`，不能写 `verified_live`。
-- 更新 [docs/product/ITERATIONS.md](docs/product/ITERATIONS.md) 时，对整个相关状态做 reconciliation。分开记录 local validation、merged、deployed、live、paused 和 Not Claimed；不得把计划、历史方案或 synthetic evidence 写成真实用户结果。
-- README 和 AGENTS.md 不缓存 commit SHA、人数、测试计数、secret 状态或当前 owner。动态状态只写入 Iteration ledger 或专用 runbook。
+- 在 PR 或交接中分开记录 local validation、merged、deployed、live、paused 和 Not Claimed；不得把计划、历史方案或 synthetic evidence 写成真实用户结果。
+- README 和 AGENTS.md 不缓存 commit SHA、人数、测试计数、secret 状态或当前 owner。Live 状态以 GitHub、Vercel、Supabase 和 Resend 的当前 readback 为准。
 
 <!-- BEGIN:nextjs-agent-rules -->
 

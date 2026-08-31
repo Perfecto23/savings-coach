@@ -121,6 +121,14 @@ Forms use a 32px lead-in from explanatory copy and a 24px vertical rhythm betwee
 
 **The One Task Rule.** A form surface presents one current user decision. Keep secondary detail in helper copy, the progress rail, or a following step.
 
+### Setup behavior
+
+- Setup 依次呈现地区偏好、储蓄账户和当前余额三个 checkpoint。用户不能跳过 checkpoint。
+- 首个 viewport 同时显示产品目的、当前 checkpoint、预计耗时和当前表单。不使用欢迎轮播或功能营销卡。
+- 储蓄账户步骤明确区分 create 和 existing 两种选择。复用既有账户时保留显式 radio selection。
+- Returning user 从首个未完成 checkpoint 继续。完成用户访问 Setup 时进入 Home。
+- Checkpoint 使用 `aria-current="step"`。Field error 使用 `role="alert"`。Setup 图标使用同一套 inline SVG，不使用 emoji。
+
 ## Elevation & Depth
 
 The system is border-first at rest. White cards separate from the warm canvas through a light border and a tonal background change, not through permanent floating shadows. Setup fields use the small native control shadow. Primary Setup actions add a diffuse orange shadow (`0 10px 24px rgba(194,65,12,0.24)`) to confirm their affordance. The completion action uses a slightly larger orange shadow (`0 12px 32px rgba(249,115,22,0.22)`). Linked dashboard cards can lift on hover.

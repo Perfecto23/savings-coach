@@ -3,7 +3,7 @@
 Savings Coach 是 manual-first 的个人储蓄执行与复盘工具。用户建立储蓄计划，确认月度行动，记录余额快照，并完成月度复盘。产品不连接银行，不转移资金，也不导入银行交易。
 
 - Production：<https://savings-coach.vercel.app>
-- 当前发布状态与验证证据：[docs/product/ITERATIONS.md](docs/product/ITERATIONS.md)
+- Live 状态必须从 GitHub、Vercel、Supabase 和 Resend 独立回读。
 - 产品范围：[PRODUCT.md](PRODUCT.md)
 
 ## 当前产品
@@ -23,7 +23,7 @@ Savings Coach 是 manual-first 的个人储蓄执行与复盘工具。用户建�
 
 - Consumer AI Coach、BYOK 和 AI config 写入保持关闭。`POST /api/chat` 固定返回 `404 feature_disabled`。
 - Public signup、密码找回 UI 和用户自助删除账号未开放。
-- Monthly Review Email Reminder 是 gated capability，不属于默认开放范围。Live gate 状态见 [迭代台账](docs/product/ITERATIONS.md)；启用顺序见 [Reminder runbook](docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md)。
+- Monthly Review Email Reminder 是 gated capability，不属于默认开放范围。操作前重新回读 live gate；启用顺序见 [Reminder runbook](docs/runbooks/monthly-review-email-reminder.md)。
 - Billing、checkout、subscription、银行同步、Household、角色和共享空间未实现。
 - Locale 目前驱动金额、日期和月界。完整 UI 多语言切换未实现，当前界面仍有中英混合文案。
 
@@ -77,7 +77,7 @@ Gated reminder path (activation-only)
 | Vercel | 当前 Web production host |
 | Resend | 受控 Reminder pipeline；启用、发送和回滚遵循专用 runbook |
 
-EdgeOne 只保留为已完成的 POC。当前结论是 `FAIL_FOR_CURRENT_SEQUENCE`，不是发布 host。详见 [docs/product/EDGEONE-POC.md](docs/product/EDGEONE-POC.md)。
+EdgeOne 不是当前发布路径。重新评估前必须重新验证 artifact isolation、Auth session、Server Action、日志关联、确定性恢复和 secret isolation。
 
 ## 本地开发
 
@@ -146,7 +146,7 @@ Tracked 模板是 [.env.local.example](.env.local.example)。
 
 `NEXT_PUBLIC_*` 会进入浏览器。只能存放 public URL 和 anon key。
 
-Reminder Edge Function secret、Supabase named secret、Vault key name 和启用顺序以 [docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md](docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md) 为唯一操作入口。README 不保存 secret value。
+Reminder Edge Function secret、Supabase named secret、Vault key name 和启用顺序以 [docs/runbooks/monthly-review-email-reminder.md](docs/runbooks/monthly-review-email-reminder.md) 为唯一操作入口。README 不保存 secret value。
 
 ## 数据库
 
@@ -240,9 +240,9 @@ pnpm test:e2e:reminder
 4. 确认 Vercel production 环境变量 key names。
 5. 合并 `main`，等待 Vercel production deployment。
 6. 分别回读数据库、Functions 和 Web。任一层成功都不能证明其他层成功。
-7. 把 `released`、`verified_preview` 和 `verified_live` 分开记录到迭代台账。
+7. 在 PR 或交接中分开记录 `merged`、`deployed` 和 `verified_live`，并附当前证据入口。
 
-真实用户 Reminder activation 必须完整执行 [Reminder runbook](docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md)。Schema 或 Function 已发布不表示发送已经开放。
+真实用户 Reminder activation 必须完整执行 [Reminder runbook](docs/runbooks/monthly-review-email-reminder.md)。Schema 或 Function 已发布不表示发送已经开放。
 
 ## 项目结构
 
@@ -263,7 +263,7 @@ supabase/
   functions/           Reminder Edge Functions and Deno tests
 scripts/               E2E harnesses, migration and concurrency tests
 tests/e2e/             Playwright user journeys
-docs/product/          charter, release ledger, POC and runbook
+docs/runbooks/         production activation and rollback procedures
 ```
 
 ## 文档入口
@@ -274,11 +274,7 @@ docs/product/          charter, release ledger, POC and runbook
 | [CONTEXT.md](CONTEXT.md) | 领域术语、状态词和禁止描述 |
 | [PRODUCT.md](PRODUCT.md) | 当前产品目的、用户和范围 |
 | [DESIGN.md](DESIGN.md) | 设计系统、组件与无障碍规则 |
-| [PRODUCT-CHARTER.md](docs/product/PRODUCT-CHARTER.md) | 初始项目判断、范围与业务假设 |
-| [ITERATIONS.md](docs/product/ITERATIONS.md) | 发布状态、验证证据和未声明能力 |
-| [SETUP-SURFACE.md](docs/product/SETUP-SURFACE.md) | Setup 用户任务和验收边界 |
-| [REVIEW-EMAIL-REMINDER-RUNBOOK.md](docs/product/REVIEW-EMAIL-REMINDER-RUNBOOK.md) | Reminder 部署、启用、回滚和指标边界 |
-| [EDGEONE-POC.md](docs/product/EDGEONE-POC.md) | EdgeOne POC 证据与停止条件 |
+| [monthly-review-email-reminder.md](docs/runbooks/monthly-review-email-reminder.md) | Reminder 部署、启用、回滚和指标边界 |
 
 ## 安全边界
 
@@ -288,4 +284,4 @@ docs/product/          charter, release ledger, POC and runbook
 - Reminder Email 不包含账户、余额、金额或 Monthly Action 内容。
 - Provider Acceptance 不等于 delivered。只有签名 webhook 可以确认 delivery receipt。
 - Auth 用户删除受 `RESTRICT` 外键保护。当前没有用户自助删除账号流程。
-- 扩大 beta 前必须重新验证浏览器安全响应头。当前证据和 non-blocking hardening 记录在 [迭代台账](docs/product/ITERATIONS.md)。
+- 扩大 beta 前必须重新验证浏览器安全响应头，并把结果写入对应 PR 或发布交接。

@@ -24,8 +24,36 @@
 | 6 | Monthly execution Home | `verified_live` | [PR #10](https://github.com/Perfecto23/savings-coach/pull/10)；hosted 007 and authenticated production journey |
 | 7 | Trustworthy Progress | `verified_live` | [PR #12](https://github.com/Perfecto23/savings-coach/pull/12)；hosted 008 and authenticated production journey |
 | 8 | Monthly close and rollover | `released` | [PR #14](https://github.com/Perfecto23/savings-coach/pull/14)；hosted 009 and Vercel production |
-| 9 | One-channel reminder experiment | `released` | [PR #18](https://github.com/Perfecto23/savings-coach/pull/18)、[PR #19](https://github.com/Perfecto23/savings-coach/pull/19)、[PR #21](https://github.com/Perfecto23/savings-coach/pull/21)；hosted 011 and live synthetic delivery readback |
+| 9 | One-channel reminder experiment | `released` | [PR #18](https://github.com/Perfecto23/savings-coach/pull/18)、[PR #19](https://github.com/Perfecto23/savings-coach/pull/19)、[PR #21](https://github.com/Perfecto23/savings-coach/pull/21)、[PR #22](https://github.com/Perfecto23/savings-coach/pull/22)；hosted 011 and live synthetic delivery readback |
 | 10 | Paid-intent beta and release candidate | `released` | [PR #16](https://github.com/Perfecto23/savings-coach/pull/16)；hosted 010 and Vercel production |
+
+## Initial 10-Iteration Program Closure
+
+- Closure date: 2026-08-31。
+- Initial program: complete。10 个预定 outcome 均已达到 `released` 或 `verified_live`。
+- Release source: `main` merge commit `59096a7`。
+- Production host: Vercel。公开 `/` → `/login`，`/login` 返回 200。
+- Production schema: migration 011 已应用；全部现有 migration 已按文件名顺序发布。
+- Scope decision: 不增加 Iteration 11。International Preferences 在实现前取消，没有代码、schema 或生产状态变化。
+- Output boundary: Release Candidate 已交付。该状态不表示客户激活、月度留存、真实 Paid Intent、收入或市场需求成立。
+- Reminder boundary: synthetic delivery 已验证。真实用户 sender domain、Cron、production UI 和真实用户触达保持关闭。
+- Next investment: 需要新的产品范围、beta cohort、地区与 privacy jurisdiction、预算上限和发布授权。
+
+### Final Closure Verification
+
+- Release code: `origin/main@59096a7`；当前 diff 只修改 README 和产品文档。
+- Application: `lint`、TypeScript 和 production build 通过；production dependency audit 为 0 个已知漏洞。
+- Database: 8 files / 454 pgTAP 通过；migration preflight 5/5；7 组 concurrency 脚本全部通过。
+- Edge Functions: 30/30。
+- Playwright: 12/12。Default 4/4、Setup 2/2、Plan 2/2、Review 2/2、Reminder 2/2；覆盖 desktop 和 mobile。
+- Production public readback: `/` → `/login`；登录页表单语义正常；无水平溢出；browser error / warning 为 0。
+- GitHub release checks: PR #22 的 GitGuardian、Vercel 和 Vercel Preview Comments 全部通过；开放 PR 为 0。
+- Final documentation review: 10 次迭代状态和边界一致；Iteration 5 的过期 `Not Claimed` 已删除；Iteration 9 已补最终 PR #22 证据。
+- Final security review: `SHIP`。README 的单 migration 部署路径已修复；diff secret pattern 扫描 0 命中。
+
+### Remaining Non-Blocking Risk
+
+- 生产 `/login` 尚未配置 `Content-Security-Policy` 的 `frame-ancestors`、`X-Frame-Options`、`X-Content-Type-Options` 和 `Referrer-Policy`。当前没有 confirmed HTML injection path。该 hardening 在扩大 beta 前处理，不阻止本次项目关闭。
 
 ## Iteration 1 Readback
 
@@ -206,7 +234,6 @@
 
 ### Not Claimed
 
-- authenticated production Plan activation 已完成。
 - production 的 Plan Rule edit、deactivate 和 reactivate 尚未执行。
 
 ### Release Readback

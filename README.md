@@ -1,13 +1,13 @@
 # 储蓄教练 (Savings Coach)
 
-个人储蓄管理应用，通过月度 SOP 流程、多账户余额追踪和 AI 教练帮你实现存钱目标。
+Manual-first 的个人储蓄执行与复盘应用。产品记录储蓄计划、月度行动、余额快照和月度复盘，不转移资金，也不导入银行交易。
 
 ## 技术栈
 
 - **Next.js 16** App Router + Server Actions
 - **Supabase** Auth + PostgreSQL + RLS
 - **Tailwind CSS 4**
-- **Vercel AI SDK** 多模型对话
+- **Vercel AI SDK**（Consumer AI 当前保持关闭）
 - **Recharts** 数据可视化
 
 ## 本地开发
@@ -29,7 +29,20 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
 ### 数据库初始化
 
-在 Supabase Dashboard → SQL Editor 中执行 `supabase/migrations/001_initial_schema.sql`，创建表结构、RLS 策略和索引。
+`supabase/migrations/` 是数据库真源。必须按文件名顺序应用全部 migration。禁止单独执行 `001_initial_schema.sql`；该文件不包含后续 owner-scoped RLS、Setup、Savings Plan、Monthly Review、Paid Intent 和 Reminder 结构。
+
+本地数据库：
+
+```bash
+pnpm exec supabase start
+pnpm exec supabase db reset
+```
+
+已链接的远端项目必须先审查 migration diff，再通过 Supabase CLI 应用全部待执行 migration：
+
+```bash
+pnpm exec supabase db push
+```
 
 ## 部署到 Vercel
 
@@ -48,8 +61,8 @@ app/
     income/           # 薪资配置 + 奖金事件
     milestones/       # 储蓄里程碑
     impulse/          # 冲动拦截
-    coach/            # AI 教练对话
-    settings/         # 账户/SOP模板/AI配置
+    coach/            # Consumer AI 当前关闭
+    settings/         # 账户/SOP 模板/提醒偏好
   login/              # 登录页
   api/chat/           # AI 对话 API
 components/           # UI 组件

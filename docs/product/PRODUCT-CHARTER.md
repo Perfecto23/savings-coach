@@ -1,10 +1,10 @@
 # Savings Coach 产品章程
 
-> Mode: Charter + Solution | Status: 执行中草案 | Owner / CEO: Codex | Sponsor: Perfecto | Date: 2026-08-30
+> Mode: Charter + Solution | Status: 初始 10 次迭代已关闭；业务结果待验证 | Owner / CEO: Codex | Sponsor: Perfecto | Date: 2026-08-31
 
 标记：`已知`、`推断`、`假设`、`待决策`。
 
-本章程已获方向和初始 10 次迭代授权。预算、生产发布和不可逆迁移仍需单独确认。
+初始 10 次迭代已经交付并发布。该状态只证明项目 Output 完成，不证明激活、留存、付费意愿或市场需求成立。后续产品投入需要新的范围和授权。
 
 ## Business Case
 
@@ -19,10 +19,10 @@
 
 | Observation | Evidence | Confidence |
 |---|---|---|
-| 仓库已覆盖计划、月度执行、余额观察、复盘和教练。 | `README.md:1-3,40-63` | Strong |
+| 仓库已覆盖计划、月度执行、余额观察和复盘；Consumer AI 保持关闭。 | `README.md:1-3,53-76` | Strong |
 | 产品已把里程碑执行状态与净值变化分开。 | `lib/milestones.ts:41-61` | Strong |
-| 当前产品固定为中文、人民币和中国薪资税务。 | `app/layout.tsx:15-35`; `lib/tax-calculator.ts:1-18` | Strong |
-| 当前 RLS 允许任意登录用户访问全部业务数据。 | `supabase/migrations/001_initial_schema.sql:147-169` | Strong |
+| Setup 支持 locale、timezone 和单一基础货币；全局 shell 仍使用中文，完整多语言体验尚未交付。 | `lib/setup/contracts.ts:1-16`; `app/layout.tsx:11-50` | Strong |
+| 业务数据已经完成 owner-scoped RLS；Consumer AI 和 BYOK 保持关闭。 | `supabase/migrations/004_owner_isolation.sql:293-409`; `docs/product/ITERATIONS.md` Iteration 3 readback | Strong |
 | 当前没有客户访谈、激活、留存或付费证据。 | 当前 schema 与 route 清单 | Weak opportunity evidence |
 
 Opportunity 仍是 provisional。当前证据证明产品闭环存在，但不证明市场需求成立。
@@ -95,7 +95,7 @@ Opportunity 仍是 provisional。当前证据证明产品闭环存在，但不�
 
 ### Direction
 
-保留 Next.js 与 Supabase。沿现有 manual-first 月度闭环渐进演进。先验证 EdgeOne，再建立 owner 安全边界、国际化设置、激活和留存闭环。平台不能反向定义产品架构。
+保留 Next.js 与 Supabase。EdgeOne POC 已得到 `FAIL_FOR_CURRENT_SEQUENCE`，当前发布 host 为 Vercel。owner 安全边界、Setup 偏好、激活和月度留存闭环已经交付。平台不能反向定义产品架构。
 
 ### Alternatives
 
@@ -195,14 +195,24 @@ Critical path：`1 → 2 → 3 → 4 → 5 → 6 → 8 → 10`。
 | Iteration 8 后一个周期 | 产品是否形成月度复访？ | Codex | 核心循环失败则暂停 reminder 和 paid work |
 | Iteration 10 | 是否有付费意愿和安全 release candidate？ | Codex / Perfecto | 依据证据继续、收窄或停止 |
 
-## Decision Blockers
+## Initial Program Closure
 
-1. Budget、vendor spend 和单次迭代的 engineering effort ceiling 未定义。
-2. 首批 beta 地区和 privacy jurisdiction 未选择。
-3. Beta cohort 和招募渠道未定义。
-4. EdgeOne preview access 和隔离 staging Supabase 未确认。
+- **Closure date**：2026-08-31。
+- **Delivery status**：初始 10 次迭代全部达到 `released` 或 `verified_live`。
+- **Current release**：Vercel production；Supabase production schema 已应用到 migration 011。
+- **Feature decision**：不增加 Iteration 11。International Preferences 在实现前取消，没有代码、schema 或生产状态变化。
+- **Internationalization boundary**：locale、timezone 和基础货币语义已经进入 Setup 与核心金额格式化；完整 UI 多语言切换未交付。
+- **Reminder boundary**：synthetic delivery 已验证；真实用户 sender domain、Cron 和 production UI 保持关闭。
+- **Business outcome boundary**：当前没有 beta cohort、激活率、月度留存、真实 Paid Intent 或收入证据。
 
-这些 blocker 不阻止 Iteration 1。本章程在这些事项明确前不称为最终 Charter。
+## Post-Program Decision Inputs
+
+1. 后续投入的 Budget、vendor spend 和 engineering effort ceiling。
+2. 首批 beta 地区和 privacy jurisdiction。
+3. Beta cohort 和招募渠道。
+4. 真实用户 Email Reminder 的 verified sender domain、Cron 和 production UI 授权。
+
+这些输入不阻止初始 10 次迭代关闭。它们阻止真实用户 beta、Email Reminder launch 和下一阶段投资决策。
 
 ## Rubric Self-Review
 
@@ -220,7 +230,7 @@ Critical path：`1 → 2 → 3 → 4 → 5 → 6 → 8 → 10`。
 | Governance readiness | ⚠️ | 本文不是 Full Initiation；cadence 和 backup 未定义 |
 | Benefits Realization | ✅ | 有 checkpoint、owner 和 course correction |
 
-**总体判定**：`需重大修正` 后才能作为最终签字 Charter。当前可作为 Iteration 1–2 的执行草案。
+**总体判定**：作为初始 10 次迭代的历史执行 Charter，交付已经关闭。作为下一阶段投资 Charter，仍是 `需重大修正`；缺少客户证据、预算上限、beta 地区和 cohort。
 
 ## Decision Trace
 
@@ -230,3 +240,6 @@ Critical path：`1 → 2 → 3 → 4 → 5 → 6 → 8 → 10`。
 - 2026-08-31 — Iteration 9 拒绝将 Home prompt 表示为 scheduler-backed reminder。Outbound reminder 等待 provider credential、verified sender 和费用授权。
 - 2026-08-31 — Iteration 9 将 Send Commit 定义为取消边界。模糊 Provider 结果使用同一 idempotency key 恢复，不得错误标记为 cancelled 或 failed。
 - 2026-08-31 — Iteration 10 冻结 `pro_beta_usd_499_monthly_v1` 价格假设。Paid Intent 不创建付款、订阅、trial 或 entitlement。
+- 2026-08-31 — Iteration 9 使用 Resend synthetic recipient 完成 delivery readback。真实用户 sender domain、Cron 和 production UI 继续保持关闭。
+- 2026-08-31 — 初始 10 次迭代关闭。项目交付与业务结果分开记录；当前不声称激活、留存、付费或市场验证成功。
+- 2026-08-31 — 取消 Iteration 11 International Preferences。该方案没有进入实现，不以低价值功能增加迭代数量。

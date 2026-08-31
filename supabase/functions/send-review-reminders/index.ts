@@ -2,13 +2,16 @@ import { withSupabase } from "npm:@supabase/server@1.4.1";
 import { createReminderRpcGateway } from "../_shared/reminder-rpc.ts";
 import { createSenderEndpointHandler } from "./handler.ts";
 
+export const REMINDER_CRON_SECRET_NAME = "reminder_cron" as const;
+const REMINDER_CRON_AUTH = `secret:${REMINDER_CRON_SECRET_NAME}` as const;
+
 let handler: ReturnType<typeof createSenderEndpointHandler> | undefined;
 
 function getHandler() {
   handler ??= createSenderEndpointHandler(
     (core) =>
       withSupabase(
-        { auth: "secret:reminder-cron", cors: "disabled" },
+        { auth: REMINDER_CRON_AUTH, cors: "disabled" },
         async (request, context) =>
           core(
             request,

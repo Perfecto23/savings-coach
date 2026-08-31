@@ -219,6 +219,7 @@ pnpm test:review-reminder-functions
 
 ```bash
 pnpm test:e2e
+pnpm test:e2e:impulse
 pnpm test:e2e:setup
 pnpm test:e2e:plan
 pnpm test:e2e:review
@@ -226,7 +227,7 @@ pnpm test:e2e:reminder
 ```
 
 - 默认 E2E 只覆盖公开 Login 和 release boundaries。
-- 四个 authenticated suite 要求项目本地 Supabase 已启动，并覆盖 Desktop Chromium 和 Pixel 5 viewport。
+- 五个 authenticated suite 要求项目本地 Supabase 已启动，并覆盖 Desktop Chromium 和 Pixel 5 viewport。
 - Authenticated suite 会重建本地数据库并写入测试 fixture。
 - E2E 不自动停止 Supabase。验证完成后运行 `pnpm exec supabase stop`。
 

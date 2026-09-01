@@ -21,7 +21,7 @@ export function AccountForm({ account, onSubmit, onCancel, copy }: AccountFormPr
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">

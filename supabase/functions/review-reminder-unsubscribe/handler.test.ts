@@ -52,10 +52,12 @@ Deno.test("unsubscribe GET only renders confirmation and performs no write", asy
     gateway(tokens),
   );
   assert.equal(response.status, 200);
-  assert.match(
-    await response.text(),
-    /Unsubscribe from monthly review reminders/,
-  );
+  const html = await response.text();
+  assert.match(html, /<html lang="zh-CN">/);
+  assert.match(html, /<title>退订月度复盘邮件提醒</);
+  assert.match(html, /确定退订月度复盘邮件提醒？/);
+  assert.match(html, /不会再发送未来的月度复盘邮件提醒/);
+  assert.match(html, />确认退订</);
   assert.deepEqual(tokens, []);
 });
 
@@ -90,6 +92,26 @@ Deno.test("unsubscribe POST response is blank and constant for known-shaped and 
   assert.notEqual(tokens[0], tokens[1]);
 });
 
+Deno.test("unsubscribe processing failure returns a Chinese public error", async () => {
+  const failingGateway = {
+    ...gateway([]),
+    unsubscribe: async () => {
+      throw new Error("synthetic failure");
+    },
+  } as ReminderRpcGateway;
+  const response = await handleReviewReminderUnsubscribe(
+    new Request(
+      "https://example.test/functions/v1/review-reminder-unsubscribe?token=11111111-1111-4111-8111-111111111111",
+      { method: "POST" },
+    ),
+    failingGateway,
+  );
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), {
+    error: { code: "processing_failed", message: "退订处理失败。" },
+  });
+});
+
 Deno.test("unsubscribe rejects a body over 8 KiB from Content-Length before reading it", async () => {
   const tokens: string[] = [];
   const response = await handleReviewReminderUnsubscribe(
@@ -104,7 +126,7 @@ Deno.test("unsubscribe rejects a body over 8 KiB from Content-Length before read
   assert.deepEqual(await response.json(), {
     error: {
       code: "request_body_too_large",
-      message: "Request body is too large.",
+      message: "请求内容过大。",
     },
   });
   assert.deepEqual(tokens, []);

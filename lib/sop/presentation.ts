@@ -1,5 +1,3 @@
-import { isChineseLocale } from "@/lib/i18n/locale";
-
 export interface SopCopy {
   page: {
     title: string;
@@ -49,71 +47,7 @@ export interface SopCopy {
   errors: Record<string, string>;
 }
 
-const ENGLISH_COPY: SopCopy = {
-  page: {
-    title: "Monthly SOP",
-    description: "Follow your monthly savings process step by step.",
-    monthAriaLabel: "Choose month",
-  },
-  checklist: {
-    loading: "Loading monthly SOP…",
-    emptyBeforeLink: "No SOP template yet. Configure one in",
-    emptyLink: "Settings",
-    emptyAfterLink: ".",
-    closed:
-      "This month is closed. Its execution record cannot be changed. Balance Snapshots remain observations and can still be corrected.",
-    progress: "This month’s progress",
-    celebrationTitle: "This month’s SOP is complete!",
-    celebrationDescription: "Good work. Keep going.",
-    dayPrefix: "Day",
-    daySuffix: "of each month",
-    addTemporaryTitle: "Add a temporary step",
-    temporaryNamePlaceholder: "Step name, for example move funds between accounts",
-    temporaryNameAria: "Temporary step name",
-    dueDay: "Due day",
-    amountOptional: "Amount (optional)",
-    amount: "Amount",
-    noteOptional: "Note (optional)",
-    note: "Note",
-    cancel: "Cancel",
-    add: "Add",
-    addTemporary: "Add a temporary step",
-  },
-  step: {
-    completedClosed: "Completed in closed month",
-    incompleteClosed: "Incomplete in closed month",
-    markIncomplete: "Mark as incomplete",
-    markComplete: "Mark as complete",
-    temporary: "Temporary",
-    monthlyActionAmount: "Monthly Action amount",
-    cancel: "Cancel",
-    edit: "Edit",
-    delete: "Delete",
-    deleteConfirm: "Delete this temporary step?",
-    completedAt: "Completed at",
-    note: "Note",
-    amount: "Amount",
-    save: "Save",
-    monthlyActionHelp:
-      "This adjusts this month’s plan. It does not record an actual bank transfer.",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_MONTH: "Choose a valid month.",
-    LOAD_FAILED: "Monthly SOP could not be loaded. Try again.",
-    INVALID_ID: "The monthly SOP step was invalid.",
-    NOT_FOUND: "Monthly SOP step was not found.",
-    UPDATE_FAILED: "Monthly SOP step could not be updated. Try again.",
-    INVALID_LABEL: "Enter a step name.",
-    INVALID_DAY: "Due day must be between 1 and 31.",
-    INVALID_AMOUNT: "Enter a valid non-negative amount.",
-    DELETE_FORBIDDEN: "Manage template steps in Settings.",
-    INVALID_NOTE: "Note must be 1,000 characters or fewer.",
-    SAVE_FAILED: "Changes could not be saved. Try again.",
-  },
-};
-
-const CHINESE_COPY: SopCopy = {
+const COPY: SopCopy = {
   page: {
     title: "月度 SOP",
     description: "按步骤执行每月储蓄流程。",
@@ -176,8 +110,8 @@ const CHINESE_COPY: SopCopy = {
   },
 };
 
-export function getSopCopy(locale: string | null | undefined): SopCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getSopCopy(): SopCopy {
+  return COPY;
 }
 
 export function getSopErrorMessage(error: string, errors: Record<string, string>) {

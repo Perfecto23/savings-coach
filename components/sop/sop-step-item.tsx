@@ -5,6 +5,7 @@ import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { toggleSopStep, updateSopStep, deleteAdHocSopStep } from "@/app/(app)/sop/actions";
 import { formatMoney } from "@/lib/format-money";
 import { getSopErrorMessage, type SopCopy } from "@/lib/sop/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface SopStepItemProps {
   record: SopDisplayRecord;
@@ -32,6 +33,7 @@ export function SopStepItem({
   const [amount, setAmount] = useState(String(record.amount ?? ""));
   const [note, setNote] = useState(record.note ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const isMonthlyAction = record.scheduled_for != null;
 
   async function handleToggle() {
@@ -51,7 +53,6 @@ export function SopStepItem({
   const isAdHoc = record.is_ad_hoc;
 
   async function handleDelete() {
-    if (!window.confirm(copy.deleteConfirm)) return;
     setLoading(true);
     const result = await deleteAdHocSopStep(record.id);
     if (result.success) {
@@ -159,7 +160,7 @@ export function SopStepItem({
                 {isAdHoc && (
                   <button
                     type="button"
-                    onClick={handleDelete}
+                    onClick={() => setDeleteDialogOpen(true)}
                     disabled={loading}
                     className="cursor-pointer text-xs text-gray-400 transition-colors hover:text-red-500"
                   >
@@ -230,6 +231,12 @@ export function SopStepItem({
           {error}
         </p>
       ) : null}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        description={copy.deleteConfirm}
+        onCancel={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

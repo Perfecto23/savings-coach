@@ -1,10 +1,8 @@
 import type {
   SetupBaseCurrency,
   SetupFormErrorCode,
-  SetupLocale,
   SetupStep,
 } from "./contracts";
-import { isChineseLocale } from "@/lib/i18n/locale";
 
 type VisibleSetupStep = Exclude<SetupStep, "complete">;
 
@@ -24,13 +22,11 @@ export interface SetupCopy {
     checkpoint: string;
     title: string;
     description: string;
-    language: string;
     timeZone: string;
     timeZoneHelp: string;
     baseCurrency: string;
     currencyLocked: string;
     currencyHelp: string;
-    localeLabels: Record<SetupLocale, string>;
     currencyLabels: Record<SetupBaseCurrency, string>;
     saving: string;
     save: string;
@@ -80,141 +76,14 @@ export interface SetupCopy {
   errors: Record<SetupFormErrorCode, string>;
 }
 
-const ENGLISH_COPY: SetupCopy = {
-  shell: {
-    brand: "Savings Coach",
-    signOut: "Sign out",
-    title: "Set your savings starting point",
-    description:
-      "Three short checkpoints. About two minutes. No bank connection required.",
-    steps: {
-      preferences: {
-        label: "Your region",
-        description: "Language, time zone, and currency",
-      },
-      savingsAccount: {
-        label: "Your savings account",
-        description: "The account you want to grow",
-      },
-      initialBalance: {
-        label: "Your current balance",
-        description: "A starting point you can return to",
-      },
-    },
-    region: "Region",
-    savingsAccount: "Savings account",
-    startingBalance: "Starting balance",
-    privacy:
-      "Your entries stay private to your account. Savings Coach records what you enter; it never moves money.",
-  },
-  preferences: {
-    checkpoint: "Checkpoint 1 of 3",
-    title: "Your region",
-    description:
-      "These settings keep dates and money readable. They do not connect a bank or move funds.",
-    language: "Language and locale",
-    timeZone: "Time zone",
-    timeZoneHelp: "Used to decide which calendar day a balance belongs to.",
-    baseCurrency: "Base currency",
-    currencyLocked:
-      "Your existing balance history uses CNY, so this value is locked.",
-    currencyHelp:
-      "All balances in this workspace use one currency. It locks after your first balance.",
-    localeLabels: {
-      "en-US": "English (United States)",
-      "en-SG": "English (Singapore)",
-      "zh-CN": "Simplified Chinese",
-    },
-    currencyLabels: {
-      AUD: "AUD — Australian dollar",
-      CAD: "CAD — Canadian dollar",
-      CHF: "CHF — Swiss franc",
-      CNY: "CNY — Chinese yuan",
-      EUR: "EUR — Euro",
-      GBP: "GBP — British pound",
-      HKD: "HKD — Hong Kong dollar",
-      NZD: "NZD — New Zealand dollar",
-      SGD: "SGD — Singapore dollar",
-      USD: "USD — US dollar",
-    },
-    saving: "Saving…",
-    save: "Save and continue",
-  },
-  account: {
-    checkpoint: "Checkpoint 2 of 3",
-    title: "Your savings account",
-    description:
-      "Choose the account whose balance will mark your starting point. Never enter an account number or credential.",
-    choice: "Account choice",
-    useExisting: "Use an existing account",
-    createNew: "Create a new account",
-    savingsAccount: "Savings account",
-    existingHelp: "Existing balance history stays unchanged.",
-    accountName: "Account name",
-    accountPlaceholder: "Rainy Day Fund",
-    institution: "Institution (optional)",
-    institutionPlaceholder: "Bank or provider",
-    saving: "Saving…",
-    save: "Save and continue",
-  },
-  balance: {
-    checkpoint: "Checkpoint 3 of 3",
-    title: "Your current balance",
-    descriptionBeforeAccount: "Record what is in",
-    descriptionAt: "at",
-    descriptionAfter: ". This is a balance observation, not a transfer.",
-    currentBalance: "Current balance",
-    amountHelpBeforeCurrency: "Enter an amount in",
-    amountHelpAfterCurrency: "Use no more than two decimal places.",
-    balanceAsOf: "Balance as of",
-    todayBeforeTimeZone: "Today in",
-    todayBetween: "is",
-    saving: "Saving…",
-    save: "Save and continue",
-  },
-  complete: {
-    brand: "Savings Coach",
-    signOut: "Sign out",
-    title: "Your starting point is saved",
-    amountBefore: "You’re starting with",
-    amountBetween: "in",
-    amountAfter: ".",
-    continue: "Continue to dashboard",
-    boundary:
-      "This confirms a balance you entered. It does not confirm a bank transaction.",
-  },
-  loading: "Loading your Setup…",
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_LOCALE: "Choose a supported language.",
-    INVALID_TIME_ZONE: "Choose a valid time zone.",
-    INVALID_BASE_CURRENCY: "Choose a supported base currency.",
-    BASE_CURRENCY_LOCKED:
-      "Base currency cannot change after a balance is recorded.",
-    PREFERENCES_REQUIRED: "Save your preferences first.",
-    INVALID_ACCOUNT_MODE: "Choose whether to create or attach an account.",
-    INVALID_ACCOUNT_NAME: "Enter an account name of 100 characters or fewer.",
-    INVALID_INSTITUTION: "Institution must be 100 characters or fewer.",
-    ACCOUNT_NOT_FOUND: "Savings account was not found.",
-    ACCOUNT_NOT_SAVINGS: "Choose a savings account.",
-    SAVINGS_ACCOUNT_REQUIRED: "Save a savings account first.",
-    INVALID_BALANCE:
-      "Enter a non-negative balance with at most two decimal places.",
-    INVALID_RECORDED_AT: "Choose a valid date that is not in the future.",
-    INITIAL_BALANCE_CONFLICT: "A different balance already exists for this date.",
-    INITIAL_BALANCE_LOCKED: "Use Balance Snapshots to record later observations.",
-    SETUP_SAVE_FAILED: "Setup could not be saved. Try again.",
-  },
-};
-
-const CHINESE_COPY: SetupCopy = {
+const COPY: SetupCopy = {
   shell: {
     brand: "储蓄教练",
     signOut: "退出登录",
     title: "设置你的储蓄起点",
     description: "完成三个简短步骤，约需两分钟。无需连接银行。",
     steps: {
-      preferences: { label: "地区偏好", description: "语言、时区和基础货币" },
+      preferences: { label: "地区偏好", description: "时区和基础货币" },
       savingsAccount: { label: "储蓄账户", description: "选择要持续积累的账户" },
       initialBalance: { label: "当前余额", description: "记录可回看的起始余额" },
     },
@@ -227,17 +96,11 @@ const CHINESE_COPY: SetupCopy = {
     checkpoint: "第 1 步，共 3 步",
     title: "地区偏好",
     description: "这些设置用于显示日期和金额。产品不会连接银行或转移资金。",
-    language: "语言与地区",
     timeZone: "时区",
     timeZoneHelp: "用于判断余额快照属于哪个自然日。",
     baseCurrency: "基础货币",
     currencyLocked: "现有余额历史使用 CNY，因此基础货币已锁定。",
     currencyHelp: "所有余额使用一种基础货币。记录首个余额后将锁定。",
-    localeLabels: {
-      "en-US": "英语（美国）",
-      "en-SG": "英语（新加坡）",
-      "zh-CN": "简体中文",
-    },
     currencyLabels: {
       AUD: "AUD — 澳大利亚元",
       CAD: "CAD — 加拿大元",
@@ -316,6 +179,6 @@ const CHINESE_COPY: SetupCopy = {
   },
 };
 
-export function getSetupCopy(locale: string | null | undefined): SetupCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getSetupCopy(): SetupCopy {
+  return COPY;
 }

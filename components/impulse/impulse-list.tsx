@@ -5,6 +5,7 @@ import type { ImpulseLog } from "@/lib/types/database";
 import { deleteImpulseLog } from "@/app/(app)/impulse/actions";
 import { formatMoney } from "@/lib/format-money";
 import { formatImpulseDate, type ImpulseCopy } from "@/lib/impulse/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ImpulseListProps {
   logs: ImpulseLog[];
@@ -22,9 +23,9 @@ export function ImpulseList({
   onDeleted,
 }: ImpulseListProps) {
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   async function handleDelete(id: string) {
-    if (!window.confirm(copy.deleteConfirm)) return;
     const result = await deleteImpulseLog(id);
     if (result.success) {
       onDeleted(id);
@@ -57,14 +58,14 @@ export function ImpulseList({
               <div className="flex items-center gap-3">
                 <span className="truncate font-medium text-gray-900">{log.item_name}</span>
                 <span
-                  aria-label={`${copy.amountAriaLabel}${locale.toLowerCase().startsWith("zh") ? "：" : ": "}${formatMoney(log.estimated_price, locale, baseCurrency)}`}
+                  aria-label={`${copy.amountAriaLabel}：${formatMoney(log.estimated_price, locale, baseCurrency)}`}
                   className="font-mono text-sm text-green-600"
                 >
                   {formatMoney(log.estimated_price, locale, baseCurrency)}
                 </span>
               </div>
               <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
-                <span>{formatImpulseDate(log.logged_at, locale)}</span>
+                <span>{formatImpulseDate(log.logged_at)}</span>
                 {log.reason && (
                   <span className="text-gray-500">· {log.reason}</span>
                 )}
@@ -72,7 +73,7 @@ export function ImpulseList({
             </div>
             <button
               type="button"
-              onClick={() => handleDelete(log.id)}
+              onClick={() => setPendingDeleteId(log.id)}
               className="cursor-pointer text-xs text-gray-300 transition-colors hover:text-red-500"
             >
               {copy.delete}
@@ -80,6 +81,14 @@ export function ImpulseList({
           </li>
         ))}
       </ul>
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        description={copy.deleteConfirm}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) return handleDelete(pendingDeleteId);
+        }}
+      />
     </div>
   );
 }

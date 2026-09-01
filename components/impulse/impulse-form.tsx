@@ -12,11 +12,10 @@ interface ImpulseFormProps {
   baseCurrency: string;
   copy: ImpulseCopy["form"];
   allCopy: ImpulseCopy;
-  locale: string;
   onAdded: (log: ImpulseLog) => void;
 }
 
-export function ImpulseForm({ baseCurrency, copy, allCopy, locale, onAdded }: ImpulseFormProps) {
+export function ImpulseForm({ baseCurrency, copy, allCopy, onAdded }: ImpulseFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +45,7 @@ export function ImpulseForm({ baseCurrency, copy, allCopy, locale, onAdded }: Im
         </div>
       )}
 
-      <form id="impulse-form" action={handleSubmit} className="mt-4 space-y-4">
+      <form id="impulse-form" action={handleSubmit} className="mt-4 space-y-4" noValidate>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="item_name" className="block text-sm font-medium text-gray-700">
@@ -64,9 +63,7 @@ export function ImpulseForm({ baseCurrency, copy, allCopy, locale, onAdded }: Im
 
           <div>
             <label htmlFor="estimated_price" className="block text-sm font-medium text-gray-700">
-              {locale.toLowerCase().startsWith("zh")
-                ? `${copy.amountLabel}（${baseCurrency}）`
-                : `${copy.amountLabel} (${baseCurrency})`}
+              {copy.amountLabel}（{baseCurrency}）
             </label>
             <input
               id="estimated_price"

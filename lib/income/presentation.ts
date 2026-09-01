@@ -1,5 +1,3 @@
-import { isChineseLocale } from "@/lib/i18n/locale";
-
 export type IncomeActionErrorCode =
   | "UNAUTHENTICATED"
   | "INVALID_MONTHLY_GROSS"
@@ -9,6 +7,7 @@ export type IncomeActionErrorCode =
   | "INVALID_SPECIAL_DEDUCTIONS"
   | "SALARY_NOT_FOUND"
   | "INVALID_BONUS_TYPE"
+  | "INVALID_BONUS_LABEL"
   | "INVALID_AMOUNT"
   | "INVALID_DATE"
   | "BONUS_NOT_FOUND"
@@ -88,97 +87,7 @@ export interface IncomeCopy {
   errors: Record<IncomeActionErrorCode, string>;
 }
 
-const ENGLISH_COPY: IncomeCopy = {
-  page: {
-    title: "Income",
-    description: "Configure salary assumptions, view monthly estimates, and manage Bonus Events.",
-  },
-  salary: {
-    title: "Salary configuration",
-    description: "Estimate monthly take-home income with China’s cumulative withholding method.",
-    monthlyGross: "Monthly gross",
-    socialInsurance: "Monthly employee social insurance",
-    socialPlaceholder: "Pension, medical, and unemployment",
-    housingRate: "Housing fund rate (%)",
-    housingBase: "Housing fund base",
-    housingBasePlaceholder: "Defaults to monthly gross",
-    specialDeductions: "Monthly special deductions",
-    specialPlaceholder: "For example rent or education",
-    effectiveFrom: "Effective from",
-    estimatedNet: "Estimated monthly take-home:",
-    rangeDirection: "(start → end of year)",
-    saving: "Saving…",
-    save: "Save configuration",
-  },
-  bonusForm: {
-    type: "Type",
-    signingBonus: "Signing bonus",
-    yearEndBonus: "Year-end bonus",
-    other: "Other",
-    name: "Name",
-    namePlaceholder: "For example, June signing bonus",
-    grossAmount: "Gross amount",
-    expectedDate: "Expected date",
-    targetAccount: "Planned target account",
-    unspecified: "Not specified",
-    note: "Note",
-    cancel: "Cancel",
-    saving: "Saving…",
-    update: "Update",
-    add: "Add",
-  },
-  bonuses: {
-    title: "Bonus Events",
-    description: "One-time income such as signing and year-end bonuses.",
-    add: "+ Add",
-    empty: "No Bonus Events yet.",
-    type: "Type",
-    name: "Name",
-    amount: "Amount",
-    date: "Date",
-    targetAccount: "Target account",
-    status: "Status",
-    actions: "Actions",
-    actual: "Actual",
-    received: "Received",
-    actualAmount: "Actual amount received",
-    confirm: "Confirm",
-    markReceived: "Mark received",
-    edit: "Edit",
-    delete: "Delete",
-    deleteConfirm: "Delete this Bonus Event?",
-  },
-  forecast: {
-    title: "Monthly take-home estimate",
-    description: "China cumulative withholding usually produces lower tax early in the year and higher tax later.",
-    month: "Month",
-    gross: "Gross",
-    socialInsurance: "Social insurance",
-    housingFund: "Housing fund",
-    tax: "Tax",
-    net: "Take-home",
-    housingCumulative: "Housing fund cumulative",
-    bonus: "Bonus",
-    total: "Total",
-    monthSuffix: "",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_MONTHLY_GROSS: "Enter a valid monthly gross amount.",
-    INVALID_HOUSING_RATE: "Enter a valid housing fund rate.",
-    INVALID_HOUSING_BASE: "Enter a valid housing fund base.",
-    INVALID_SOCIAL_INSURANCE: "Enter a valid social insurance amount.",
-    INVALID_SPECIAL_DEDUCTIONS: "Enter a valid special deduction amount.",
-    SALARY_NOT_FOUND: "Salary configuration was not found.",
-    INVALID_BONUS_TYPE: "Choose a valid Bonus Event type.",
-    INVALID_AMOUNT: "Enter a valid positive amount.",
-    INVALID_DATE: "Choose a valid date.",
-    BONUS_NOT_FOUND: "Bonus Event was not found.",
-    SAVE_FAILED: "Changes could not be saved. Try again.",
-  },
-};
-
-const CHINESE_COPY: IncomeCopy = {
+const COPY: IncomeCopy = {
   page: { title: "收入管理", description: "配置薪资假设、查看月度预测并管理奖金事件。" },
   salary: {
     title: "薪资配置",
@@ -258,6 +167,7 @@ const CHINESE_COPY: IncomeCopy = {
     INVALID_SPECIAL_DEDUCTIONS: "请输入有效的专项扣除金额。",
     SALARY_NOT_FOUND: "找不到薪资配置。",
     INVALID_BONUS_TYPE: "请选择有效的奖金事件类型。",
+    INVALID_BONUS_LABEL: "请输入奖金事件名称。",
     INVALID_AMOUNT: "请输入有效的正数金额。",
     INVALID_DATE: "请选择有效日期。",
     BONUS_NOT_FOUND: "找不到该奖金事件。",
@@ -265,8 +175,8 @@ const CHINESE_COPY: IncomeCopy = {
   },
 };
 
-export function getIncomeCopy(locale: string | null | undefined): IncomeCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getIncomeCopy(): IncomeCopy {
+  return COPY;
 }
 
 export function getIncomeErrorMessage(error: string, copy: IncomeCopy): string {

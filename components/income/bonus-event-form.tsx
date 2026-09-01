@@ -30,7 +30,7 @@ export function BonusEventForm({
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="type" className="block text-sm font-medium text-gray-700">
@@ -93,7 +93,9 @@ export function BonusEventForm({
           <input
             id="expected_date"
             name="expected_date"
-            type="date"
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
             required
             defaultValue={event?.expected_date}
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"

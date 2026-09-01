@@ -10,6 +10,7 @@ import type {
   MilestoneDeleteErrorCode,
   MilestonesCopy,
 } from "@/lib/milestones/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface MilestoneTableProps {
   milestones: MonthlyMilestone[];
@@ -38,11 +39,11 @@ export function MilestoneTable({
 }: MilestoneTableProps) {
   const [milestones, setMilestones] = useState(initialMilestones);
   const [deleteError, setDeleteError] = useState<MilestoneDeleteErrorCode | null>(null);
+  const [pendingDeleteMonth, setPendingDeleteMonth] = useState<string | null>(null);
   const router = useRouter();
   const currentMonth = currentYearMonth;
 
   async function handleDelete(yearMonth: string) {
-    if (!window.confirm(copy.deleteConfirm.replace("{month}", formatMonth(yearMonth, locale)))) return;
     setDeleteError(null);
     const result = await deleteMilestone(yearMonth);
     if (result.success) {
@@ -157,7 +158,7 @@ export function MilestoneTable({
                         milestone.actual_savings == null ? (
                           <button
                             type="button"
-                            onClick={() => handleDelete(milestone.year_month)}
+                            onClick={() => setPendingDeleteMonth(milestone.year_month)}
                             className="cursor-pointer text-xs text-stone-400 transition-colors hover:text-red-600"
                           >
                             {copy.delete}
@@ -172,6 +173,17 @@ export function MilestoneTable({
           </table>
         </div>
       </div>
+      <ConfirmDialog
+        open={pendingDeleteMonth !== null}
+        description={copy.deleteConfirm.replace(
+          "{month}",
+          pendingDeleteMonth ? formatMonth(pendingDeleteMonth, locale) : ""
+        )}
+        onCancel={() => setPendingDeleteMonth(null)}
+        onConfirm={() => {
+          if (pendingDeleteMonth) return handleDelete(pendingDeleteMonth);
+        }}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { BalanceForm } from "@/components/balances/balance-form";
 import type { Account } from "@/lib/types/database";
 import type { BalanceDisplaySnapshot } from "@/lib/balances/contracts";
 import { getBalancesCopy } from "@/lib/balances/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -42,16 +43,16 @@ export default async function BalancesPage() {
       .order("recorded_at", { ascending: true }),
     supabase
       .from("owner_setup")
-      .select("locale, time_zone, base_currency")
+      .select("time_zone, base_currency")
       .eq("owner_id", user.id)
       .maybeSingle(),
   ]);
 
   const accounts = (accountsRes.data || []) as Account[];
   const snapshots = (snapshotsRes.data || []) as BalanceDisplaySnapshot[];
-  const locale = setupRes.data?.locale || "en-US";
+  const locale = APP_LOCALE;
   const baseCurrency = setupRes.data?.base_currency || "USD";
-  const copy = getBalancesCopy(locale);
+  const copy = getBalancesCopy();
 
   // 每个账户的最新快照
   const latestByAccount = new Map<string, BalanceDisplaySnapshot>();

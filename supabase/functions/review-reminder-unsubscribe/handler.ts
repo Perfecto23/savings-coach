@@ -22,15 +22,15 @@ function confirmationPage(token: string): Response {
   const action = token ? `?token=${encodeURIComponent(token)}` : "";
   const html = [
     "<!doctype html>",
-    '<html lang="en"><head><meta charset="utf-8">',
+    '<html lang="zh-CN"><head><meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width,initial-scale=1">',
-    "<title>Unsubscribe from monthly review reminders</title></head>",
+    "<title>退订月度复盘邮件提醒</title></head>",
     "<body><main>",
-    "<h1>Unsubscribe from monthly review reminders?</h1>",
-    "<p>This stops future monthly review reminder emails.</p>",
+    "<h1>确定退订月度复盘邮件提醒？</h1>",
+    "<p>退订后，系统不会再发送未来的月度复盘邮件提醒。</p>",
     `<form method="post" action="${escapeHtmlAttribute(action)}">`,
     '<input type="hidden" name="List-Unsubscribe" value="One-Click">',
-    '<button type="submit">Unsubscribe</button>',
+    '<button type="submit">确认退订</button>',
     "</form></main></body></html>",
   ].join("");
   return new Response(html, {
@@ -68,7 +68,7 @@ export async function handleReviewReminderUnsubscribe(
   if (token === null) {
     return errorResponse(
       "request_body_too_large",
-      "Request body is too large.",
+      "请求内容过大。",
       413,
     );
   }
@@ -84,7 +84,7 @@ export async function handleReviewReminderUnsubscribe(
     );
     return errorResponse(
       "processing_failed",
-      "Unsubscribe processing failed.",
+      "退订处理失败。",
       500,
     );
   }

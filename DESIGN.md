@@ -1,5 +1,5 @@
 ---
-name: Savings Coach
+name: 储蓄教练
 description: A calm, manual-first savings workspace with warm paper surfaces and decisive orange actions.
 colors:
   canvas: "#fffbf5"
@@ -84,7 +84,7 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Calm Ledger."** Savings Coach treats financial input as a deliberate record, not a performance dashboard. Warm paper surfaces make manual entry approachable. Dark anchoring areas mark orientation and completion. Orange identifies the next action, not generic decoration.
+**Creative North Star: "The Calm Ledger."** 储蓄教练 treats financial input as a deliberate record, not a performance dashboard. Warm paper surfaces make manual entry approachable. Dark anchoring areas mark orientation and completion. Orange identifies the next action, not generic decoration.
 
 **Key Characteristics:**
 
@@ -113,11 +113,11 @@ Use `tabular-nums` for values that users compare, confirm, or scan in a list. Ke
 
 ## Language
 
-Owner locale 是已登录产品的界面语言真源。`zh-CN` 使用中文；`en-US` 与 `en-SG` 使用英文。同一 Surface 的标题、说明、label、placeholder、按钮、状态、ARIA 名称、确认框和错误提示必须使用同一种语言。
+产品界面固定使用简体中文。所有 Surface 的标题、说明、label、placeholder、按钮、状态、ARIA 名称、确认框和错误提示都使用中文。
 
-日期和金额使用完整 owner locale。币种继续使用 owner base currency。用户输入、账户名、币种代码和 IANA 时区保持原值。Server Component 选择 feature-local typed copy；Client Component 只接收当前交互所需的 copy slice。
+日期和金额固定使用 `zh-CN` 格式。币种继续使用 owner base currency。用户输入、账户名、币种代码和 IANA 时区保持原值。Server Component 使用 feature-local typed presentation；Client Component 只接收当前交互所需的 copy slice。
 
-**The One Language Rule.** 已知另一语言的内建产品文案不能出现在当前 Surface。用户输入和标准标识符不属于语言泄漏。
+**The One Language Rule.** 英文内建产品文案不能出现在用户界面。用户输入和标准标识符不属于语言泄漏。
 
 ## Layout
 
@@ -198,7 +198,7 @@ Use thin, low-contrast borders for fields and containers. Preserve the visible 2
 
 ### Don't:
 
-- **Don't** imply that Savings Coach connects to a bank, transfers money, or confirms a bank transaction.
+- **Don't** imply that 储蓄教练 connects to a bank, transfers money, or confirms a bank transaction.
 - **Don't** turn every card into a raised container or add shadows without a state purpose.
 - **Don't** use orange as ordinary body text or a general background color.
 - **Don't** hide validation in placeholders or color alone; keep labels, error text, and focus visible.

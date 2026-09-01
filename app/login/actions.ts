@@ -3,11 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  clearRequestLocale,
-  getRequestLocale,
-  setRequestLocale,
-} from "@/lib/i18n/request-locale";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -23,12 +18,6 @@ export async function login(formData: FormData) {
     return { error: "AUTH_FAILED" as const };
   }
 
-  const { data: setup } = await supabase
-    .from("owner_setup")
-    .select("locale")
-    .maybeSingle();
-  await setRequestLocale(setup?.locale ?? (await getRequestLocale()));
-
   revalidatePath("/", "layout");
   redirect("/");
 }
@@ -36,7 +25,6 @@ export async function login(formData: FormData) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  await clearRequestLocale();
   revalidatePath("/", "layout");
   redirect("/login");
 }

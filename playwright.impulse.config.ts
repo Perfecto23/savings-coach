@@ -19,27 +19,19 @@ export default defineConfig({
     video: "off",
   },
   webServer: {
-    command: `SAVINGS_E2E_RUN_TOKEN=${runToken} IMPULSE_E2E=1 bash scripts/start-plan-e2e-server.sh ${port}`,
+    command: `SAVINGS_E2E_RUN_TOKEN=${runToken} bash scripts/start-plan-e2e-server.sh ${port}`,
     url: `${baseURL}/login`,
     reuseExistingServer: false,
     timeout: 180_000,
   },
   projects: [
     {
-      name: "desktop-zh-chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: "desktop-chromium",
+      use: { ...devices["Desktop Chrome"], locale: "zh-CN" },
     },
     {
-      name: "mobile-zh-chromium",
-      use: { ...devices["Pixel 5"] },
-    },
-    {
-      name: "desktop-en-chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "mobile-en-chromium",
-      use: { ...devices["Pixel 5"] },
+      name: "mobile-chromium",
+      use: { ...devices["Pixel 5"], locale: "zh-CN" },
     },
   ],
 });

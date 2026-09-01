@@ -137,7 +137,7 @@ export function AiConfigManager({ initialConfigs }: AiConfigFormProps) {
       {showForm ? (
         <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
           <h4 className="mb-3 text-sm font-medium text-gray-700">添加 AI 模型配置</h4>
-          <form action={handleCreate} className="space-y-4">
+          <form action={handleCreate} className="space-y-4" noValidate>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="provider_name" className="block text-sm font-medium text-gray-700">

@@ -6,6 +6,7 @@ import { BonusEventsList } from "@/components/income/bonus-events-list";
 import { MonthlyForecastTable } from "@/components/income/monthly-forecast-table";
 import type { SalaryConfig, BonusEvent, Account } from "@/lib/types/database";
 import { getIncomeCopy } from "@/lib/income/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 export default async function IncomePage() {
   const supabase = await createClient();
@@ -32,7 +33,7 @@ export default async function IncomePage() {
       .order("sort_order"),
     supabase
       .from("owner_setup")
-      .select("locale, base_currency")
+      .select("base_currency")
       .eq("owner_id", user.id)
       .maybeSingle(),
   ]);
@@ -44,9 +45,9 @@ export default async function IncomePage() {
   const salaryConfig = salaryRes.data as SalaryConfig | null;
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
   const accounts = (accountsRes.data || []) as Account[];
-  const locale = setupRes.data?.locale ?? "en-US";
+  const locale = APP_LOCALE;
   const baseCurrency = setupRes.data?.base_currency ?? "USD";
-  const copy = getIncomeCopy(locale);
+  const copy = getIncomeCopy();
 
   const breakdown = salaryConfig
     ? calculateYearlyTax({

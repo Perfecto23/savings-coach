@@ -47,7 +47,7 @@ export function SavingsAccountStep({
         {copy.description}
       </p>
 
-      <form action={formAction} className="mt-8 space-y-6">
+      <form action={formAction} className="mt-8 space-y-6" noValidate>
         {state.status === "error" ? (
           <div
             ref={errorRef}

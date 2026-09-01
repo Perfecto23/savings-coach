@@ -4,7 +4,7 @@ import { logout } from "@/app/login/actions";
 import { formatMoney } from "@/lib/format-money";
 import { getSetupState } from "@/lib/setup/server";
 import { getSetupCopy } from "@/lib/setup/presentation";
-import { DocumentLocale } from "@/components/document-locale";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 function formatCalendarDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -21,17 +21,16 @@ export default async function SetupCompletePage() {
 
   const amount = formatMoney(
     Number(state.initialBalance.balance),
-    state.preferences.locale,
+    APP_LOCALE,
     state.preferences.baseCurrency
   );
-  const copy = getSetupCopy(state.preferences.locale).complete;
+  const copy = getSetupCopy().complete;
 
   return (
     <main
-      lang={state.preferences.locale}
+      lang={APP_LOCALE}
       className="min-h-dvh bg-stone-950 px-5 py-8 text-stone-50 selection:bg-orange-200 selection:text-orange-950 sm:px-8"
     >
-      <DocumentLocale locale={state.preferences.locale} />
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col">
         <header className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-sm font-semibold">
@@ -68,7 +67,7 @@ export default async function SetupCompletePage() {
             <span>
               {formatCalendarDate(
                 state.initialBalance.recordedAt,
-                state.preferences.locale
+                APP_LOCALE
               )}
             </span>
             <span>{state.preferences.timeZone}</span>

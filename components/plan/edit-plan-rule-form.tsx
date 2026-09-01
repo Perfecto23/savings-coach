@@ -49,7 +49,7 @@ export function EditPlanRuleForm({
         {copy.editForm.description}
       </p>
 
-      <form action={formAction} className="mt-5 space-y-5">
+      <form action={formAction} className="mt-5 space-y-5" noValidate>
         <input type="hidden" name="rule_id" value={rule.id} />
 
         {state.status === "error" ? (

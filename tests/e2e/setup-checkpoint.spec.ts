@@ -81,38 +81,38 @@ test("an invited owner can save and recover the three Setup checkpoints", async 
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
 
-  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
-  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
-  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
+  await page.getByLabel("邮箱").fill(fixture.email);
+  await page.getByLabel("密码").fill(fixture.password);
+  await page.getByRole("button", { name: "登录" }).click();
 
   await expect(page).toHaveURL(/\/setup$/);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Set your savings starting point" }),
+    page.getByRole("heading", { level: 1, name: "设置你的储蓄起点" }),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your region" })).toBeVisible();
-  await expect(page.locator('[aria-current="step"]')).toContainText("Your region");
+  await expect(page.getByRole("heading", { name: "地区偏好" })).toBeVisible();
+  await expect(page.locator('[aria-current="step"]')).toContainText("地区偏好");
+  await expect(page.getByLabel("语言与地区")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
-  await page.getByLabel("Language and locale").selectOption("en-SG");
-  await page.getByLabel("Time zone").selectOption("Asia/Singapore");
-  await page.getByLabel("Base currency").selectOption("SGD");
-  await page.getByRole("button", { name: "Save and continue" }).click();
+  await page.getByLabel("时区").selectOption("Asia/Singapore");
+  await page.getByLabel("基础货币").selectOption("CNY");
+  await page.getByRole("button", { name: "保存并继续" }).click();
 
-  await expect(page.getByRole("heading", { name: "Your savings account" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "储蓄账户" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Your savings account" })).toBeVisible();
-  await expect(page.locator('[aria-current="step"]')).toContainText("Your savings account");
+  await expect(page.getByRole("heading", { name: "储蓄账户" })).toBeVisible();
+  await expect(page.locator('[aria-current="step"]')).toContainText("储蓄账户");
   await expect(page.getByText(fixture.otherOwnerCanary, { exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
-  await page.getByLabel("Account name").fill(fixture.accountName);
-  await expect(page.getByLabel("Institution (optional)")).toHaveValue("");
-  await page.getByRole("button", { name: "Save and continue" }).dblclick();
+  await page.getByLabel("账户名称").fill(fixture.accountName);
+  await expect(page.getByLabel("机构（可选）")).toHaveValue("");
+  await page.getByRole("button", { name: "保存并继续" }).dblclick();
 
-  await expect(page.getByRole("heading", { name: "Your current balance" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "当前余额" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Your current balance" })).toBeVisible();
-  await expect(page.locator('[aria-current="step"]')).toContainText("Your current balance");
+  await expect(page.getByRole("heading", { name: "当前余额" })).toBeVisible();
+  await expect(page.locator('[aria-current="step"]')).toContainText("当前余额");
   await expect(
     page
       .getByText(fixture.accountName, { exact: true })
@@ -133,30 +133,32 @@ test("an invited owner can save and recover the three Setup checkpoints", async 
     });
   }
 
-  await page.getByLabel("Current balance").fill("1234.56");
-  await expect(page.getByLabel("Balance as of")).not.toHaveValue("");
-  await page.getByRole("button", { name: "Save and continue" }).click();
+  await page.getByLabel("当前余额").fill("1234.56");
+  await expect(page.getByLabel("余额日期")).toHaveAttribute("type", "text");
+  await expect(page.getByLabel("余额日期")).toHaveAttribute("placeholder", "YYYY-MM-DD");
+  await expect(page.getByLabel("余额日期")).not.toHaveValue("");
+  await page.getByRole("button", { name: "保存并继续" }).click();
 
   await expect(page).toHaveURL(/\/setup\/complete$/);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Your starting point is saved" }),
+    page.getByRole("heading", { level: 1, name: "储蓄起点已保存" }),
   ).toBeVisible();
-  await expect(page.getByText(/^You’re starting with/)).toContainText("S$1,234.56");
-  await expect(page.getByText(/^You’re starting with/)).toContainText(fixture.accountName);
+  await expect(page.getByText(/^你的起始余额为/)).toContainText("¥1,234.56");
+  await expect(page.getByText(/^你的起始余额为/)).toContainText(fixture.accountName);
   await expectNoHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByRole("button", { name: "退出登录" }).click();
   await expect(page).toHaveURL(/\/login$/);
 
-  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
-  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
-  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
+  await page.getByLabel("邮箱").fill(fixture.email);
+  await page.getByLabel("密码").fill(fixture.password);
+  await page.getByRole("button", { name: "登录" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { level: 1, name: "This month" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Build your Savings Plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "本月" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "建立储蓄计划" })).toBeVisible();
 
   await page.goto("/setup/complete");
-  await expect(page.getByText("S$1,234.56", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("¥1,234.56", { exact: true }).first()).toBeVisible();
 
   await page.goto("/setup");
   await expect(page).toHaveURL(/\/$/);

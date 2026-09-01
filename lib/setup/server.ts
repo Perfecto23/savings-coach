@@ -11,6 +11,7 @@ import type {
   SetupSavingsCandidateDto,
   SetupState,
 } from "./contracts";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 interface AccountProjection {
   id: string;
@@ -115,7 +116,7 @@ export async function getSetupState(): Promise<SetupState> {
   }
 
   const preferences = {
-    locale: setup.locale as SetupLocale,
+    locale: APP_LOCALE as SetupLocale,
     timeZone: setup.time_zone,
     baseCurrency: setup.base_currency as SetupBaseCurrency,
   };

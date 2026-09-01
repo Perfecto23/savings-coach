@@ -1,4 +1,4 @@
-# Savings Coach 项目指令
+# 储蓄教练项目指令
 
 ## 读取路由与权威源
 
@@ -15,7 +15,7 @@
 
 ## 产品与访问边界
 
-- Savings Coach 服务个人储蓄者。每名登录用户对应一个 `owner` 和一个数据空间。Household、角色、共享空间和跨 owner 协作不在当前范围。
+- 储蓄教练服务个人储蓄者。每名登录用户对应一个 `owner` 和一个数据空间。Household、角色、共享空间和跨 owner 协作不在当前范围。
 - 所有业务读取和写入必须保持 owner scope。数据库 RLS 是数据边界；Server Action、Route Handler 和服务侧 Function 仍需独立校验身份、权限和输入。
 - Public signup 和 anonymous sign-in 保持关闭。当前用户通过邀请或预创建方式获得访问。
 - 每名 owner 只有一种基础货币。产品不提供 FX 或多币种资产组合。
@@ -54,7 +54,7 @@
 - Server Component 只查询必要字段，并只向 Client Component 传 UI 所需 DTO。禁止跨 RSC 边界传递 `owner_id`、密钥、内部状态、原始 SQL error 或完整数据库 row。
 - Client state 只保存交互事实。派生值在 render 中计算。复杂行为使用明确 variant 和 children 组合；没有真实跨组件共享需求时不新增 Context。
 - UI 改动沿用 `DESIGN.md` 的 Calm Ledger 系统。金额使用 tabular figures；orange 只表达动作、选中、当前 checkpoint 或进度；交互目标和 focus 必须可见。
-- Owner locale 控制已登录产品的全部内建文案、ARIA 名称、确认框、错误提示、日期和金额格式。`zh-CN` 使用中文；`en-US` 与 `en-SG` 使用英文。Server Component 选择 feature-local typed copy；Client Component 只接收当前 Surface 所需的 string-only copy。Server Action 返回 stable code，由 UI 本地化。用户输入、账户名、币种代码和 IANA 时区保持原值。
+- 产品界面固定使用简体中文和 `zh-CN` 格式。标题、说明、label、placeholder、按钮、状态、ARIA 名称、确认框、错误提示、日期和金额不得按 owner 或浏览器语言分支。文案继续使用 feature-local typed presentation；Client Component 只接收当前 Surface 所需的 string-only copy。Server Action 返回 stable code，由 UI 映射中文错误。用户输入、账户名、币种代码和 IANA 时区保持原值。
 - E2E 使用 role、label、accessible name 和用户可观察行为。禁止依赖 class、DOM 层级或 `data-testid`。
 
 ## 领域影响检查
@@ -77,7 +77,7 @@
 - 修改 schema、RLS、ACL、数据库函数或类型：按文件名顺序重建本地数据库，运行完整 pgTAP，并验证 migration、RLS、ACL、外键和 TypeScript 类型。
 - 修改 Setup、Plan、Home、Progress、Monthly Review、Paid Intent 或 Reminder：运行对应 Playwright 和 concurrency suite。Reminder 还必须运行 Edge Function tests。
 - 修改 UI：完成相关 desktop/mobile Playwright，并用 Codex 侧边栏浏览器验收真实页面、响应式、keyboard、focus、错误恢复和 browser logs。
-- 修改已登录产品文案、locale、导航、ARIA、日期或金额展示：运行 `pnpm test:e2e:locale`。该 suite 必须覆盖 `zh-CN` 与 `en-SG` 的 desktop/mobile 独立 owner，并断言已知另一语言的内建产品文案不出现。
+- 修改产品文案、导航、ARIA、日期或金额展示：运行 `pnpm test:e2e:chinese`。该 suite 必须覆盖 desktop/mobile 独立 owner，并断言英文内建产品文案不出现。
 - 公开页面测试使用隔离端口和 fake public Supabase 配置。禁止读取 `.env.local`。
 - Authenticated E2E、migration preflight 和 concurrency 测试会重建本地数据库。只对可丢弃的项目本地实例运行；测试后停止本地 Supabase。
 

@@ -12,11 +12,11 @@ web
 
 ## Product Purpose
 
-Savings Coach 帮助用户建立储蓄计划、执行月度行动、记录余额观察并完成月度复盘。成功表示用户能持续完成真实的储蓄流程，而不是只查看财务数据。
+储蓄教练帮助用户建立储蓄计划、执行月度行动、记录余额观察并完成月度复盘。成功表示用户能持续完成真实的储蓄流程，而不是只查看财务数据。
 
 ## Positioning
 
-Savings Coach 是 manual-first 的储蓄执行工具。产品把计划转入、步骤完成和净值变化分开记录，不把余额变化描述为已确认储蓄。
+储蓄教练是 manual-first 的储蓄执行工具。产品把计划转入、步骤完成和净值变化分开记录，不把余额变化描述为已确认储蓄。
 
 ## Operating Context
 
@@ -34,8 +34,7 @@ Savings Coach 是 manual-first 的储蓄执行工具。产品把计划转入、�
 
 - 每名登录用户对应一个 owner 和一个数据空间。
 - 每名 owner 只有一种 base currency。
-- 产品保存 locale 和 timezone 偏好。
-- Owner locale 控制已登录产品的界面语言、无障碍名称、确认框、错误提示、日期和金额格式。`zh-CN` 使用中文；`en-US` 与 `en-SG` 使用英文。
+- 产品界面固定使用简体中文和 `zh-CN` 格式。产品保存 timezone 和单一 base currency，不提供界面语言选择。
 - 产品不转移资金，不同步银行，不导入交易。
 - Public signup 保持关闭。首批用户由邀请或预创建方式获得访问。
 - Consumer AI Coach 和 BYOK 保持关闭。
@@ -45,7 +44,7 @@ Savings Coach 是 manual-first 的储蓄执行工具。产品把计划转入、�
 
 ## Brand Commitments
 
-产品名称是 Savings Coach；当前中文产品名是“储蓄教练”。产品文案保持直接、克制，不使用财富承诺或银行侧确认语气。
+产品名称是“储蓄教练”。`Savings Coach` 只保留为仓库和部署标识，不在用户界面展示。产品文案保持直接、克制，不使用财富承诺或银行侧确认语气。
 
 ## Evidence on Hand
 
@@ -67,4 +66,4 @@ Savings Coach 是 manual-first 的储蓄执行工具。产品把计划转入、�
 ## Accessibility & Inclusion
 
 公开入口和 Setup 必须支持键盘操作、明确 label、可见 focus、错误恢复和 desktop/mobile 响应式布局。
-已登录产品必须保持单一语言。用户输入、账户名、币种代码和 IANA 时区不翻译。
+公开入口和已登录产品只显示简体中文。用户输入、账户名、币种代码和 IANA 时区保持原值。

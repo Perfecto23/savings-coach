@@ -1,5 +1,4 @@
 import type { MonthlyReviewErrorCode } from "./contracts";
-import { isChineseLocale } from "../i18n/locale";
 
 export interface MonthlyReportCopy {
   page: { backAria: string; backTitle: string; title: string; description: string };
@@ -43,36 +42,7 @@ export interface MonthlyReviewCopy {
   errors: Record<MonthlyReviewErrorCode, string>;
 }
 
-const ENGLISH_REPORT_COPY: MonthlyReportCopy = {
-  page: {
-    backAria: "Back to Progress",
-    backTitle: "Back",
-    title: "{month} Monthly report",
-    description: "Plan, confirmations, and Balance Snapshot observations.",
-  },
-  stats: {
-    executionCompletion: "Execution completion",
-    plannedTransfer: "Planned transfer",
-    netValueChange: "Net value change",
-    impulseAmount: "Impulse amount",
-    decisions: "{count} decisions",
-  },
-  explanation:
-    "Execution status only reflects confirmations. Net value change comes from Balance Snapshots and stays independent from planned transfer.",
-  actions: {
-    title: "Monthly Action confirmations",
-    empty: "No monthly actions for this month.",
-  },
-  balances: {
-    title: "Balance Snapshot observations",
-    account: "Account",
-    earliest: "Earliest Balance Snapshot",
-    latest: "Latest Balance Snapshot",
-    observedChange: "Observed change",
-  },
-};
-
-const CHINESE_REPORT_COPY: MonthlyReportCopy = {
+const REPORT_COPY: MonthlyReportCopy = {
   page: {
     backAria: "返回进展",
     backTitle: "返回",
@@ -100,38 +70,7 @@ const CHINESE_REPORT_COPY: MonthlyReportCopy = {
   },
 };
 
-const ENGLISH_REVIEW_COPY: MonthlyReviewCopy = {
-  complete: {
-    ariaLabel: "Monthly Review status",
-    label: "Review complete",
-    title: "{month} is closed.",
-    description:
-      "Monthly execution is preserved. Balance Snapshots remain observations and can still be corrected.",
-    openMonth: "Open {month}",
-  },
-  review: {
-    ariaLabel: "Complete Monthly Review",
-    label: "Monthly Review",
-    title: "Close {month}",
-    description:
-      "Closing preserves Monthly Action confirmations and prepares the current month. It does not confirm a bank balance or transfer.",
-    progress: "{completed} of {total} Monthly Actions confirmed",
-    openPlan: "Open Savings Plan",
-    closing: "Closing…",
-    close: "Close {month}",
-    finishActions: "Finish Monthly Actions",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_MONTH: "Reload the Monthly Review and try again.",
-    MONTH_NOT_AVAILABLE: "This month is not available for Monthly Review.",
-    ACTIONS_INCOMPLETE: "Finish every Monthly Action before closing this month.",
-    PLAN_NOT_READY: "Add or reactivate a Plan Rule before closing this month.",
-    REVIEW_FAILED: "The Monthly Review could not be completed. Try again.",
-  },
-};
-
-const CHINESE_REVIEW_COPY: MonthlyReviewCopy = {
+const REVIEW_COPY: MonthlyReviewCopy = {
   complete: {
     ariaLabel: "月度复盘状态",
     label: "复盘完成",
@@ -160,10 +99,10 @@ const CHINESE_REVIEW_COPY: MonthlyReviewCopy = {
   },
 };
 
-export function getMonthlyReportCopy(locale: string | null | undefined): MonthlyReportCopy {
-  return isChineseLocale(locale) ? CHINESE_REPORT_COPY : ENGLISH_REPORT_COPY;
+export function getMonthlyReportCopy(): MonthlyReportCopy {
+  return REPORT_COPY;
 }
 
-export function getMonthlyReviewCopy(locale: string | null | undefined): MonthlyReviewCopy {
-  return isChineseLocale(locale) ? CHINESE_REVIEW_COPY : ENGLISH_REVIEW_COPY;
+export function getMonthlyReviewCopy(): MonthlyReviewCopy {
+  return REVIEW_COPY;
 }

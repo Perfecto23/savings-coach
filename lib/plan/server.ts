@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { APP_LOCALE } from "@/lib/product-locale";
 import type {
   MonthlyActionDto,
   PlanAccountDto,
@@ -11,7 +12,6 @@ import type {
 } from "./contracts";
 
 interface SetupProjection {
-  locale: string;
   time_zone: string;
   base_currency: string;
   savings_account_id: string | null;
@@ -92,7 +92,7 @@ export async function getSavingsPlanPage(): Promise<SavingsPlanPageDto> {
 
   const { data: setupData, error: setupError } = await supabase
     .from("owner_setup")
-    .select("locale, time_zone, base_currency, savings_account_id, plan_activated_at")
+    .select("time_zone, base_currency, savings_account_id, plan_activated_at")
     .eq("owner_id", user.id)
     .maybeSingle();
 
@@ -207,7 +207,7 @@ export async function getSavingsPlanPage(): Promise<SavingsPlanPageDto> {
   );
 
   return {
-    locale: setup.locale,
+    locale: APP_LOCALE,
     baseCurrency: setup.base_currency,
     targetAccount,
     sourceAccounts: accounts

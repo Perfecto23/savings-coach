@@ -1,5 +1,4 @@
 import type { PaidIntentErrorCode } from "./contracts";
-import { isChineseLocale } from "../i18n/locale";
 
 export interface PaidIntentCopy {
   recorded: {
@@ -22,35 +21,7 @@ export interface PaidIntentCopy {
   errors: Record<PaidIntentErrorCode, string>;
 }
 
-const ENGLISH_COPY: PaidIntentCopy = {
-  recorded: {
-    ariaLabel: "Pro beta interest",
-    label: "Interest recorded",
-    title: "You were not charged, and no subscription was created.",
-    description:
-      "This is a product-interest signal only. It does not unlock Pro or reserve a future price.",
-  },
-  offer: {
-    ariaLabel: "Savings Coach Pro beta offer",
-    label: "Pro beta interest",
-    title: "Help shape Savings Coach Pro",
-    description:
-      "We are exploring scheduled reminders and richer Monthly Review guidance. Planned features are not available or guaranteed yet.",
-    price: "US$4.99/month after launch",
-    disclaimer:
-      "Today: no charge. No card. No subscription. This records interest only; it does not start a trial or reserve a price.",
-    recording: "Recording…",
-    record: "I'm interested in Pro beta",
-    dismiss: "Not now",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    NOT_ELIGIBLE: "Complete a Monthly Review before recording Pro beta interest.",
-    RECORD_FAILED: "Pro beta interest could not be recorded. Try again.",
-  },
-};
-
-const CHINESE_COPY: PaidIntentCopy = {
+const COPY: PaidIntentCopy = {
   recorded: {
     ariaLabel: "专业版内测付费意愿",
     label: "付费意愿已记录",
@@ -75,6 +46,6 @@ const CHINESE_COPY: PaidIntentCopy = {
   },
 };
 
-export function getPaidIntentCopy(locale: string | null | undefined): PaidIntentCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getPaidIntentCopy(): PaidIntentCopy {
+  return COPY;
 }

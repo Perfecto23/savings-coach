@@ -67,47 +67,47 @@ function captureRsc(page: Page) {
 }
 
 async function selectReminderTab(page: Page) {
-  await page.getByRole("tab", { name: "Email reminders" }).click();
+  await page.getByRole("tab", { name: "邮件提醒" }).click();
   const reminder = page.getByRole("region", {
-    name: "Monthly Review email reminder",
+    name: "月度复盘邮件提醒",
   });
   await expect(reminder).toBeVisible();
   return reminder;
 }
 
-test("an owner controls Monthly Review email reminder consent", async ({ page }, testInfo) => {
+test("中文环境下可控制月度复盘邮件提醒授权", async ({ page }, testInfo) => {
   const fixture = loadFixture(testInfo.project.name);
 
   await page.goto("/login");
-  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
-  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
-  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
+  await page.getByLabel("邮箱").fill(fixture.email);
+  await page.getByLabel("密码").fill(fixture.password);
+  await page.getByRole("button", { name: "登录" }).click();
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto("/settings");
-  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "设置" })).toBeVisible();
   const captured = captureRsc(page);
   await page.reload();
   let reminder = await selectReminderTab(page);
   const consent = reminder.getByRole("checkbox", {
-    name: "I agree to receive a Monthly Review reminder email when my previous review is still open.",
+    name: "我同意在上一月月度复盘仍未完成时接收提醒邮件。",
   });
   const enableButton = reminder.getByRole("button", {
-    name: "Enable email reminders",
+    name: "启用邮件提醒",
   });
 
-  await expect(reminder.getByText("Disabled", { exact: true })).toBeVisible();
+  await expect(reminder.getByText("已关闭", { exact: true })).toBeVisible();
   await expect(enableButton).toBeDisabled();
-  await expect(reminder).toContainText("On the 2nd of each month at 09:00 (Asia/Singapore).");
+  await expect(reminder).toContainText("每月 2 日 09:00 (Asia/Singapore)发送。");
   await expectNoHorizontalOverflow(page);
 
   await consent.check();
   await expect(enableButton).toBeEnabled();
   await enableButton.click();
-  await expect(reminder.getByText("Enabled", { exact: true })).toBeVisible();
-  await expect(reminder.getByRole("button", { name: "Unsubscribe from emails" })).toBeVisible();
+  await expect(reminder.getByText("已启用", { exact: true })).toBeVisible();
+  await expect(reminder.getByRole("button", { name: "退订邮件提醒" })).toBeVisible();
   await expect(reminder).toContainText(
-    "Unsubscribing blocks reminders that have not started dispatch.",
+    "退订会阻止尚未开始发送的提醒。",
   );
   await expectNoHorizontalOverflow(page);
 
@@ -127,20 +127,20 @@ test("an owner controls Monthly Review email reminder consent", async ({ page },
 
   await page.goto("/settings");
   reminder = await selectReminderTab(page);
-  await expect(reminder.getByText("Enabled", { exact: true })).toBeVisible();
+  await expect(reminder.getByText("已启用", { exact: true })).toBeVisible();
   await expect(
-    reminder.getByText(/Once dispatch starts, that email may still arrive/),
+    reminder.getByText(/发送开始后，该邮件仍可能/),
   ).toBeVisible();
 
-  await reminder.getByRole("button", { name: "Unsubscribe from emails" }).click();
-  await expect(reminder.getByText("Disabled", { exact: true })).toBeVisible();
+  await reminder.getByRole("button", { name: "退订邮件提醒" }).click();
+  await expect(reminder.getByText("已关闭", { exact: true })).toBeVisible();
 
   const reenableConsent = reminder.getByRole("checkbox", {
-    name: "I agree to receive a Monthly Review reminder email when my previous review is still open.",
+    name: "我同意在上一月月度复盘仍未完成时接收提醒邮件。",
   });
   await reenableConsent.check();
-  await reminder.getByRole("button", { name: "Enable email reminders" }).click();
-  await expect(reminder.getByText("Enabled", { exact: true })).toBeVisible();
+  await reminder.getByRole("button", { name: "启用邮件提醒" }).click();
+  await expect(reminder.getByText("已启用", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   const payload = await captured.read();

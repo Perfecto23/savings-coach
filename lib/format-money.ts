@@ -1,4 +1,4 @@
-const FALLBACK_LOCALE = "en-US";
+const FALLBACK_LOCALE = "zh-CN";
 const FALLBACK_CURRENCY = "USD";
 const AMBIGUOUS_DOLLAR_SYMBOLS: Record<string, string> = {
   AUD: "A$",

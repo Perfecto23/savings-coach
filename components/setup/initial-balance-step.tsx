@@ -63,7 +63,7 @@ export function InitialBalanceStep({
         {copy.descriptionAfter}
       </p>
 
-      <form action={formAction} className="mt-8 space-y-6">
+      <form action={formAction} className="mt-8 space-y-6" noValidate>
         {state.status === "error" ? (
           <div
             ref={errorRef}
@@ -124,9 +124,10 @@ export function InitialBalanceStep({
           <input
             id="setup-recorded-at"
             name="recorded_at"
-            type="date"
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
             required
-            max={today}
             defaultValue={today}
             aria-invalid={fieldError?.field === "recorded_at"}
             aria-describedby={

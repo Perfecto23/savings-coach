@@ -31,7 +31,7 @@ Vercel availability gate `REVIEW_EMAIL_FEATURE_ENABLED` 默认保持 `false`。G
 2. 完成 SPF、DKIM 和 DMARC readback。
 3. 保持 open tracking 和 click tracking 关闭。
 4. 创建 send-only API key。
-5. 使用 Savings Coach 专用 webhook。禁止把无关产品邮件发送到该 webhook。
+5. 使用储蓄教练专用 webhook。禁止把无关产品邮件发送到该 webhook。
 6. 创建 webhook，订阅：
    - `email.sent`
    - `email.delivered`
@@ -52,6 +52,8 @@ Vercel availability gate `REVIEW_EMAIL_FEATURE_ENABLED` 默认保持 `false`。G
 - `REVIEW_EMAIL_FROM`
 - `APP_BASE_URL=https://savings-coach.vercel.app`
 - `REVIEW_EMAIL_SENDING_ENABLED=false`
+
+`REVIEW_EMAIL_FROM` 的显示名称必须是“储蓄教练”。地址继续由生产 secret 提供，本文档不记录地址或 secret value。
 
 Supabase 默认提供 `SUPABASE_URL` 和 server secret key。禁止把 server secret key放入浏览器或 Cron body。
 

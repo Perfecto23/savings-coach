@@ -1,8 +1,7 @@
-import { getLanguage, normalizeLocale, type AppLocale } from "@/lib/i18n/locale";
+import type { AppLocale } from "@/lib/product-locale";
 
 export interface AppShellCopy {
   locale: AppLocale;
-  language: "en" | "zh";
   brand: string;
   navigationLabel: string;
   navigation: {
@@ -27,36 +26,8 @@ export interface AppShellCopy {
   logout: string;
 }
 
-const ENGLISH_COPY: AppShellCopy = {
-  locale: "en-US",
-  language: "en",
-  brand: "Savings Coach",
-  navigationLabel: "Main navigation",
-  navigation: {
-    home: "Home",
-    plan: "Savings Plan",
-    sop: "Monthly SOP",
-    balances: "Balance Snapshots",
-    income: "Income",
-    milestones: "Progress",
-    impulse: "Impulse Check",
-    settings: "Settings",
-  },
-  mobile: {
-    home: "Home",
-    plan: "Plan",
-    sop: "SOP",
-    balances: "Balances",
-    more: "More",
-    moreMenu: "More navigation",
-    closeMore: "Close more navigation",
-  },
-  logout: "Log out",
-};
-
-const CHINESE_COPY: AppShellCopy = {
+const COPY: AppShellCopy = {
   locale: "zh-CN",
-  language: "zh",
   brand: "储蓄教练",
   navigationLabel: "主导航",
   navigation: {
@@ -81,8 +52,6 @@ const CHINESE_COPY: AppShellCopy = {
   logout: "退出登录",
 };
 
-export function getAppShellCopy(locale: string): AppShellCopy {
-  const normalizedLocale = normalizeLocale(locale);
-  const copy = getLanguage(normalizedLocale) === "zh" ? CHINESE_COPY : ENGLISH_COPY;
-  return { ...copy, locale: normalizedLocale };
+export function getAppShellCopy(): AppShellCopy {
+  return COPY;
 }

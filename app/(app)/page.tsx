@@ -5,7 +5,7 @@ import { getMonthlyExecutionHome } from "@/lib/home/server";
 
 async function HomeContent() {
   const home = await getMonthlyExecutionHome();
-  return <MonthlyExecutionHome home={home} copy={getHomeCopy(home.locale)} />;
+  return <MonthlyExecutionHome home={home} copy={getHomeCopy()} />;
 }
 
 function HomeSkeleton() {

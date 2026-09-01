@@ -1,8 +1,6 @@
 import type { HomeActionErrorCode } from "./contracts";
-import { isChineseLocale } from "../i18n/locale";
 
 export interface HomeCopy {
-  language: string;
   page: { title: string; subtitle: string };
   activation: { title: string; description: string };
   needsPlan: { title: string; description: string; action: string };
@@ -53,83 +51,7 @@ export interface HomeCopy {
   errors: Record<HomeActionErrorCode, string>;
 }
 
-const ENGLISH_COPY: HomeCopy = {
-  language: "en",
-  page: { title: "This month", subtitle: "{month} · One clear action at a time." },
-  activation: {
-    title: "Your plan is now in motion.",
-    description:
-      "You confirmed your first Monthly Action. Your Plan Path remains a target, and your Balance Snapshots remain separate.",
-  },
-  needsPlan: {
-    title: "Build your Savings Plan",
-    description: "Add a Plan Rule and activate it to see this month's action here.",
-    action: "Open Savings Plan",
-  },
-  needsReview: {
-    label: "Monthly Review",
-    title: "Review {reviewMonth} before starting {currentMonth}.",
-    description:
-      "Closing preserves the month's execution record. Balance Snapshots remain observations and can be added or corrected later.",
-    progress: "{completed} of {total} Monthly Actions confirmed",
-    reviewAction: "Review {month}",
-    finishAction: "Finish {month}",
-  },
-  repair: {
-    title: "Your Monthly Actions need attention.",
-    description:
-      "The active Plan Path has no usable action for this month. Open your Savings Plan and activate it again.",
-    action: "Open Savings Plan",
-  },
-  ready: {
-    ariaLabel: "Next Monthly Action",
-    title: "Your next Monthly Action",
-    overdueSince: "Overdue since {date}",
-    dueToday: "Due today",
-    due: "Due {date}",
-    transferFrom: "From {source} to {target}",
-    transferTo: "To {target}",
-    description:
-      "Complete it manually, then confirm it here. Savings Coach does not move money or verify a bank transfer.",
-    confirmAria: "Confirm completion for {name}",
-    confirming: "Confirming…",
-    confirm: "I completed this",
-  },
-  complete: {
-    title: "This month's Monthly Actions are complete.",
-    description:
-      "You confirmed {completed} of {total} actions. Your Monthly Review will open after this natural month ends.",
-    openPlan: "Open Savings Plan",
-    undoAria: "Undo confirmation for {name}",
-    undoing: "Undoing…",
-    undo: "Undo confirmation",
-  },
-  progress: {
-    ariaLabel: "Monthly Action progress",
-    title: "Monthly Action progress",
-    count: "{completed} of {total} Monthly Actions confirmed",
-    undoAria: "Undo confirmation for {name}",
-    undoLast: "Undo last confirmation",
-  },
-  planSummary: {
-    ariaLabel: "Plan Path summary",
-    title: "Plan Path",
-    plannedThisMonth: "Planned this month",
-    targetBalance: "Target balance",
-    description:
-      "Plan Path is a target. Balance Snapshots and net value remain separate.",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    ACTION_NOT_FOUND: "This Monthly Action is no longer available. Reload Home.",
-    INVALID_ACTION: "Reload Home and try again.",
-    MONTH_CLOSED: "This month is closed. Its Monthly Actions cannot be changed.",
-    ACTION_UPDATE_FAILED: "The Monthly Action could not be updated. Try again.",
-  },
-};
-
-const CHINESE_COPY: HomeCopy = {
-  language: "zh-CN",
+const COPY: HomeCopy = {
   page: { title: "本月", subtitle: "{month} · 每次只做一件明确的事。" },
   activation: {
     title: "储蓄计划已经开始执行。",
@@ -197,6 +119,6 @@ const CHINESE_COPY: HomeCopy = {
   },
 };
 
-export function getHomeCopy(locale: string | null | undefined): HomeCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getHomeCopy(): HomeCopy {
+  return COPY;
 }

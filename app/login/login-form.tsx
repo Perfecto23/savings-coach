@@ -1,16 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import type { PublicCopy } from "@/lib/i18n/public-presentation";
+import { useRef, useState } from "react";
+import type { PublicCopy } from "@/lib/public/presentation";
 import { login } from "./actions";
 
 export function LoginForm({ copy }: { copy: PublicCopy["login"] }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(formData: FormData) {
-    setLoading(true);
     setError(null);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    if (!email) {
+      setError(copy.emailRequired);
+      emailRef.current?.focus();
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setError(copy.emailInvalid);
+      emailRef.current?.focus();
+      return;
+    }
+    if (!password) {
+      setError(copy.passwordRequired);
+      passwordRef.current?.focus();
+      return;
+    }
+
+    setLoading(true);
     const result = await login(formData);
     if (result?.error) {
       setError(copy.error);
@@ -19,13 +39,14 @@ export function LoginForm({ copy }: { copy: PublicCopy["login"] }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4" noValidate>
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           {copy.email}
         </label>
         <input
           id="email"
+          ref={emailRef}
           name="email"
           type="email"
           required
@@ -41,6 +62,7 @@ export function LoginForm({ copy }: { copy: PublicCopy["login"] }) {
         </label>
         <input
           id="password"
+          ref={passwordRef}
           name="password"
           type="password"
           required

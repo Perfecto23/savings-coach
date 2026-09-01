@@ -1,5 +1,3 @@
-import { isChineseLocale } from "@/lib/i18n/locale";
-
 export interface ImpulseCopy {
   page: {
     title: string;
@@ -32,50 +30,7 @@ export interface ImpulseCopy {
   errors: Record<string, string>;
 }
 
-const ENGLISH_COPY: ImpulseCopy = {
-  page: {
-    title: "Impulse Check",
-    description:
-      "Record a purchase you decided not to make without treating it as savings.",
-  },
-  counter: {
-    label: "Impulse amount",
-    description:
-      "Estimated price of purchases you decided not to make. It is not confirmed savings.",
-  },
-  form: {
-    title: "Log an impulse check",
-    description:
-      "Record the estimated price of a purchase you decided not to make. This is not confirmed savings.",
-    itemLabel: "What did you decide not to buy?",
-    itemPlaceholder: "For example, headphones",
-    amountLabel: "Impulse amount",
-    amountPlaceholder: "3999",
-    reasonLabel: "Why did you pause?",
-    reasonPlaceholder: "For example, I will wait a week",
-    submit: "Log impulse check",
-    submitting: "Recording…",
-  },
-  list: {
-    title: "Impulse checks",
-    empty:
-      "No impulse checks yet. Add one when you decide not to make a planned purchase.",
-    amountAriaLabel: "Impulse amount",
-    delete: "Delete",
-    deleteConfirm: "Delete this impulse check?",
-    deleteError: "The impulse check could not be deleted. Try again.",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_ITEM_NAME: "Enter what you decided not to buy.",
-    INVALID_AMOUNT: "Enter a valid positive impulse amount.",
-    INVALID_CATEGORY: "Enter a valid category.",
-    NOT_FOUND: "Impulse check was not found.",
-    SAVE_FAILED: "The impulse check could not be saved. Try again.",
-  },
-};
-
-const CHINESE_COPY: ImpulseCopy = {
+const COPY: ImpulseCopy = {
   page: {
     title: "冲动拦截",
     description: "记录一次决定放弃的计划外购买，但不把拦截金额算作已确认储蓄。",
@@ -114,20 +69,20 @@ const CHINESE_COPY: ImpulseCopy = {
   },
 };
 
-export function getImpulseCopy(locale: string): ImpulseCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getImpulseCopy(): ImpulseCopy {
+  return COPY;
 }
 
 export function getImpulseErrorMessage(error: string, copy: ImpulseCopy): string {
   return copy.errors[error] ?? copy.errors.SAVE_FAILED;
 }
 
-export function formatImpulseDate(value: string, locale: string): string {
+export function formatImpulseDate(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return value;
 
   const [, year, month, day] = match;
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "long",
     day: "numeric",

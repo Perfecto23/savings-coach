@@ -17,7 +17,7 @@ function formatActionDate(value: string, locale: string) {
 
 export default async function SavingsPlanPage() {
   const plan = await getSavingsPlanPage();
-  const copy = getPlanCopy(plan.locale);
+  const copy = getPlanCopy();
   const activeRuleCount = plan.rules.filter((rule) => rule.active).length;
 
   return (

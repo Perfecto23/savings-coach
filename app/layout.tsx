@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { getRequestLocale } from "@/lib/i18n/request-locale";
-import { getPublicCopy } from "@/lib/i18n/public-presentation";
+import { getPublicCopy } from "@/lib/public/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,11 +14,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export async function generateMetadata(): Promise<Metadata> {
-  const copy = getPublicCopy(await getRequestLocale()).metadata;
-  return {
-    title: { default: copy.title, template: copy.template },
-    description: copy.description,
+const metadataCopy = getPublicCopy().metadata;
+
+export const metadata: Metadata = {
+    title: { default: metadataCopy.title, template: metadataCopy.template },
+    description: metadataCopy.description,
     icons: {
       icon: [
         {
@@ -28,13 +28,12 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
     },
     openGraph: {
-      title: copy.title,
-      description: copy.openGraphDescription,
+      title: metadataCopy.title,
+      description: metadataCopy.openGraphDescription,
       type: "website",
-      locale: copy.openGraphLocale,
+      locale: metadataCopy.openGraphLocale,
     },
-  };
-}
+};
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -42,14 +41,13 @@ export const viewport: Viewport = {
   themeColor: "#f97316",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getRequestLocale();
   return (
-    <html lang={locale} data-scroll-behavior="smooth">
+    <html lang={APP_LOCALE} data-scroll-behavior="smooth">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

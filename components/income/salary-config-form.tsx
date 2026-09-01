@@ -82,7 +82,7 @@ export function SalaryConfigForm({
         </div>
       )}
 
-      <form action={handleSubmit} className="mt-4 space-y-4">
+      <form action={handleSubmit} className="mt-4 space-y-4" noValidate>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="monthly_gross" className="block text-sm font-medium text-gray-700">
@@ -174,7 +174,9 @@ export function SalaryConfigForm({
             <input
               id="effective_from"
               name="effective_from"
-              type="date"
+              type="text"
+              inputMode="numeric"
+              placeholder="YYYY-MM-DD"
               required
               defaultValue={config?.effective_from ?? ""}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { MonthSelector } from "./month-selector";
 import { getSopCopy } from "@/lib/sop/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 interface SopPageProps {
   searchParams: Promise<{ month?: string }>;
@@ -28,7 +29,7 @@ export default async function SopPage({ searchParams }: SopPageProps) {
 
   const setupRes = await supabase
     .from("owner_setup")
-    .select("locale, time_zone, base_currency")
+    .select("time_zone, base_currency")
     .eq("owner_id", user.id)
     .maybeSingle();
   if (setupRes.error || !setupRes.data) {
@@ -53,8 +54,8 @@ export default async function SopPage({ searchParams }: SopPageProps) {
     throw new Error("Unable to load monthly execution steps");
   }
   const displayRecords = (recordsRes.data || []) as SopDisplayRecord[];
-  const locale = setupRes.data.locale ?? "en-US";
-  const copy = getSopCopy(locale);
+  const locale = APP_LOCALE;
+  const copy = getSopCopy();
 
   return (
     <div lang={locale} className="mx-auto max-w-3xl space-y-6">
@@ -64,6 +65,7 @@ export default async function SopPage({ searchParams }: SopPageProps) {
           <p className="mt-1 text-sm text-gray-500">{copy.page.description}</p>
         </div>
         <MonthSelector
+          key={yearMonth}
           currentMonth={yearMonth}
           ariaLabel={copy.page.monthAriaLabel}
         />

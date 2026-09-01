@@ -1,5 +1,4 @@
 import type { BalanceSnapshot } from "../types/database";
-import { isChineseLocale } from "../i18n/locale";
 
 export type BalanceActionErrorCode =
   | "UNAUTHENTICATED"
@@ -49,49 +48,7 @@ export interface BalancesCopy {
   errors: Record<BalanceActionErrorCode, string>;
 }
 
-const ENGLISH_COPY: BalancesCopy = {
-  page: {
-    title: "Balance Snapshots",
-    description: "Record what you observe. Savings Coach does not verify a bank balance.",
-  },
-  card: { observed: "Observed {date}" },
-  form: {
-    title: "Record Balance Snapshots",
-    description: "This saves your observation. It does not confirm a bank balance.",
-    dateLabel: "Observation date",
-    balancePlaceholder: "Observed balance",
-    balanceAria: "{account} Balance Snapshot",
-    success: "Balance Snapshot saved. Savings Coach does not verify a bank balance.",
-    saving: "Saving…",
-    submit: "Save Balance Snapshots",
-  },
-  history: {
-    title: "Balance Snapshot history",
-    empty: "No Balance Snapshots yet.",
-    threeMonths: "3 months",
-    sixMonths: "6 months",
-    all: "All",
-    deleteConfirm: "Delete all Balance Snapshots observed on {date}?",
-    deleteAria: "Delete Balance Snapshots for {date}",
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_DATE: "Choose a valid observation date that is not in the future.",
-    EMPTY_OBSERVATIONS: "Enter at least one valid Balance Snapshot.",
-    INVALID_ACCOUNT: "Check each Balance Snapshot and try again.",
-    INVALID_BALANCE: "Enter non-negative balances with at most two decimal places.",
-    DUPLICATE_ACCOUNT: "Each account can appear once per observation date.",
-    OBSERVATION_NOT_FOUND: "No Balance Snapshots exist for this observation date.",
-    SETUP_OBSERVATION_REQUIRED: "Keep at least one Balance Snapshot for your Setup Savings Account.",
-    ACCOUNT_NOT_FOUND: "One selected account was not found.",
-    PLAN_PATH_INCOMPLETE: "Your Plan Path needs attention before Balance Snapshots can change.",
-    SAVE_FAILED: "Balance Snapshots could not be saved. Try again.",
-    DELETE_FAILED: "Balance Snapshots could not be deleted. Try again.",
-    LOAD_FAILED: "Balance Snapshot history could not be loaded. Try again.",
-  },
-};
-
-const CHINESE_COPY: BalancesCopy = {
+const COPY: BalancesCopy = {
   page: {
     title: "余额快照",
     description: "记录你观察到的余额。储蓄教练不验证银行余额。",
@@ -133,6 +90,6 @@ const CHINESE_COPY: BalancesCopy = {
   },
 };
 
-export function getBalancesCopy(locale: string | null | undefined): BalancesCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getBalancesCopy(): BalancesCopy {
+  return COPY;
 }

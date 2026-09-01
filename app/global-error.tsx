@@ -1,35 +1,21 @@
 "use client";
 
-import type { AppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
 import { getAppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
-const localeBootstrap = `(() => {
-  const match = document.cookie.match(/(?:^|; )savings-coach-locale=([^;]*)/);
-  const cookieLocale = match ? decodeURIComponent(match[1]) : "";
-  const locale = /^(en-US|en-SG|zh-CN)$/.test(cookieLocale)
-    ? cookieLocale
-    : navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-  document.documentElement.lang = locale;
-})();`;
-
-function ErrorPanel({
-  copy,
+export default function GlobalError({
   error,
   reset,
-  className,
-  locale,
 }: {
-  copy: AppFeedbackCopy["error"];
   error: Error & { digest?: string };
   reset: () => void;
-  className: string;
-  locale: "en-US" | "zh-CN";
 }) {
+  const copy = getAppFeedbackCopy().error;
+
   return (
-    <div
-      lang={locale}
-      className={`${className} mx-auto max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-lg`}
-    >
+    <html lang={APP_LOCALE}>
+      <body className="flex min-h-screen items-center justify-center bg-orange-50">
+        <div className="mx-auto max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-lg">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -59,38 +45,7 @@ function ErrorPanel({
       >
         {copy.retry}
       </button>
-    </div>
-  );
-}
-
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  return (
-    <html lang="en-US" suppressHydrationWarning>
-      <head>
-        <style>{`.locale-zh { display: none; } html[lang="zh-CN"] .locale-en { display: none; } html[lang="zh-CN"] .locale-zh { display: block; }`}</style>
-        <script dangerouslySetInnerHTML={{ __html: localeBootstrap }} />
-      </head>
-      <body className="flex min-h-screen items-center justify-center bg-orange-50">
-        <ErrorPanel
-          className="locale-en"
-          locale="en-US"
-          copy={getAppFeedbackCopy("en-US").error}
-          error={error}
-          reset={reset}
-        />
-        <ErrorPanel
-          className="locale-zh"
-          locale="zh-CN"
-          copy={getAppFeedbackCopy("zh-CN").error}
-          error={error}
-          reset={reset}
-        />
+        </div>
       </body>
     </html>
   );

@@ -20,6 +20,7 @@ import type {
   BalanceActionErrorCode,
   BalancesCopy,
 } from "@/lib/balances/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const ACCOUNT_COLORS: Record<string, string> = {
   salary: "#3b82f6",
@@ -59,13 +60,9 @@ export function BalanceHistoryChart({
   const [range, setRange] = useState<"3" | "6" | "all">("all");
   const router = useRouter();
   const [error, setError] = useState<BalanceActionErrorCode | null>(null);
+  const [pendingDeleteDate, setPendingDeleteDate] = useState<string | null>(null);
 
   async function handleDeleteDate(date: string) {
-    if (
-      !window.confirm(
-        copy.deleteConfirm.replace("{date}", formatObservationDate(date, locale))
-      )
-    ) return;
     setError(null);
     const result = await deleteBalanceSnapshotsByDate(date);
     if (result.success) {
@@ -148,7 +145,7 @@ export function BalanceHistoryChart({
             {formatObservationDate(d.date, locale)}
             <button
               type="button"
-              onClick={() => handleDeleteDate(d.date)}
+              onClick={() => setPendingDeleteDate(d.date)}
               className="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
               aria-label={copy.deleteAria.replace(
                 "{date}",
@@ -215,6 +212,17 @@ export function BalanceHistoryChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
+      <ConfirmDialog
+        open={pendingDeleteDate !== null}
+        description={copy.deleteConfirm.replace(
+          "{date}",
+          pendingDeleteDate ? formatObservationDate(pendingDeleteDate, locale) : ""
+        )}
+        onCancel={() => setPendingDeleteDate(null)}
+        onConfirm={() => {
+          if (pendingDeleteDate) return handleDeleteDate(pendingDeleteDate);
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
-# 储蓄教练（Savings Coach）
+# 储蓄教练
 
-Savings Coach 是 manual-first 的个人储蓄执行与复盘工具。用户建立储蓄计划，确认月度行动，记录余额快照，并完成月度复盘。产品不连接银行，不转移资金，也不导入银行交易。
+储蓄教练是 manual-first 的个人储蓄执行与复盘工具。用户建立储蓄计划，确认月度行动，记录余额快照，并完成月度复盘。产品不连接银行，不转移资金，也不导入银行交易。
 
 - Production：<https://savings-coach.vercel.app>
 - Live 状态必须从 GitHub、Vercel、Supabase 和 Resend 独立回读。
@@ -11,7 +11,7 @@ Savings Coach 是 manual-first 的个人储蓄执行与复盘工具。用户建�
 ### 已发布能力
 
 1. 受邀用户通过 Email 和密码登录。Public signup 保持关闭。
-2. Setup 保存 locale、timezone、单一基础货币、一个储蓄账户和初始余额快照。
+2. Setup 固定使用简体中文，并保存 timezone、单一基础货币、一个储蓄账户和初始余额快照。
 3. Plan Rule 按月生成 Monthly Action。Plan Activation 创建当前月行动和 12 个月 Plan Path。
 4. Home 显示下一行动。用户可以确认或撤销步骤完成；该操作不表示银行已经转账。
 5. Balance Snapshot、Progress 和 Monthly Report 分别展示余额观察、计划转入、目标余额和净值变化。
@@ -25,7 +25,7 @@ Savings Coach 是 manual-first 的个人储蓄执行与复盘工具。用户建�
 - Public signup、密码找回 UI 和用户自助删除账号未开放。
 - Monthly Review Email Reminder 是 gated capability，不属于默认开放范围。操作前重新回读 live gate；启用顺序见 [Reminder runbook](docs/runbooks/monthly-review-email-reminder.md)。
 - Billing、checkout、subscription、银行同步、Household、角色和共享空间未实现。
-- 已登录产品支持 `zh-CN`、`en-US` 和 `en-SG`。Owner locale 控制界面文案、ARIA 名称、确认框、错误提示、日期和金额格式。
+- 公开入口和已登录产品只显示简体中文。日期和金额固定使用 `zh-CN` 格式。
 
 ## 用户流程
 
@@ -220,7 +220,7 @@ pnpm test:review-reminder-functions
 ```bash
 pnpm test:e2e
 pnpm test:e2e:impulse
-pnpm test:e2e:locale
+pnpm test:e2e:chinese
 pnpm test:e2e:setup
 pnpm test:e2e:plan
 pnpm test:e2e:review
@@ -229,7 +229,7 @@ pnpm test:e2e:reminder
 
 - 默认 E2E 只覆盖公开 Login 和 release boundaries。
 - 六个 authenticated suite 要求项目本地 Supabase 已启动，并覆盖 Desktop Chromium 和 Pixel 5 viewport。
-- Locale suite 使用独立 owner 覆盖 `zh-CN` 与 `en-SG` 的 desktop/mobile 矩阵。
+- Chinese suite 使用独立 owner 覆盖 desktop/mobile，并检查英文内建产品文案不出现。
 - Authenticated suite 会重建本地数据库并写入测试 fixture。
 - Authenticated suite 共用一个本地 Supabase 锁，必须串行运行。第二个并发运行会快速失败，不会删除当前 fixture。
 - E2E 不自动停止 Supabase。验证完成后运行 `pnpm exec supabase stop`。

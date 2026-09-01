@@ -1,5 +1,4 @@
 import type { AccountPurpose } from "@/lib/types/database";
-import { isChineseLocale } from "@/lib/i18n/locale";
 
 export type SettingsActionErrorCode =
   | "UNAUTHENTICATED"
@@ -9,6 +8,7 @@ export type SettingsActionErrorCode =
   | "SETUP_ACCOUNT_PROTECTED"
   | "BALANCE_HISTORY_PROTECTED"
   | "INVALID_STEP_NAME"
+  | "INVALID_STEP_KEY"
   | "INVALID_DUE_DAY"
   | "TEMPLATE_NOT_FOUND"
   | "SAVE_FAILED";
@@ -110,136 +110,7 @@ export interface SettingsCopy {
   errors: Record<SettingsActionErrorCode, string>;
 }
 
-const ENGLISH_COPY: SettingsCopy = {
-  page: {
-    title: "Settings",
-    description: "Manage accounts and SOP templates.",
-    descriptionWithEmail: "Manage accounts, SOP templates, and email reminders.",
-  },
-  tabs: {
-    accounts: "Accounts",
-    sop: "SOP templates",
-    email: "Email",
-    emailAria: "Email reminders",
-    sectionsAria: "Settings sections",
-  },
-  accountForm: {
-    name: "Account name",
-    namePlaceholder: "For example, salary account",
-    institution: "Institution (optional)",
-    institutionPlaceholder: "For example, your bank",
-    purpose: "Purpose",
-    icon: "Icon",
-    purposes: {
-      salary: "Salary",
-      fixed_expense: "Fixed expenses",
-      dating_fund: "Dating and leisure fund",
-      savings: "Savings",
-      flexible: "Flexible spending",
-      housing_fund: "Housing fund",
-    },
-    cancel: "Cancel",
-    saving: "Saving…",
-    update: "Update",
-    add: "Add",
-  },
-  accounts: {
-    empty: "No accounts yet. Use the button below to add one.",
-    icon: "Icon",
-    name: "Name",
-    institution: "Institution",
-    purpose: "Purpose",
-    actions: "Actions",
-    edit: "Edit",
-    delete: "Delete",
-    editTitle: "Edit account",
-    addTitle: "Add account",
-    add: "+ Add account",
-    deleteConfirm:
-      "Delete this account? The Setup Savings Account and accounts with Balance Snapshots are protected. If deletion is allowed, SOP Template links are disconnected and historical Monthly Actions remain.",
-  },
-  sopForm: {
-    stepKey: "Step key",
-    stepKeyPlaceholder: "For example, transfer_savings",
-    stepLabel: "Step name",
-    stepLabelPlaceholder: "For example, move funds to savings",
-    dueDay: "Due day",
-    sourceAccount: "Source account",
-    targetAccount: "Target account",
-    none: "None",
-    defaultAmount: "Default amount",
-    optional: "Optional",
-    enabled: "Enabled",
-    cancel: "Cancel",
-    saving: "Saving…",
-    update: "Update",
-    add: "Add",
-  },
-  templates: {
-    empty: "No SOP templates yet. Use the button below to add one.",
-    step: "Step",
-    dueDay: "Due day",
-    route: "Source → target",
-    amount: "Amount",
-    status: "Status",
-    actions: "Actions",
-    monthlyDayPrefix: "Day",
-    monthlyDaySuffix: "of each month",
-    enabled: "Enabled",
-    disabled: "Disabled",
-    edit: "Edit",
-    delete: "Delete",
-    editTitle: "Edit SOP step",
-    addTitle: "Add SOP step",
-    add: "+ Add SOP step",
-    deleteConfirm: "Delete this SOP template?",
-  },
-  reminder: {
-    title: "Monthly Review email reminder",
-    description:
-      "Receive one email when it is time to complete the previous month’s Monthly Review. The email never includes financial amounts, accounts, balances, or Monthly Actions.",
-    enabled: "Enabled",
-    disabled: "Disabled",
-    schedulePrefix: "On the 2nd of each month at 09:00",
-    scheduleSuffix: ".",
-    unsubscribing: "Unsubscribing…",
-    unsubscribe: "Unsubscribe from emails",
-    unsubscribeHelp:
-      "Unsubscribing blocks reminders that have not started dispatch. Once dispatch starts, that email may still arrive before Provider Acceptance is recorded.",
-    consent:
-      "I agree to receive a Monthly Review reminder email when my previous review is still open.",
-    scheduleSettingsSuffix: "You can unsubscribe at any time in Settings.",
-    enabling: "Enabling…",
-    enable: "Enable email reminders",
-    successEnabled: "Email reminders are enabled.",
-    successUnsubscribed: "You are unsubscribed from email reminders.",
-    errors: {
-      FEATURE_DISABLED: "Email reminders are not available yet.",
-      CONSENT_REQUIRED: "Agree to receive the Monthly Review email before enabling reminders.",
-      INVALID_REQUEST: "The email reminder request was invalid. Reload Settings and try again.",
-      UNAUTHENTICATED: "Please sign in again.",
-      LOAD_FAILED: "Email reminder settings could not be loaded. Reload Settings and try again.",
-      EMAIL_UNCONFIRMED: "Confirm your email address before enabling email reminders.",
-      SETUP_INCOMPLETE: "Complete Setup before changing email reminders.",
-      UPDATE_FAILED: "Email reminder settings could not be updated. Try again.",
-      INVALID_RECEIPT: "Email reminder settings returned an invalid receipt. Reload Settings and try again.",
-    },
-  },
-  errors: {
-    UNAUTHENTICATED: "Please sign in again.",
-    INVALID_ACCOUNT_NAME: "Enter an account name.",
-    INVALID_ACCOUNT_PURPOSE: "Choose a valid account purpose.",
-    ACCOUNT_NOT_FOUND: "Account was not found.",
-    SETUP_ACCOUNT_PROTECTED: "Choose a different Setup Savings Account before deleting this account.",
-    BALANCE_HISTORY_PROTECTED: "Delete this account’s Balance Snapshots before deleting the account.",
-    INVALID_STEP_NAME: "Enter a step name.",
-    INVALID_DUE_DAY: "Due day must be between 1 and 31.",
-    TEMPLATE_NOT_FOUND: "SOP template was not found.",
-    SAVE_FAILED: "Changes could not be saved. Try again.",
-  },
-};
-
-const CHINESE_COPY: SettingsCopy = {
+const COPY: SettingsCopy = {
   page: {
     title: "设置",
     description: "管理账户和 SOP 模板。",
@@ -361,14 +232,15 @@ const CHINESE_COPY: SettingsCopy = {
     SETUP_ACCOUNT_PROTECTED: "请先更换初始设置中的储蓄账户。",
     BALANCE_HISTORY_PROTECTED: "请先删除该账户的余额快照。",
     INVALID_STEP_NAME: "请输入步骤名称。",
+    INVALID_STEP_KEY: "请输入步骤标识。",
     INVALID_DUE_DAY: "执行日必须在 1 到 31 之间。",
     TEMPLATE_NOT_FOUND: "找不到该 SOP 模板。",
     SAVE_FAILED: "保存失败，请重试。",
   },
 };
 
-export function getSettingsCopy(locale: string | null | undefined): SettingsCopy {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getSettingsCopy(): SettingsCopy {
+  return COPY;
 }
 
 export function getSettingsErrorMessage(error: string, copy: SettingsCopy): string {

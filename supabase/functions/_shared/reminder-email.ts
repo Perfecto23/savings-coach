@@ -92,7 +92,7 @@ function formatReviewMonth(yearMonth: string): string {
     throw new Error("review_year_month_invalid");
   }
   const [year, month] = yearMonth.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("zh-CN", {
     month: "long",
     timeZone: "UTC",
     year: "numeric",
@@ -129,27 +129,27 @@ export function buildReviewReminderEmail(
   const safeReviewLabel = escapeHtml(reviewLabel);
   const safeReviewUrl = escapeHtml(reviewUrl);
   const safeUnsubscribeUrl = escapeHtml(unsubscribeUrl.toString());
-  const preheader = "Sign in to Savings Coach to continue.";
+  const preheader = "登录储蓄教练，完成月度复盘。";
   const text = [
-    `Your ${reviewLabel} Monthly Review is ready.`,
+    `你的 ${reviewLabel}月度复盘已准备好。`,
     "",
     preheader,
-    `Open Monthly Review: ${reviewUrl}`,
+    `打开月度复盘：${reviewUrl}`,
     "",
-    "You received this reminder because you enabled Monthly Review email reminders in Settings.",
+    "你收到此提醒，是因为你已在设置中启用月度复盘邮件提醒。",
     "",
-    `Unsubscribe from monthly review reminders: ${unsubscribeUrl}`,
+    `退订月度复盘邮件提醒：${unsubscribeUrl}`,
   ].join("\n");
   const html = [
-    '<!doctype html><html lang="en"><body>',
+    '<!doctype html><html lang="zh-CN"><body>',
     `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${
       escapeHtml(preheader)
     }</div>`,
-    `<p>Your ${safeReviewLabel} Monthly Review is ready.</p>`,
+    `<p>你的 ${safeReviewLabel}月度复盘已准备好。</p>`,
     `<p>${escapeHtml(preheader)}</p>`,
-    `<p><a href="${safeReviewUrl}">Open Monthly Review</a></p>`,
-    "<p>You received this reminder because you enabled Monthly Review email reminders in Settings.</p>",
-    `<p><a href="${safeUnsubscribeUrl}">Unsubscribe from monthly review reminders</a></p>`,
+    `<p><a href="${safeReviewUrl}">打开月度复盘</a></p>`,
+    "<p>你收到此提醒，是因为你已在设置中启用月度复盘邮件提醒。</p>",
+    `<p><a href="${safeUnsubscribeUrl}">退订月度复盘邮件提醒</a></p>`,
     "</body></html>",
   ].join("");
 
@@ -159,7 +159,7 @@ export function buildReviewReminderEmail(
     payload: {
       from: input.from,
       to: [input.recipientEmail],
-      subject: `Your ${reviewLabel} Monthly Review is ready`,
+      subject: `请完成 ${reviewLabel}月度复盘`,
       text,
       html,
       headers: {

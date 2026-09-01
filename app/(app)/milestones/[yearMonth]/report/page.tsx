@@ -17,6 +17,7 @@ import {
   getMonthlyReviewCopy,
 } from "@/lib/monthly-review/presentation";
 import { getPaidIntentCopy } from "@/lib/paid-intent/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 interface ReportPageProps {
   params: Promise<{ yearMonth: string }>;
@@ -102,7 +103,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
         .order("created_at"),
       supabase
         .from("owner_setup")
-        .select("locale, time_zone, base_currency")
+        .select("time_zone, base_currency")
         .eq("owner_id", user.id)
         .maybeSingle(),
       supabase.rpc("get_paid_intent_offer_state"),
@@ -127,14 +128,14 @@ export default async function ReportPage({ params }: ReportPageProps) {
   const completedMonthlyActions = monthlyActions.filter(
     (record) => record.completed
   ).length;
-  const locale = setupRes.data?.locale || "en-US";
+  const locale = APP_LOCALE;
   const currentYearMonth = currentYearMonthInTimeZone(
     setupRes.data?.time_zone || "UTC"
   );
   const previousReviewYearMonth = previousYearMonth(currentYearMonth);
-  const reportCopy = getMonthlyReportCopy(locale);
-  const reviewCopy = getMonthlyReviewCopy(locale);
-  const paidIntentCopy = getPaidIntentCopy(locale);
+  const reportCopy = getMonthlyReportCopy();
+  const reviewCopy = getMonthlyReviewCopy();
+  const paidIntentCopy = getPaidIntentCopy();
   const paidIntentState = paidIntentRes.data as PaidIntentOfferState | null;
   if (
     !paidIntentState ||

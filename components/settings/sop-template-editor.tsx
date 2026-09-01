@@ -13,6 +13,7 @@ import {
   getSettingsErrorMessage,
   type SettingsCopy,
 } from "@/lib/settings/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface SopTemplateEditorProps {
   initialTemplates: SopTemplate[];
@@ -33,6 +34,7 @@ export function SopTemplateEditor({
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<SopTemplate | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   function getAccountName(id: string | null) {
     if (!id) return "—";
@@ -81,7 +83,6 @@ export function SopTemplateEditor({
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm(copy.templates.deleteConfirm)) return;
     const result = await deleteSopTemplate(id);
     if (result.success) {
       setTemplates((prev) => prev.filter((t) => t.id !== id));
@@ -93,7 +94,9 @@ export function SopTemplateEditor({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {error}
+        </div>
       )}
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -154,7 +157,7 @@ export function SopTemplateEditor({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(tpl.id)}
+                      onClick={() => setPendingDeleteId(tpl.id)}
                       className="ml-3 cursor-pointer text-gray-400 transition-colors hover:text-red-500"
                     >
                       {copy.templates.delete}
@@ -206,6 +209,14 @@ export function SopTemplateEditor({
           {copy.templates.add}
         </button>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        description={copy.templates.deleteConfirm}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) return handleDelete(pendingDeleteId);
+        }}
+      />
     </div>
   );
 }

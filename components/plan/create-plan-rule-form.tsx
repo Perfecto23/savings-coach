@@ -53,7 +53,7 @@ export function CreatePlanRuleForm({
         {copy.createForm.description}
       </p>
 
-      <form ref={formRef} action={formAction} className="mt-8 space-y-6">
+      <form ref={formRef} action={formAction} className="mt-8 space-y-6" noValidate>
         <input type="hidden" name="rule_id" value={ruleId} />
 
         {state.status === "error" ? (

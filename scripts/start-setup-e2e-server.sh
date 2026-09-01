@@ -57,7 +57,7 @@ if ! mkdir "${setup_lock_dir}" 2>/dev/null; then
       read -r stale_runtime <"${setup_lock_dir}/runtime" || true
     fi
     case "${stale_runtime}" in
-      "/tmp/savings-coach-locale-e2e"|"${setup_root}/.setup-e2e"|"${setup_root}/.setup-e2e/plan")
+      "${setup_root}/.setup-e2e"|"${setup_root}/.setup-e2e/plan")
         rm -rf "${stale_runtime}"
         ;;
     esac
@@ -264,14 +264,14 @@ fs.writeFileSync(
     "desktop-chromium": {
       email: process.env.OWNER_A_EMAIL,
       password: process.env.OWNER_A_PASSWORD,
-      accountName: "Desktop Rainy Day Fund",
+      accountName: "桌面应急储蓄",
       otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
       secretCanary: process.env.SECRET_CANARY,
     },
     "mobile-chromium": {
       email: process.env.OWNER_B_EMAIL,
       password: process.env.OWNER_B_PASSWORD,
-      accountName: "Mobile Rainy Day Fund",
+      accountName: "移动应急储蓄",
       otherOwnerCanary: process.env.OTHER_OWNER_CANARY,
       secretCanary: process.env.SECRET_CANARY,
     },

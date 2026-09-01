@@ -6,10 +6,9 @@ import { FieldError } from "@/components/setup/field-error";
 import {
   INITIAL_SETUP_FORM_STATE,
   SUPPORTED_BASE_CURRENCIES,
-  SUPPORTED_SETUP_LOCALES,
 } from "@/lib/setup/contracts";
 import type { SetupCopy } from "@/lib/setup/presentation";
-import type { SetupFormErrorCode, SetupLocale } from "@/lib/setup/contracts";
+import type { SetupFormErrorCode } from "@/lib/setup/contracts";
 
 const TIME_ZONES = [
   "UTC",
@@ -25,14 +24,12 @@ const TIME_ZONES = [
 
 interface PreferencesStepProps {
   legacyCurrencyLocked: boolean;
-  locale: SetupLocale;
   copy: SetupCopy["preferences"];
   errorCopy: Record<SetupFormErrorCode, string>;
 }
 
 export function PreferencesStep({
   legacyCurrencyLocked,
-  locale,
   copy,
   errorCopy,
 }: PreferencesStepProps) {
@@ -57,7 +54,7 @@ export function PreferencesStep({
         {copy.description}
       </p>
 
-      <form action={formAction} className="mt-8 space-y-6">
+      <form action={formAction} className="mt-8 space-y-6" noValidate>
         {state.status === "error" ? (
           <div
             ref={errorRef}
@@ -68,37 +65,6 @@ export function PreferencesStep({
             {errorCopy[state.error.code]}
           </div>
         ) : null}
-
-        <div>
-          <label
-            htmlFor="setup-locale"
-            className="block text-sm font-medium text-stone-800"
-          >
-            {copy.language}
-          </label>
-          <select
-            id="setup-locale"
-            name="locale"
-            defaultValue={locale}
-            aria-invalid={fieldError?.field === "locale"}
-            aria-describedby={
-              fieldError?.field === "locale" ? "setup-locale-error" : undefined
-            }
-            className="mt-2 min-h-12 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-3 text-base shadow-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-          >
-            {SUPPORTED_SETUP_LOCALES.map((locale) => (
-              <option key={locale} value={locale}>
-                {copy.localeLabels[locale]}
-              </option>
-            ))}
-          </select>
-          <FieldError
-            id="setup-locale-error"
-            field="locale"
-            error={fieldError}
-            message={fieldError ? errorCopy[fieldError.code] : ""}
-          />
-        </div>
 
         <div>
           <label

@@ -11,7 +11,7 @@ export default defineConfig({
     "impulse-locale.spec.ts",
     "monthly-review.spec.ts",
     "review-email-reminder.spec.ts",
-    "locale-consistency.spec.ts",
+    "chinese-consistency.spec.ts",
   ],
   fullyParallel: false,
   use: {
@@ -31,11 +31,11 @@ export default defineConfig({
   projects: [
     {
       name: "desktop-chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], locale: "zh-CN" },
     },
     {
       name: "mobile-chromium",
-      use: { ...devices["Pixel 5"] },
+      use: { ...devices["Pixel 5"], locale: "zh-CN" },
     },
   ],
 });

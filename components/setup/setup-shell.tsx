@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import { logout } from "@/app/login/actions";
 import type { SetupCopy } from "@/lib/setup/presentation";
-import type { SetupLocale } from "@/lib/setup/contracts";
-import { DocumentLocale } from "@/components/document-locale";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 export type SetupStepId =
   | "preferences"
@@ -10,7 +9,6 @@ export type SetupStepId =
   | "initialBalance";
 
 interface SetupShellProps {
-  locale: SetupLocale;
   copy: SetupCopy["shell"];
   currentStep: SetupStepId;
   summary?: {
@@ -22,7 +20,6 @@ interface SetupShellProps {
 }
 
 export function SetupShell({
-  locale,
   copy,
   currentStep,
   summary,
@@ -35,10 +32,9 @@ export function SetupShell({
 
   return (
     <main
-      lang={locale}
+      lang={APP_LOCALE}
       className="min-h-dvh bg-[#f6f1e8] text-stone-950 selection:bg-orange-200 selection:text-orange-950"
     >
-      <DocumentLocale locale={locale} />
       <div className="mx-auto grid min-h-dvh max-w-[1440px] lg:grid-cols-[minmax(320px,0.8fr)_minmax(560px,1.2fr)]">
         <aside className="relative overflow-hidden bg-stone-950 px-6 py-5 text-stone-50 sm:px-10 sm:py-7 lg:flex lg:min-h-dvh lg:flex-col lg:px-12 lg:py-10">
           <div

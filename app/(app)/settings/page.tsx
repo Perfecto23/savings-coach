@@ -4,6 +4,7 @@ import { SettingsTabs } from "./settings-tabs";
 import type { Account, SopTemplate } from "@/lib/types/database";
 import type { ReviewEmailReminderSettings } from "@/lib/reminders/contracts";
 import { getSettingsCopy } from "@/lib/settings/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 interface ReviewEmailReminderStateReceipt {
   enabled?: unknown;
@@ -32,7 +33,7 @@ export default async function SettingsPage() {
       .order("sort_order"),
     supabase
       .from("owner_setup")
-      .select("locale, base_currency, time_zone")
+      .select("base_currency, time_zone")
       .eq("owner_id", user.id)
       .maybeSingle(),
   ]);
@@ -43,8 +44,8 @@ export default async function SettingsPage() {
 
   const accounts = (accountsRes.data || []) as Account[];
   const templates = (templatesRes.data || []) as SopTemplate[];
-  const locale = setupRes.data.locale || "en-US";
-  const copy = getSettingsCopy(locale);
+  const locale = APP_LOCALE;
+  const copy = getSettingsCopy();
   let reviewEmailReminder: ReviewEmailReminderSettings | null = null;
   if (reminderFeatureEnabled) {
     const reminderRes = await supabase.rpc("get_review_email_reminder_state");

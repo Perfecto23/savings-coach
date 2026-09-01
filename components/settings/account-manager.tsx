@@ -8,6 +8,7 @@ import {
   getSettingsErrorMessage,
   type SettingsCopy,
 } from "@/lib/settings/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface AccountManagerProps {
   initialAccounts: Account[];
@@ -19,6 +20,7 @@ export function AccountManager({ initialAccounts, copy }: AccountManagerProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   async function handleCreate(formData: FormData) {
     setError(null);
@@ -56,11 +58,6 @@ export function AccountManager({ initialAccounts, copy }: AccountManagerProps) {
   }
 
   async function handleDelete(id: string) {
-    if (
-      !window.confirm(
-        copy.accounts.deleteConfirm
-      )
-    ) return;
     const result = await deleteAccount(id);
     if (result.success) {
       setAccounts((prev) => prev.filter((a) => a.id !== id));
@@ -72,7 +69,9 @@ export function AccountManager({ initialAccounts, copy }: AccountManagerProps) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {error}
+        </div>
       )}
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -113,7 +112,7 @@ export function AccountManager({ initialAccounts, copy }: AccountManagerProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(account.id)}
+                      onClick={() => setPendingDeleteId(account.id)}
                       className="ml-3 cursor-pointer text-gray-400 transition-colors hover:text-red-500"
                     >
                       {copy.accounts.delete}
@@ -161,6 +160,14 @@ export function AccountManager({ initialAccounts, copy }: AccountManagerProps) {
           {copy.accounts.add}
         </button>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        description={copy.accounts.deleteConfirm}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) return handleDelete(pendingDeleteId);
+        }}
+      />
     </div>
   );
 }

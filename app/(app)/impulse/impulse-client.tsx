@@ -22,7 +22,7 @@ export function ImpulsePageClient({
 }: ImpulsePageClientProps) {
   const [logs, setLogs] = useState(initialLogs);
   const [total, setTotal] = useState(initialTotal);
-  const copy = getImpulseCopy(locale);
+  const copy = getImpulseCopy();
 
   function handleAdded(log: ImpulseLog) {
     setLogs((prev) => [log, ...prev]);
@@ -60,7 +60,6 @@ export function ImpulsePageClient({
         baseCurrency={baseCurrency}
         copy={copy.form}
         allCopy={copy}
-        locale={locale}
         onAdded={handleAdded}
       />
       <ImpulseList

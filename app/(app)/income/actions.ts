@@ -61,12 +61,14 @@ export async function saveSalaryConfig(
   const housingFundBase = housingFundBaseRaw ? Number(housingFundBaseRaw) : null;
   const socialInsurance = Number(formData.get("social_insurance"));
   const specialDeductions = Number(formData.get("special_deductions"));
+  const effectiveFrom = String(formData.get("effective_from") ?? "");
 
   if (!Number.isFinite(monthlyGross) || monthlyGross < 0) return { success: false, error: "INVALID_MONTHLY_GROSS" };
   if (!Number.isFinite(housingFundRate) || housingFundRate < 0) return { success: false, error: "INVALID_HOUSING_RATE" };
   if (housingFundBase !== null && (!Number.isFinite(housingFundBase) || housingFundBase < 0)) return { success: false, error: "INVALID_HOUSING_BASE" };
   if (!Number.isFinite(socialInsurance) || socialInsurance < 0) return { success: false, error: "INVALID_SOCIAL_INSURANCE" };
   if (!Number.isFinite(specialDeductions) || specialDeductions < 0) return { success: false, error: "INVALID_SPECIAL_DEDUCTIONS" };
+  if (!YYYY_MM_DD.test(effectiveFrom)) return { success: false, error: "INVALID_DATE" };
 
   const payload = {
     owner_id: user.id,
@@ -75,7 +77,7 @@ export async function saveSalaryConfig(
     housing_fund_base: housingFundBase,
     social_insurance: socialInsurance,
     special_deductions: specialDeductions,
-    effective_from: formData.get("effective_from") as string,
+    effective_from: effectiveFrom,
     note: (formData.get("note") as string) || null,
   };
 
@@ -136,10 +138,12 @@ export async function addBonusEvent(
   if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const type = formData.get("type") as string;
+  const label = String(formData.get("label") ?? "").trim();
   const amount = Number(formData.get("amount"));
   const expectedDate = formData.get("expected_date") as string;
 
   if (!BONUS_TYPES.includes(type as (typeof BONUS_TYPES)[number])) return { success: false, error: "INVALID_BONUS_TYPE" };
+  if (!label) return { success: false, error: "INVALID_BONUS_LABEL" };
   if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "INVALID_AMOUNT" };
   if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "INVALID_DATE" };
 
@@ -148,7 +152,7 @@ export async function addBonusEvent(
     .insert({
       owner_id: user.id,
       type,
-      label: formData.get("label") as string,
+      label,
       amount,
       expected_date: expectedDate,
       target_account_id: (formData.get("target_account_id") as string) || null,
@@ -173,10 +177,12 @@ export async function updateBonusEvent(
   if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const type = formData.get("type") as string;
+  const label = String(formData.get("label") ?? "").trim();
   const amount = Number(formData.get("amount"));
   const expectedDate = formData.get("expected_date") as string;
 
   if (!BONUS_TYPES.includes(type as (typeof BONUS_TYPES)[number])) return { success: false, error: "INVALID_BONUS_TYPE" };
+  if (!label) return { success: false, error: "INVALID_BONUS_LABEL" };
   if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "INVALID_AMOUNT" };
   if (!YYYY_MM_DD.test(expectedDate || "")) return { success: false, error: "INVALID_DATE" };
 
@@ -184,7 +190,7 @@ export async function updateBonusEvent(
     .from("bonus_events")
     .update({
       type,
-      label: formData.get("label") as string,
+      label,
       amount,
       expected_date: expectedDate,
       target_account_id: (formData.get("target_account_id") as string) || null,

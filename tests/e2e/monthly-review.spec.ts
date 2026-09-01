@@ -26,7 +26,7 @@ function loadFixture(projectName: string): ReviewFixture {
 }
 
 function formatMonth(yearMonth: string) {
-  return new Intl.DateTimeFormat("en-SG", {
+  return new Intl.DateTimeFormat("zh-CN", {
     month: "long",
     year: "numeric",
     timeZone: "UTC",
@@ -86,68 +86,68 @@ test("an owner closes the previous Monthly Review and starts the current month",
   });
 
   await page.goto("/login");
-  await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
-  await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
-  await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
+  await page.getByLabel("邮箱").fill(fixture.email);
+  await page.getByLabel("密码").fill(fixture.password);
+  await page.getByRole("button", { name: "登录" }).click();
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: `Review ${reviewMonth} before starting ${currentMonth}.` })).toBeVisible();
-  await expect(page.getByText("1 of 1 Monthly Actions confirmed", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `先复盘 ${reviewMonth}，再开始 ${currentMonth}。` })).toBeVisible();
+  await expect(page.getByText("已确认 1/1 个月度行动", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  await page.getByRole("link", { name: `Review ${reviewMonth}` }).click();
+  await page.getByRole("link", { name: `复盘 ${reviewMonth}` }).click();
   await expect(page).toHaveURL(new RegExp(`/milestones/${fixture.reviewYearMonth}/report$`));
-  await expect(page.getByRole("heading", { level: 1, name: `${reviewMonth} Monthly report` })).toBeVisible();
-  await expect(page.getByText("S$500.00", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/does not confirm a bank balance or transfer/)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: `${reviewMonth} 月度报告` })).toBeVisible();
+  await expect(page.getByText("¥500.00", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/不确认银行余额或转账/)).toBeVisible();
 
-  await page.getByRole("button", { name: `Close ${reviewMonth}` }).click();
-  await expect(page.getByText("Review complete", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: `${reviewMonth} is closed.` })).toBeVisible();
+  await page.getByRole("button", { name: `关闭 ${reviewMonth}` }).click();
+  await expect(page.getByText("复盘完成", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `${reviewMonth} 已关闭。` })).toBeVisible();
 
-  const offer = page.getByRole("region", { name: "Savings Coach Pro beta offer" });
-  await expect(offer.getByRole("heading", { name: "Help shape Savings Coach Pro" })).toBeVisible();
-  await expect(offer.getByText("US$4.99/month after launch", { exact: true })).toBeVisible();
-  await expect(offer.getByText(/Today: no charge\. No card\. No subscription\./)).toBeVisible();
-  await expect(page.getByRole("textbox", { name: /card/i })).toHaveCount(0);
-  await offer.getByRole("button", { name: "I'm interested in Pro beta" }).click();
-  await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
+  const offer = page.getByRole("region", { name: "储蓄教练专业版内测方案" });
+  await expect(offer.getByRole("heading", { name: "参与完善储蓄教练专业版" })).toBeVisible();
+  await expect(offer.getByText("正式发布后每月 4.99 美元", { exact: true })).toBeVisible();
+  await expect(offer.getByText(/今天不会收费，无需银行卡，也不会创建订阅/)).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /银行卡/ })).toHaveCount(0);
+  await offer.getByRole("button", { name: "我对专业版内测感兴趣" }).click();
+  await expect(page.getByText("付费意愿已记录", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", {
-      name: "You were not charged, and no subscription was created.",
+      name: "没有产生收费，也没有创建订阅。",
     })
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
+  await expect(page.getByText("付费意愿已记录", { exact: true })).toBeVisible();
   expect(paymentRequests).toEqual([]);
 
   if (testInfo.project.name === "desktop-chromium") {
-    await page.getByRole("button", { name: "Log out" }).click();
+    await page.getByRole("button", { name: "退出登录" }).click();
     await expect(page).toHaveURL(/\/login$/);
-    await page.getByLabel(/^(Email|邮箱)$/).fill(fixture.email);
-    await page.getByLabel(/^(Password|密码)$/).fill(fixture.password);
-    await page.getByRole("button", { name: /^(Log in|登录)$/ }).click();
+    await page.getByLabel("邮箱").fill(fixture.email);
+    await page.getByLabel("密码").fill(fixture.password);
+    await page.getByRole("button", { name: "登录" }).click();
     await expect(page).toHaveURL(/\/$/);
     await page.goto(`/milestones/${fixture.reviewYearMonth}/report`);
-    await expect(page.getByText("Interest recorded", { exact: true })).toBeVisible();
+    await expect(page.getByText("付费意愿已记录", { exact: true })).toBeVisible();
   }
 
-  await page.getByRole("link", { name: `Open ${currentMonth}` }).click();
+  await page.getByRole("link", { name: `打开 ${currentMonth}` }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("region", { name: "Next Monthly Action" })).toContainText("S$500.00");
-  await expect(page.getByRole("region", { name: "Next Monthly Action" })).toContainText("Monthly Review Action");
+  await expect(page.getByRole("region", { name: "下一月度行动" })).toContainText("¥500.00");
+  await expect(page.getByRole("region", { name: "下一月度行动" })).toContainText("月度复盘行动");
   await page.reload();
-  await expect(page.getByRole("region", { name: "Next Monthly Action" })).toContainText("S$500.00");
+  await expect(page.getByRole("region", { name: "下一月度行动" })).toContainText("¥500.00");
 
   await page.goto(`/sop?month=${fixture.reviewYearMonth}`);
-  await expect(page.getByText(/This month is closed/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Mark as incomplete" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(0);
-  await expect(page.getByText(/Add a temporary step/)).toHaveCount(0);
+  await expect(page.getByText(/该月份已关闭/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "标记为未完成" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "编辑" })).toHaveCount(0);
+  await expect(page.getByText(/添加临时步骤/)).toHaveCount(0);
 
   await page.goto("/milestones");
   const reviewedRow = page.getByRole("row").filter({ hasText: reviewMonth });
-  await expect(reviewedRow).toContainText("Reviewed");
+  await expect(reviewedRow).toContainText("已复盘");
   await expectNoHorizontalOverflow(page);
 
   const responsePayload = await captured.read();

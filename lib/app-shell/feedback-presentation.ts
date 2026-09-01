@@ -1,5 +1,3 @@
-import { isChineseLocale } from "@/lib/i18n/locale";
-
 export interface AppFeedbackCopy {
   error: {
     iconTitle: string;
@@ -16,23 +14,7 @@ export interface AppFeedbackCopy {
   };
 }
 
-const ENGLISH_COPY: AppFeedbackCopy = {
-  error: {
-    iconTitle: "Error",
-    title: "Something went wrong",
-    errorId: "Error ID",
-    description: "The page could not be loaded. Try again.",
-    retry: "Try again",
-    home: "Return home",
-  },
-  notFound: {
-    title: "Page not found",
-    description: "This page does not exist or has been removed.",
-    home: "Return home",
-  },
-};
-
-const CHINESE_COPY: AppFeedbackCopy = {
+const COPY: AppFeedbackCopy = {
   error: {
     iconTitle: "错误",
     title: "出了点问题",
@@ -48,6 +30,6 @@ const CHINESE_COPY: AppFeedbackCopy = {
   },
 };
 
-export function getAppFeedbackCopy(locale: string | null | undefined) {
-  return isChineseLocale(locale) ? CHINESE_COPY : ENGLISH_COPY;
+export function getAppFeedbackCopy(): AppFeedbackCopy {
+  return COPY;
 }

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { ImpulseLog } from "@/lib/types/database";
 import { ImpulsePageClient } from "./impulse-client";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 export default async function ImpulsePage() {
   const supabase = await createClient();
@@ -22,7 +23,7 @@ export default async function ImpulsePage() {
       .eq("resisted", true),
     supabase
       .from("owner_setup")
-      .select("locale, base_currency")
+      .select("base_currency")
       .eq("owner_id", user.id)
       .maybeSingle(),
   ]);
@@ -37,7 +38,7 @@ export default async function ImpulsePage() {
     <ImpulsePageClient
       initialLogs={logs}
       initialTotal={total}
-      locale={setupRes.data?.locale ?? "en-US"}
+      locale={APP_LOCALE}
       baseCurrency={setupRes.data?.base_currency ?? "USD"}
     />
   );

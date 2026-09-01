@@ -200,7 +200,9 @@ export async function createSopTemplate(
   if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const stepLabel = (formData.get("step_label") as string) || "";
+  const stepKey = String(formData.get("step_key") ?? "").trim();
   const dueDay = Number(formData.get("due_day"));
+  if (!stepKey) return { success: false, error: "INVALID_STEP_KEY" };
   if (!stepLabel.trim()) return { success: false, error: "INVALID_STEP_NAME" };
   if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) return { success: false, error: "INVALID_DUE_DAY" };
 
@@ -208,7 +210,7 @@ export async function createSopTemplate(
     .from("sop_templates")
     .insert({
       owner_id: user.id,
-      step_key: formData.get("step_key") as string,
+      step_key: stepKey,
       step_label: formData.get("step_label") as string,
       due_day: Number(formData.get("due_day")),
       from_account_id: (formData.get("from_account_id") as string) || null,
@@ -238,14 +240,16 @@ export async function updateSopTemplate(
   if (!user) return { success: false, error: "UNAUTHENTICATED" };
 
   const stepLabel = (formData.get("step_label") as string) || "";
+  const stepKey = String(formData.get("step_key") ?? "").trim();
   const dueDay = Number(formData.get("due_day"));
+  if (!stepKey) return { success: false, error: "INVALID_STEP_KEY" };
   if (!stepLabel.trim()) return { success: false, error: "INVALID_STEP_NAME" };
   if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) return { success: false, error: "INVALID_DUE_DAY" };
 
   const { data, error } = await supabase
     .from("sop_templates")
     .update({
-      step_key: formData.get("step_key") as string,
+      step_key: stepKey,
       step_label: formData.get("step_label") as string,
       due_day: Number(formData.get("due_day")),
       from_account_id: (formData.get("from_account_id") as string) || null,

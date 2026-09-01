@@ -59,14 +59,16 @@ export function BalanceForm({
         {copy.description}
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
         <div>
           <label htmlFor="balance-date" className="block text-sm font-medium text-gray-700">
             {copy.dateLabel}
           </label>
           <input
             id="balance-date"
-            type="date"
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="mt-1 w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"

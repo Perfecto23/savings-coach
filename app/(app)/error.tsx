@@ -1,26 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import type { AppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
 import { getAppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
-function ErrorPanel({
-  copy,
+export default function Error({
   error,
   reset,
-  className,
-  locale,
 }: {
-  copy: AppFeedbackCopy["error"];
   error: Error & { digest?: string };
   reset: () => void;
-  className: string;
-  locale: "en-US" | "zh-CN";
 }) {
+  const copy = getAppFeedbackCopy().error;
+
   return (
     <div
-      lang={locale}
-      className={`${className} mx-auto max-w-md flex-col items-center py-20 text-center`}
+      lang={APP_LOCALE}
+      className="mx-auto flex max-w-md flex-col items-center py-20 text-center"
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
         <svg
@@ -60,33 +56,5 @@ function ErrorPanel({
         </Link>
       </div>
     </div>
-  );
-}
-
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  return (
-    <>
-      <style>{`.app-error-zh { display: none; } html[lang="zh-CN"] .app-error-en { display: none; } html[lang="zh-CN"] .app-error-zh { display: flex; }`}</style>
-      <ErrorPanel
-        className="app-error-en flex"
-        locale="en-US"
-        copy={getAppFeedbackCopy("en-US").error}
-        error={error}
-        reset={reset}
-      />
-      <ErrorPanel
-        className="app-error-zh"
-        locale="zh-CN"
-        copy={getAppFeedbackCopy("zh-CN").error}
-        error={error}
-        reset={reset}
-      />
-    </>
   );
 }

@@ -4,14 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   SUPPORTED_BASE_CURRENCIES,
-  SUPPORTED_SETUP_LOCALES,
   type SetupBaseCurrency,
   type SetupFormError,
   type SetupFormState,
   type SetupLocale,
 } from "@/lib/setup/contracts";
 import { createClient } from "@/lib/supabase/server";
-import { setRequestLocale } from "@/lib/i18n/request-locale";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MONEY_PATTERN = /^(0|[1-9]\d{0,9})(\.\d{1,2})?$/;
@@ -47,10 +45,6 @@ function unauthenticatedState(): SetupFormState {
 function readString(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
-}
-
-function isSupportedLocale(value: string): value is SetupLocale {
-  return (SUPPORTED_SETUP_LOCALES as readonly string[]).includes(value);
 }
 
 function isSupportedCurrency(value: string): value is SetupBaseCurrency {
@@ -102,16 +96,7 @@ export async function saveSetupPreferences(
   } = await supabase.auth.getUser();
   if (!user) return unauthenticatedState();
 
-  const localeInput = readString(formData, "locale");
-  let locale: string;
-  try {
-    locale = new Intl.Locale(localeInput).toString();
-  } catch {
-    return errorState({ code: "INVALID_LOCALE", field: "locale" });
-  }
-  if (!isSupportedLocale(locale)) {
-    return errorState({ code: "INVALID_LOCALE", field: "locale" });
-  }
+  const locale: SetupLocale = "zh-CN";
 
   const timeZone = normalizeTimeZone(readString(formData, "time_zone"));
   if (!timeZone) {
@@ -129,8 +114,6 @@ export async function saveSetupPreferences(
     base_currency: currency,
   });
   if (failure) return failure;
-
-  await setRequestLocale(locale);
 
   revalidatePath("/setup");
   redirect("/setup");

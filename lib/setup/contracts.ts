@@ -1,4 +1,4 @@
-export const SUPPORTED_SETUP_LOCALES = ["en-US", "en-SG", "zh-CN"] as const;
+export const SUPPORTED_SETUP_LOCALES = ["zh-CN"] as const;
 
 export const SUPPORTED_BASE_CURRENCIES = [
   "AUD",

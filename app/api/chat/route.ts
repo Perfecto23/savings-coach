@@ -5,7 +5,7 @@ export async function POST() {
     {
       error: {
         code: "feature_disabled",
-        message: "AI Coach is not available in this release.",
+        message: "AI 教练在当前版本未开放。",
       },
     },
     { status: 404 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { MilestoneTable } from "@/components/milestones/milestone-table";
 import type { MonthlyMilestone, BonusEvent } from "@/lib/types/database";
 import { getMilestonesCopy } from "@/lib/milestones/presentation";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 function localYearMonth(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -31,16 +32,16 @@ export default async function MilestonesPage() {
       .order("expected_date"),
     supabase
       .from("owner_setup")
-      .select("locale, time_zone, base_currency")
+      .select("time_zone, base_currency")
       .eq("owner_id", user.id)
       .maybeSingle(),
   ]);
 
   const milestones = (milestonesRes.data || []) as MonthlyMilestone[];
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
-  const locale = setupRes.data?.locale || "en-US";
+  const locale = APP_LOCALE;
   const baseCurrency = setupRes.data?.base_currency || "USD";
-  const copy = getMilestonesCopy(locale);
+  const copy = getMilestonesCopy();
 
   return (
     <div lang={locale} className="mx-auto max-w-5xl space-y-6">

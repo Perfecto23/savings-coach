@@ -1,17 +1,14 @@
-import { DocumentLocale } from "@/components/document-locale";
-import { getPublicCopy } from "@/lib/i18n/public-presentation";
-import { getRequestLocale } from "@/lib/i18n/request-locale";
+import { getPublicCopy } from "@/lib/public/presentation";
 import { LoginForm } from "./login-form";
 
-export default async function LoginPage() {
-  const copy = getPublicCopy(await getRequestLocale());
+export default function LoginPage() {
+  const copy = getPublicCopy();
 
   return (
     <div
       lang={copy.locale}
       className="flex min-h-screen items-center justify-center bg-linear-to-br from-amber-50 to-orange-50 px-4"
     >
-      <DocumentLocale locale={copy.locale} />
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg sm:p-8">
         <div className="mb-6 text-center">
           <div className="mb-2 inline-flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">

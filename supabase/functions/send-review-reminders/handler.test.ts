@@ -24,7 +24,7 @@ function fakeGateway(
 
 const environment = {
   appBaseUrl: "https://app.example.test",
-  from: "Savings Coach <review@example.test>",
+  from: "储蓄教练 <review@example.test>",
   resendApiKey: "test-provider-key",
   sendingEnabled: "true",
   supabaseUrl: "https://project.supabase.co",
@@ -90,7 +90,7 @@ Deno.test("invalid URL or From configuration returns 503 before claim", async ()
     { ...environment, appBaseUrl: "http://app.example.test" },
     {
       ...environment,
-      from: "Savings Coach <review@example.test>\r\nBcc: attacker@example.test",
+      from: "储蓄教练 <review@example.test>\r\nBcc: attacker@example.test",
     },
   ];
   for (const invalidEnvironment of invalidEnvironments) {
@@ -219,7 +219,7 @@ Deno.test("sender ignores request owner and email and sends privacy-safe payload
   const payloadText = await providerRequest.text();
   assert.match(payloadText, /authorized@example\.test/);
   assert.match(payloadText, /https:\/\/app\.example\.test/);
-  assert.match(payloadText, /Savings Coach <review@example\.test>/);
+  assert.match(payloadText, /储蓄教练 <review@example\.test>/);
   assert.doesNotMatch(
     payloadText,
     /attacker-owner|attacker@example\.test|attacker\.example\.test/,

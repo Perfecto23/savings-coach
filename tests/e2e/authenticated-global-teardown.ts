@@ -19,7 +19,6 @@ export default async function authenticatedGlobalTeardown() {
   const allowedRuntimeDirs = new Set([
     path.resolve(".setup-e2e"),
     path.resolve(".setup-e2e/plan"),
-    "/tmp/savings-coach-locale-e2e",
   ]);
   if (!allowedRuntimeDirs.has(runtimeDir)) {
     throw new Error("Refusing to clean an unknown authenticated E2E runtime path");

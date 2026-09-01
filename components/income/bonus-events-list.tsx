@@ -14,6 +14,7 @@ import {
   getIncomeErrorMessage,
   type IncomeCopy,
 } from "@/lib/income/presentation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface BonusEventsListProps {
   initialEvents: BonusEvent[];
@@ -45,6 +46,7 @@ export function BonusEventsList({
   const [error, setError] = useState<string | null>(null);
   const [receivingId, setReceivingId] = useState<string | null>(null);
   const [receiveAmount, setReceiveAmount] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   function getAccountName(id: string | null) {
     if (!id) return "—";
@@ -68,7 +70,6 @@ export function BonusEventsList({
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm(copy.bonuses.deleteConfirm)) return;
     const result = await deleteBonusEvent(id);
     if (result.success) {
       setEvents((prev) => prev.filter((e) => e.id !== id));
@@ -137,7 +138,7 @@ export function BonusEventsList({
       </div>
 
       {error && (
-        <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+        <div role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -264,7 +265,7 @@ export function BonusEventsList({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(event.id)}
+                          onClick={() => setPendingDeleteId(event.id)}
                           className="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
                         >
                           {copy.bonuses.delete}
@@ -278,6 +279,14 @@ export function BonusEventsList({
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        description={copy.bonuses.deleteConfirm}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) return handleDelete(pendingDeleteId);
+        }}
+      />
     </div>
   );
 }

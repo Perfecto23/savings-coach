@@ -9,10 +9,10 @@ test("consumer AI and public signup stay closed", async ({ page, request }) => {
   await expect(response.json()).resolves.toEqual({
     error: {
       code: "feature_disabled",
-      message: "AI Coach is not available in this release.",
+      message: "AI 教练在当前版本未开放。",
     },
   });
 
   await page.goto("/login");
-  await expect(page.getByRole("link", { name: /注册|sign up/i })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /注册/ })).toHaveCount(0);
 });

@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { getAppFeedbackCopy } from "@/lib/app-shell/feedback-presentation";
-import { getSetupState } from "@/lib/setup/server";
+import { APP_LOCALE } from "@/lib/product-locale";
 
-export default async function NotFound() {
-  const setup = await getSetupState();
-  const locale = setup.preferences?.locale ?? "en-US";
-  const copy = getAppFeedbackCopy(locale).notFound;
+export default function NotFound() {
+  const copy = getAppFeedbackCopy().notFound;
 
   return (
-    <div lang={locale} className="mx-auto flex max-w-md flex-col items-center py-20 text-center">
+    <div lang={APP_LOCALE} className="mx-auto flex max-w-md flex-col items-center py-20 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
         <span className="text-2xl" aria-hidden="true">
           🔍

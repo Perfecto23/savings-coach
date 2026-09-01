@@ -32,7 +32,7 @@ export function SopTemplateForm({
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="step_key" className="block text-sm font-medium text-gray-700">

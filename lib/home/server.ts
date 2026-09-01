@@ -7,9 +7,9 @@ import type {
   MonthlyExecutionHomeDto,
 } from "@/lib/home/contracts";
 import { createClient } from "@/lib/supabase/server";
+import { APP_LOCALE } from "@/lib/product-locale";
 
 interface HomeSetupProjection {
-  locale: string;
   time_zone: string;
   base_currency: string;
   plan_activated_at: string | null;
@@ -80,7 +80,7 @@ function toActionDto(
 
 function emptyHomeBase(setup: HomeSetupProjection, currentYearMonth: string) {
   return {
-    locale: setup.locale,
+    locale: APP_LOCALE,
     baseCurrency: setup.base_currency,
     currentYearMonth,
     completedCount: 0,
@@ -98,7 +98,7 @@ export async function getMonthlyExecutionHome(): Promise<MonthlyExecutionHomeDto
 
   const { data: setupData, error: setupError } = await supabase
     .from("owner_setup")
-    .select("locale, time_zone, base_currency, plan_activated_at")
+    .select("time_zone, base_currency, plan_activated_at")
     .eq("owner_id", user.id)
     .maybeSingle();
   if (setupError || !setupData) throw new Error("Unable to load Home");

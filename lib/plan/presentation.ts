@@ -1,9 +1,8 @@
-import { getLanguage, normalizeLocale, type AppLocale } from "@/lib/i18n/locale";
+import type { AppLocale } from "@/lib/product-locale";
 import type { PlanFormErrorCode, PlanFormSuccessCode } from "./contracts";
 
 export interface PlanCopy {
   locale: AppLocale;
-  language: "en" | "zh";
   page: {
     title: string;
     description: string;
@@ -84,117 +83,8 @@ export interface PlanCopy {
   successMessages: Record<PlanFormSuccessCode, string>;
 }
 
-const ENGLISH_COPY: PlanCopy = {
-  locale: "en-US",
-  language: "en",
-  page: {
-    title: "Build your Savings Plan",
-    description:
-      "Set a monthly intention, turn it into actions, and see the path ahead. No income data or bank connection required.",
-    currentActionsLabel: "Current month actions",
-    currentActionsTitle: "Current month actions",
-    currentActionsDescription:
-      "Each action keeps the Rule Amount and account names from the month it was created.",
-    currentActionsEmpty: "Activate your Savings Plan to create this month's actions.",
-    duePrefix: "Due",
-    noSourceAccount: "No Source Account",
-    overdue: "Overdue",
-    completed: "Completed",
-  },
-  createForm: {
-    regionLabel: "Add a Plan Rule",
-    title: "Add a Plan Rule",
-    description:
-      "Choose one amount you intend to move each month. Savings Coach records the action; it never transfers money.",
-    nameLabel: "Rule name",
-    namePlaceholder: "Monthly savings transfer",
-    amountLabel: "Rule amount",
-    amountHelp: "A positive amount in your base currency.",
-    dueDayLabel: "Due day",
-    dueDayHelp: "Short months use their last day.",
-    sourceAccountLabel: "Source account (optional)",
-    noSourceAccount: "No Source Account",
-    targetAccountLabel: "Target account",
-    submit: "Add rule",
-    submitting: "Adding…",
-  },
-  editForm: {
-    title: "Edit a Plan Rule",
-    description:
-      "Changes affect future months. This month's Monthly Action keeps its original Rule Amount.",
-    nameLabel: "Rule name",
-    amountLabel: "Rule amount",
-    dueDayLabel: "Due day",
-    sourceAccountLabel: "Source account (optional)",
-    noSourceAccount: "No Source Account",
-    targetAccountLabel: "Target account",
-    cancel: "Cancel",
-    submit: "Save changes",
-    submitting: "Saving…",
-  },
-  ruleList: {
-    regionLabel: "Plan Rules",
-    title: "Plan Rules",
-    description: "Each active rule creates one Monthly Action per natural month.",
-    addAnother: "Add another rule",
-    active: "Active",
-    inactive: "Inactive",
-    onDayPrefix: "on day",
-    dueDaySuffix: "",
-    edit: "Edit",
-    deactivate: "Deactivate",
-    reactivate: "Reactivate",
-    cancel: "Cancel",
-  },
-  activation: {
-    activeTitle: "Your Savings Plan is active.",
-    activeSummary: "You plan to move {amount} into {account} each month.",
-    nextAction: "Your next action is due {date}.",
-    currentActionsComplete: "Your current Monthly Actions are complete.",
-    safetyNote:
-      "This is a plan based on your entries. Savings Coach does not move money or guarantee a future balance.",
-    title: "Turn rules into this month's actions",
-    description:
-      "Activation creates the current Monthly Actions and a 12-month Plan Path. You can safely repeat it without creating duplicates.",
-    submit: "Activate Savings Plan",
-    submitting: "Activating…",
-    disabledHelp: "Add one active Plan Rule to continue.",
-  },
-  path: {
-    regionLabel: "Plan Path",
-    title: "Plan Path",
-    description:
-      "Twelve monthly target balances from your latest Balance Snapshot and planned transfers. This path is not a forecast.",
-    monthsSuffix: "months",
-    empty: "Activate your Savings Plan to create the Plan Path.",
-    current: "Current",
-    plannedThisMonthSuffix: "planned this month",
-  },
-  errorMessages: {
-    UNAUTHENTICATED: "Please sign in again.",
-    SETUP_INCOMPLETE: "Finish Setup before building a Savings Plan.",
-    INVALID_RULE: "Check the Plan Rule fields and try again.",
-    RULE_NOT_FOUND: "This Plan Rule no longer exists. Reload the page.",
-    ACCOUNT_NOT_FOUND: "The selected Source Account was not found.",
-    TARGET_ACCOUNT_MISMATCH:
-      "The Target Account must match the Savings Account from Setup.",
-    PLAN_HAS_NO_RULES: "Add at least one active Plan Rule before activation.",
-    PLAN_SAVE_FAILED: "The Plan Rule could not be saved. Try again.",
-    PLAN_ACTIVATION_FAILED:
-      "The Savings Plan could not be activated. Try again.",
-  },
-  successMessages: {
-    PLAN_RULE_ADDED: "Plan Rule added.",
-    PLAN_RULE_UPDATED: "Plan Rule updated.",
-    PLAN_RULE_REACTIVATED: "Plan Rule reactivated.",
-    PLAN_RULE_DEACTIVATED: "Plan Rule deactivated.",
-    SAVINGS_PLAN_ACTIVATED: "Savings Plan activated.",
-  },
-};
-
-const CHINESE_COPY: PlanCopy = {
+const COPY: PlanCopy = {
   locale: "zh-CN",
-  language: "zh",
   page: {
     title: "建立你的储蓄计划",
     description:
@@ -295,8 +185,6 @@ const CHINESE_COPY: PlanCopy = {
   },
 };
 
-export function getPlanCopy(locale: string): PlanCopy {
-  const normalizedLocale = normalizeLocale(locale);
-  const copy = getLanguage(normalizedLocale) === "zh" ? CHINESE_COPY : ENGLISH_COPY;
-  return { ...copy, locale: normalizedLocale };
+export function getPlanCopy(): PlanCopy {
+  return COPY;
 }

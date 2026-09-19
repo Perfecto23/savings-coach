@@ -59,19 +59,19 @@ export function generateReportData(params: {
   const sopDone = sopRecords.filter((r) => r.completed).length;
   const sopCompletionRate = sopTotal > 0 ? Math.round((sopDone / sopTotal) * 100) : 0;
 
-  // 按账户聚合余额变化
-  const monthSnapshots = snapshots.filter((s) =>
-    s.recorded_at.startsWith(yearMonth)
-  );
-
   const accountBalances = accounts.map((account) => {
-    const acctSnaps = monthSnapshots
+    const acctSnaps = snapshots
       .filter((s) => s.account_id === account.id)
       .toSorted((a, b) => a.recorded_at.localeCompare(b.recorded_at));
 
-    const startBalance = acctSnaps.length > 0 ? acctSnaps[0].balance : null;
-    const endBalance =
-      acctSnaps.length > 0 ? acctSnaps[acctSnaps.length - 1].balance : null;
+    const monthStart = `${yearMonth}-01`;
+    const monthSnaps = acctSnaps.filter((s) => s.recorded_at.startsWith(yearMonth));
+    const previousSnaps = acctSnaps.filter((s) => s.recorded_at < monthStart);
+    const startSnapshot =
+      previousSnaps.at(-1) ?? (monthSnaps.length > 1 ? monthSnaps[0] : undefined);
+    const endSnapshot = monthSnaps.at(-1);
+    const startBalance = startSnapshot?.balance ?? null;
+    const endBalance = endSnapshot?.balance ?? null;
     const change =
       startBalance != null && endBalance != null
         ? endBalance - startBalance

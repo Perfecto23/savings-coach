@@ -48,10 +48,14 @@ export default async function BalancesPage() {
       .maybeSingle(),
   ]);
 
+  if (accountsRes.error || snapshotsRes.error || setupRes.error || !setupRes.data) {
+    throw new Error("Unable to load balance records");
+  }
+
   const accounts = (accountsRes.data || []) as Account[];
   const snapshots = (snapshotsRes.data || []) as BalanceDisplaySnapshot[];
   const locale = APP_LOCALE;
-  const baseCurrency = setupRes.data?.base_currency || "USD";
+  const baseCurrency = setupRes.data.base_currency;
   const copy = getBalancesCopy();
 
   // 每个账户的最新快照
@@ -91,7 +95,7 @@ export default async function BalancesPage() {
       <BalanceForm
         accounts={accounts}
         baseCurrency={baseCurrency}
-        defaultDate={localDate(setupRes.data?.time_zone || "UTC")}
+        defaultDate={localDate(setupRes.data.time_zone)}
         copy={copy.form}
         errorCopy={copy.errors}
       />

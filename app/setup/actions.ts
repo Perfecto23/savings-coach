@@ -21,6 +21,7 @@ const RPC_ERRORS: Record<string, SetupFormError> = {
   invalid_time_zone: { code: "INVALID_TIME_ZONE", field: "time_zone" },
   unsupported_base_currency: { code: "INVALID_BASE_CURRENCY", field: "base_currency" },
   base_currency_locked: { code: "BASE_CURRENCY_LOCKED", field: "base_currency" },
+  activated_setup_locked: { code: "ACTIVATED_SETUP_LOCKED" },
   preferences_required: { code: "PREFERENCES_REQUIRED" },
   invalid_account_mode: { code: "INVALID_ACCOUNT_MODE", field: "mode" },
   invalid_account_name: { code: "INVALID_ACCOUNT_NAME", field: "name" },

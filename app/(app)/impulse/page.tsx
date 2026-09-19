@@ -28,6 +28,10 @@ export default async function ImpulsePage() {
       .maybeSingle(),
   ]);
 
+  if (logsRes.error || totalRes.error || setupRes.error || !setupRes.data) {
+    throw new Error("Unable to load impulse records");
+  }
+
   const logs = (logsRes.data || []) as ImpulseLog[];
   const total = (totalRes.data || []).reduce(
     (sum: number, row: { estimated_price: number }) => sum + row.estimated_price,
@@ -39,7 +43,7 @@ export default async function ImpulsePage() {
       initialLogs={logs}
       initialTotal={total}
       locale={APP_LOCALE}
-      baseCurrency={setupRes.data?.base_currency ?? "USD"}
+      baseCurrency={setupRes.data.base_currency}
     />
   );
 }

@@ -93,6 +93,12 @@ export async function updateAccount(
   if (error) return { success: false, error: "SAVE_FAILED" };
   if (!data) return { success: false, error: "ACCOUNT_NOT_FOUND" };
   revalidatePath("/settings");
+  revalidatePath("/");
+  revalidatePath("/plan");
+  revalidatePath("/balances");
+  revalidatePath("/sop");
+  revalidatePath("/income");
+  revalidatePath("/milestones");
   return { success: true, data: undefined };
 }
 

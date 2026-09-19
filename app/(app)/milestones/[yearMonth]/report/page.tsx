@@ -109,8 +109,17 @@ export default async function ReportPage({ params }: ReportPageProps) {
       supabase.rpc("get_paid_intent_offer_state"),
     ]);
 
-  if (paidIntentRes.error) {
-    throw new Error("Unable to load Pro beta offer state");
+  if (
+    accountsRes.error ||
+    snapshotsRes.error ||
+    milestoneRes.error ||
+    sopRes.error ||
+    impulseRes.error ||
+    setupRes.error ||
+    !setupRes.data ||
+    paidIntentRes.error
+  ) {
+    throw new Error("Unable to load monthly report");
   }
 
   const sopRecords = (sopRes.data || []) as MonthlyReportSopRecord[];
@@ -130,7 +139,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
   ).length;
   const locale = APP_LOCALE;
   const currentYearMonth = currentYearMonthInTimeZone(
-    setupRes.data?.time_zone || "UTC"
+    setupRes.data.time_zone
   );
   const previousReviewYearMonth = previousYearMonth(currentYearMonth);
   const reportCopy = getMonthlyReportCopy();
@@ -192,7 +201,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
       <MonthlyReport
         data={reportData}
         locale={locale}
-        baseCurrency={setupRes.data?.base_currency || "USD"}
+        baseCurrency={setupRes.data.base_currency}
         copy={reportCopy}
       />
     </div>

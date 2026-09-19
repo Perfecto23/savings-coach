@@ -38,7 +38,7 @@ export default async function SettingsPage() {
       .maybeSingle(),
   ]);
 
-  if (setupRes.error || !setupRes.data?.time_zone) {
+  if (accountsRes.error || templatesRes.error || setupRes.error || !setupRes.data?.time_zone) {
     throw new Error("Unable to load Settings");
   }
 
@@ -82,7 +82,7 @@ export default async function SettingsPage() {
           accounts={accounts}
           templates={templates}
           locale={locale}
-          baseCurrency={setupRes.data?.base_currency || "USD"}
+          baseCurrency={setupRes.data.base_currency}
           reviewEmailReminder={reviewEmailReminder}
           copy={copy}
         />

@@ -37,10 +37,14 @@ export default async function MilestonesPage() {
       .maybeSingle(),
   ]);
 
+  if (milestonesRes.error || bonusRes.error || setupRes.error || !setupRes.data) {
+    throw new Error("Unable to load milestone records");
+  }
+
   const milestones = (milestonesRes.data || []) as MonthlyMilestone[];
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
   const locale = APP_LOCALE;
-  const baseCurrency = setupRes.data?.base_currency || "USD";
+  const baseCurrency = setupRes.data.base_currency;
   const copy = getMilestonesCopy();
 
   return (
@@ -57,7 +61,7 @@ export default async function MilestonesPage() {
         bonusEvents={bonusEvents}
         locale={locale}
         baseCurrency={baseCurrency}
-        currentYearMonth={localYearMonth(setupRes.data?.time_zone || "UTC")}
+        currentYearMonth={localYearMonth(setupRes.data.time_zone)}
         copy={copy.table}
       />
     </div>

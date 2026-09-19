@@ -38,7 +38,7 @@ export default async function IncomePage() {
       .maybeSingle(),
   ]);
 
-  if (salaryRes.error || bonusRes.error || accountsRes.error || setupRes.error) {
+  if (salaryRes.error || bonusRes.error || accountsRes.error || setupRes.error || !setupRes.data) {
     throw new Error("Unable to load Income");
   }
 
@@ -46,7 +46,7 @@ export default async function IncomePage() {
   const bonusEvents = (bonusRes.data || []) as BonusEvent[];
   const accounts = (accountsRes.data || []) as Account[];
   const locale = APP_LOCALE;
-  const baseCurrency = setupRes.data?.base_currency ?? "USD";
+  const baseCurrency = setupRes.data.base_currency;
   const copy = getIncomeCopy();
 
   const breakdown = salaryConfig

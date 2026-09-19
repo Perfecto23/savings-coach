@@ -25,7 +25,6 @@ export interface SetupCopy {
     timeZone: string;
     timeZoneHelp: string;
     baseCurrency: string;
-    currencyLocked: string;
     currencyHelp: string;
     currencyLabels: Record<SetupBaseCurrency, string>;
     saving: string;
@@ -99,7 +98,6 @@ const COPY: SetupCopy = {
     timeZone: "时区",
     timeZoneHelp: "用于判断余额快照属于哪个自然日。",
     baseCurrency: "基础货币",
-    currencyLocked: "现有余额历史使用 CNY，因此基础货币已锁定。",
     currencyHelp: "所有余额使用一种基础货币。记录首个余额后将锁定。",
     currencyLabels: {
       AUD: "AUD — 澳大利亚元",
@@ -164,6 +162,7 @@ const COPY: SetupCopy = {
     INVALID_TIME_ZONE: "请选择有效时区。",
     INVALID_BASE_CURRENCY: "请选择支持的基础货币。",
     BASE_CURRENCY_LOCKED: "记录余额后不能修改基础货币。",
+    ACTIVATED_SETUP_LOCKED: "储蓄计划激活后不能修改时区或储蓄账户。",
     PREFERENCES_REQUIRED: "请先保存地区偏好。",
     INVALID_ACCOUNT_MODE: "请选择使用现有账户或创建新账户。",
     INVALID_ACCOUNT_NAME: "请输入不超过 100 个字符的账户名称。",

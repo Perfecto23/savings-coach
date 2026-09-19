@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { SopDisplayRecord } from "@/lib/sop/contracts";
 import { SopStepItem } from "./sop-step-item";
 import { initMonthSop, addAdHocSopStep } from "@/app/(app)/sop/actions";
@@ -13,6 +13,7 @@ interface SopChecklistProps {
   yearMonth: string;
   locale: string;
   baseCurrency: string;
+  isPlanActivated: boolean;
   isClosed: boolean;
   copy: SopCopy["checklist"];
   stepCopy: SopCopy["step"];
@@ -24,6 +25,7 @@ export function SopChecklist({
   yearMonth,
   locale,
   baseCurrency,
+  isPlanActivated,
   isClosed,
   copy,
   stepCopy,
@@ -32,7 +34,6 @@ export function SopChecklist({
   const [records, setRecords] = useState(initialRecords);
   const [loading, setLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [initDone, setInitDone] = useState(initialRecords.length > 0 || isClosed);
   const [showAdHocForm, setShowAdHocForm] = useState(false);
   const [adHocLabel, setAdHocLabel] = useState("");
   const [adHocDay, setAdHocDay] = useState("10");
@@ -41,26 +42,17 @@ export function SopChecklist({
   const [adHocLoading, setAdHocLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initDone) return;
-    let cancelled = false;
-    async function doInit() {
-      setLoading(true);
-      const result = await initMonthSop(yearMonth);
-      if (!cancelled && result.success) {
-        setRecords(result.data);
-        setError(null);
-      } else if (!cancelled && !result.success) {
-        setError(getSopErrorMessage(result.error, errorCopy));
-      }
-      if (!cancelled) {
-        setLoading(false);
-        setInitDone(true);
-      }
+  async function handleInitialize() {
+    setLoading(true);
+    const result = await initMonthSop(yearMonth);
+    if (result.success) {
+      setRecords(result.data);
+      setError(null);
+    } else {
+      setError(getSopErrorMessage(result.error, errorCopy));
     }
-    doInit();
-    return () => { cancelled = true; };
-  }, [errorCopy, initDone, yearMonth]);
+    setLoading(false);
+  }
 
   function handleRecordUpdated(updated: SopDisplayRecord) {
     setRecords((prev) => {
@@ -133,12 +125,36 @@ export function SopChecklist({
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
         <p className="text-gray-500">
-          {copy.emptyBeforeLink}{" "}
-          <a href="/settings" className="font-medium text-orange-500 hover:text-orange-600">
-            {copy.emptyLink}
-          </a>
-          {copy.emptyAfterLink}
+          {isPlanActivated ? (
+            <>
+              {copy.emptyBeforeSettings}{" "}
+              <a href="/settings" className="font-medium text-orange-500 hover:text-orange-600">
+                {copy.emptyLink}
+              </a>
+              {copy.emptyAfterLink}
+            </>
+          ) : (
+            <>
+              {copy.emptyBeforePlan}{" "}
+              <a href="/plan" className="font-medium text-orange-500 hover:text-orange-600">
+                {copy.planLink}
+              </a>
+            </>
+          )}
         </p>
+        {isPlanActivated && !isClosed ? (
+          <>
+            <p className="mt-2 text-sm text-gray-400">{copy.initializeHelp}</p>
+            <button
+              type="button"
+              onClick={handleInitialize}
+              disabled={loading}
+              className="mt-5 cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? copy.initializing : copy.initialize}
+            </button>
+          </>
+        ) : null}
       </div>
     );
   }

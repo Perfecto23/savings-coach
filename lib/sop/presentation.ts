@@ -6,7 +6,12 @@ export interface SopCopy {
   };
   checklist: {
     loading: string;
-    emptyBeforeLink: string;
+    emptyBeforePlan: string;
+    emptyBeforeSettings: string;
+    planLink: string;
+    initialize: string;
+    initializing: string;
+    initializeHelp: string;
     emptyLink: string;
     emptyAfterLink: string;
     closed: string;
@@ -55,7 +60,12 @@ const COPY: SopCopy = {
   },
   checklist: {
     loading: "正在加载月度 SOP…",
-    emptyBeforeLink: "还没有 SOP 模板，请先在",
+    emptyBeforePlan: "请先建立并激活储蓄计划，再生成本月 SOP。",
+    emptyBeforeSettings: "本月还没有可执行步骤。请先在",
+    planLink: "储蓄计划",
+    initialize: "生成本月 SOP",
+    initializing: "生成中…",
+    initializeHelp: "生成后，系统会把启用的 SOP 模板复制为本月执行步骤。",
     emptyLink: "设置",
     emptyAfterLink: "中配置。",
     closed:

@@ -10,7 +10,7 @@ import {
 import type { ActionResult } from "@/lib/types/database";
 import type { SopDisplayRecord } from "@/lib/sop/contracts";
 
-const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
+const YEAR_MONTH_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 async function readDisplayRecords(
   supabase: Awaited<ReturnType<typeof createClient>>,

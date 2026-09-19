@@ -23,13 +23,11 @@ const TIME_ZONES = [
 ] as const;
 
 interface PreferencesStepProps {
-  legacyCurrencyLocked: boolean;
   copy: SetupCopy["preferences"];
   errorCopy: Record<SetupFormErrorCode, string>;
 }
 
 export function PreferencesStep({
-  legacyCurrencyLocked,
   copy,
   errorCopy,
 }: PreferencesStepProps) {
@@ -109,21 +107,17 @@ export function PreferencesStep({
           >
             {copy.baseCurrency}
           </label>
-          {legacyCurrencyLocked ? (
-            <input type="hidden" name="base_currency" value="CNY" />
-          ) : null}
           <select
             id="setup-base-currency"
-            name={legacyCurrencyLocked ? undefined : "base_currency"}
-            defaultValue={legacyCurrencyLocked ? "CNY" : "USD"}
-            disabled={legacyCurrencyLocked}
+            name="base_currency"
+            defaultValue="CNY"
             aria-invalid={fieldError?.field === "base_currency"}
             aria-describedby={
               fieldError?.field === "base_currency"
                 ? "base-currency-help setup-base-currency-error"
                 : "base-currency-help"
             }
-            className="mt-2 min-h-12 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-3 text-base shadow-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500"
+            className="mt-2 min-h-12 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-3 text-base shadow-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
           >
             {SUPPORTED_BASE_CURRENCIES.map((currency) => (
               <option key={currency} value={currency}>
@@ -132,9 +126,7 @@ export function PreferencesStep({
             ))}
           </select>
           <p id="base-currency-help" className="mt-2 text-sm leading-6 text-stone-500">
-            {legacyCurrencyLocked
-              ? copy.currencyLocked
-              : copy.currencyHelp}
+            {copy.currencyHelp}
           </p>
           <FieldError
             id="setup-base-currency-error"

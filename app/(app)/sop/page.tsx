@@ -29,7 +29,7 @@ export default async function SopPage({ searchParams }: SopPageProps) {
 
   const setupRes = await supabase
     .from("owner_setup")
-    .select("time_zone, base_currency")
+    .select("time_zone, base_currency, plan_activated_at")
     .eq("owner_id", user.id)
     .maybeSingle();
   if (setupRes.error || !setupRes.data) {
@@ -75,7 +75,8 @@ export default async function SopPage({ searchParams }: SopPageProps) {
         initialRecords={displayRecords}
         yearMonth={yearMonth}
         locale={locale}
-        baseCurrency={setupRes.data?.base_currency ?? "USD"}
+        baseCurrency={setupRes.data.base_currency}
+        isPlanActivated={setupRes.data.plan_activated_at != null}
         isClosed={reviewRes.data?.review_completed_at != null}
         copy={copy.checklist}
         stepCopy={copy.step}
